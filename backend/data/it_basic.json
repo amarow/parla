@@ -1,0 +1,1110 @@
+[
+  {
+    "category": "Zahlen & Mengen",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "eins",
+        "foreign": "uno"
+      },
+      {
+        "native": "zwei",
+        "foreign": "due"
+      },
+      {
+        "native": "drei",
+        "foreign": "tre"
+      },
+      {
+        "native": "vier",
+        "foreign": "quattro"
+      },
+      {
+        "native": "fünf",
+        "foreign": "cinque"
+      },
+      {
+        "native": "sechs",
+        "foreign": "sei"
+      },
+      {
+        "native": "sieben",
+        "foreign": "sette"
+      },
+      {
+        "native": "acht",
+        "foreign": "otto"
+      },
+      {
+        "native": "neun",
+        "foreign": "nove"
+      },
+      {
+        "native": "zehn",
+        "foreign": "dieci"
+      },
+      {
+        "native": "elf",
+        "foreign": "undici"
+      },
+      {
+        "native": "zwölf",
+        "foreign": "dodici"
+      },
+      {
+        "native": "zwanzig",
+        "foreign": "venti"
+      },
+      {
+        "native": "hundert",
+        "foreign": "cento"
+      },
+      {
+        "native": "tausend",
+        "foreign": "mille"
+      },
+      {
+        "native": "viel",
+        "foreign": "molto"
+      },
+      {
+        "native": "wenig",
+        "foreign": "poco"
+      },
+      {
+        "native": "alles",
+        "foreign": "tutto"
+      },
+      {
+        "native": "nichts",
+        "foreign": "niente"
+      },
+      {
+        "native": "einige",
+        "foreign": "alcuni"
+      }
+    ]
+  },
+  {
+    "category": "Familie & Menschen",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "die Familie",
+        "foreign": "la famiglia"
+      },
+      {
+        "native": "der Vater",
+        "foreign": "il padre"
+      },
+      {
+        "native": "die Mutter",
+        "foreign": "la madre"
+      },
+      {
+        "native": "der Bruder",
+        "foreign": "il fratello"
+      },
+      {
+        "native": "die Schwester",
+        "foreign": "la sorella"
+      },
+      {
+        "native": "der Sohn",
+        "foreign": "il figlio"
+      },
+      {
+        "native": "die Tochter",
+        "foreign": "la figlia"
+      },
+      {
+        "native": "der Großvater",
+        "foreign": "il nonno"
+      },
+      {
+        "native": "die Großmutter",
+        "foreign": "la nonna"
+      },
+      {
+        "native": "das Kind",
+        "foreign": "il bambino"
+      },
+      {
+        "native": "der Mann",
+        "foreign": "l\"uomo"
+      },
+      {
+        "native": "die Frau",
+        "foreign": "la donna"
+      },
+      {
+        "native": "der Junge",
+        "foreign": "il ragazzo"
+      },
+      {
+        "native": "das Mädchen",
+        "foreign": "la ragazza"
+      },
+      {
+        "native": "der Onkel",
+        "foreign": "lo zio"
+      },
+      {
+        "native": "die Tante",
+        "foreign": "la zia"
+      }
+    ]
+  },
+  {
+    "category": "Körper & Gesundheit",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "der Kopf",
+        "foreign": "la testa"
+      },
+      {
+        "native": "das Auge",
+        "foreign": "l\"occhio"
+      },
+      {
+        "native": "das Haar",
+        "foreign": "il capello"
+      },
+      {
+        "native": "das Ohr",
+        "foreign": "l\"orecchio"
+      },
+      {
+        "native": "die Nase",
+        "foreign": "il naso"
+      },
+      {
+        "native": "der Mund",
+        "foreign": "la bocca"
+      },
+      {
+        "native": "der Zahn",
+        "foreign": "il dente"
+      },
+      {
+        "native": "das Gesicht",
+        "foreign": "il viso"
+      },
+      {
+        "native": "der Hals",
+        "foreign": "il collo"
+      },
+      {
+        "native": "der Arm",
+        "foreign": "il braccio"
+      },
+      {
+        "native": "die Hand",
+        "foreign": "la mano"
+      },
+      {
+        "native": "der Finger",
+        "foreign": "il dito"
+      },
+      {
+        "native": "das Bein",
+        "foreign": "la gamba"
+      },
+      {
+        "native": "der Fuß",
+        "foreign": "il piede"
+      },
+      {
+        "native": "der Rücken",
+        "foreign": "la schiena"
+      },
+      {
+        "native": "das Herz",
+        "foreign": "il cuore"
+      },
+      {
+        "native": "das Blut",
+        "foreign": "il sangue"
+      },
+      {
+        "native": "krank",
+        "foreign": "malato"
+      },
+      {
+        "native": "gesund",
+        "foreign": "sano"
+      },
+      {
+        "native": "der Arzt",
+        "foreign": "il medico"
+      }
+    ]
+  },
+  {
+    "category": "Natur & Wetter",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "die Sonne",
+        "foreign": "il sole"
+      },
+      {
+        "native": "der Mond",
+        "foreign": "la luna"
+      },
+      {
+        "native": "der Stern",
+        "foreign": "la stella"
+      },
+      {
+        "native": "der Himmel",
+        "foreign": "il cielo"
+      },
+      {
+        "native": "die Wolke",
+        "foreign": "la nuvola"
+      },
+      {
+        "native": "der Regen",
+        "foreign": "la pioggia"
+      },
+      {
+        "native": "der Schnee",
+        "foreign": "la neve"
+      },
+      {
+        "native": "der Wind",
+        "foreign": "il vento"
+      },
+      {
+        "native": "das Wasser",
+        "foreign": "l\"acqua"
+      },
+      {
+        "native": "das Feuer",
+        "foreign": "il fuoco"
+      },
+      {
+        "native": "die Erde",
+        "foreign": "la terra"
+      },
+      {
+        "native": "der Baum",
+        "foreign": "l\"albero"
+      },
+      {
+        "native": "der Wald",
+        "foreign": "il bosco"
+      },
+      {
+        "native": "die Blume",
+        "foreign": "il fiore"
+      },
+      {
+        "native": "das Gras",
+        "foreign": "l\"erba"
+      },
+      {
+        "native": "das Tier",
+        "foreign": "l\"animale"
+      },
+      {
+        "native": "der Hund",
+        "foreign": "il cane"
+      },
+      {
+        "native": "die Katze",
+        "foreign": "il gatto"
+      },
+      {
+        "native": "der Vogel",
+        "foreign": "l\"uccello"
+      },
+      {
+        "native": "der Fisch",
+        "foreign": "il pesce"
+      }
+    ]
+  },
+  {
+    "category": "Haus & Möbel",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "die Tür",
+        "foreign": "la porta"
+      },
+      {
+        "native": "das Fenster",
+        "foreign": "la finestra"
+      },
+      {
+        "native": "das Zimmer",
+        "foreign": "la stanza"
+      },
+      {
+        "native": "das Schlafzimmer",
+        "foreign": "la camera da letto"
+      },
+      {
+        "native": "das Badezimmer",
+        "foreign": "il bagno"
+      },
+      {
+        "native": "die Küche",
+        "foreign": "la cucina"
+      },
+      {
+        "native": "der Tisch",
+        "foreign": "il tavolo"
+      },
+      {
+        "native": "der Stuhl",
+        "foreign": "la sedia"
+      },
+      {
+        "native": "das Bett",
+        "foreign": "il letto"
+      },
+      {
+        "native": "der Schrank",
+        "foreign": "l\"armadio"
+      },
+      {
+        "native": "das Sofa",
+        "foreign": "il divano"
+      },
+      {
+        "native": "der Fernseher",
+        "foreign": "la televisione"
+      },
+      {
+        "native": "das Licht",
+        "foreign": "la luce"
+      },
+      {
+        "native": "der Schlüssel",
+        "foreign": "la chiave"
+      },
+      {
+        "native": "die Wand",
+        "foreign": "il muro"
+      }
+    ]
+  },
+  {
+    "category": "Essen & Trinken (Erweitert)",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "das Obst",
+        "foreign": "la frutta"
+      },
+      {
+        "native": "das Gemüse",
+        "foreign": "la verdura"
+      },
+      {
+        "native": "das Fleisch",
+        "foreign": "la carne"
+      },
+      {
+        "native": "der Käse",
+        "foreign": "il formaggio"
+      },
+      {
+        "native": "das Brot",
+        "foreign": "il pane"
+      },
+      {
+        "native": "die Butter",
+        "foreign": "il burro"
+      },
+      {
+        "native": "das Salz",
+        "foreign": "il sale"
+      },
+      {
+        "native": "der Pfeffer",
+        "foreign": "il pepe"
+      },
+      {
+        "native": "der Zucker",
+        "foreign": "lo zucchero"
+      },
+      {
+        "native": "der Kaffee",
+        "foreign": "il caffè"
+      },
+      {
+        "native": "der Tee",
+        "foreign": "il tè"
+      },
+      {
+        "native": "das Bier",
+        "foreign": "la birra"
+      },
+      {
+        "native": "der Wein",
+        "foreign": "il vino"
+      },
+      {
+        "native": "der Saft",
+        "foreign": "il succo"
+      },
+      {
+        "native": "die Suppe",
+        "foreign": "la zuppa"
+      }
+    ]
+  },
+  {
+    "category": "Wichtige Verben (Grundform)",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "sein",
+        "foreign": "essere"
+      },
+      {
+        "native": "haben",
+        "foreign": "avere"
+      },
+      {
+        "native": "machen",
+        "foreign": "fare"
+      },
+      {
+        "native": "gehen",
+        "foreign": "andare"
+      },
+      {
+        "native": "sagen",
+        "foreign": "dire"
+      },
+      {
+        "native": "können",
+        "foreign": "potere"
+      },
+      {
+        "native": "wollen",
+        "foreign": "volere"
+      },
+      {
+        "native": "wissen",
+        "foreign": "sapere"
+      },
+      {
+        "native": "sehen",
+        "foreign": "vedere"
+      },
+      {
+        "native": "geben",
+        "foreign": "dare"
+      },
+      {
+        "native": "sprechen",
+        "foreign": "parlare"
+      },
+      {
+        "native": "finden",
+        "foreign": "trovare"
+      },
+      {
+        "native": "fühlen",
+        "foreign": "sentire"
+      },
+      {
+        "native": "lassen",
+        "foreign": "lasciare"
+      },
+      {
+        "native": "nehmen",
+        "foreign": "prendere"
+      },
+      {
+        "native": "glauben",
+        "foreign": "credere"
+      },
+      {
+        "native": "bringen",
+        "foreign": "portare"
+      },
+      {
+        "native": "kommen",
+        "foreign": "venire"
+      },
+      {
+        "native": "denken",
+        "foreign": "pensare"
+      },
+      {
+        "native": "verstehen",
+        "foreign": "capire"
+      },
+      {
+        "native": "essen",
+        "foreign": "mangiare"
+      },
+      {
+        "native": "trinken",
+        "foreign": "bere"
+      },
+      {
+        "native": "schlafen",
+        "foreign": "dormire"
+      },
+      {
+        "native": "arbeiten",
+        "foreign": "lavorare"
+      },
+      {
+        "native": "lernen",
+        "foreign": "imparare"
+      }
+    ]
+  },
+  {
+    "category": "Wichtige Adjektive",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "gut",
+        "foreign": "buono"
+      },
+      {
+        "native": "schlecht",
+        "foreign": "cattivo"
+      },
+      {
+        "native": "groß",
+        "foreign": "grande"
+      },
+      {
+        "native": "klein",
+        "foreign": "piccolo"
+      },
+      {
+        "native": "neu",
+        "foreign": "nuovo"
+      },
+      {
+        "native": "alt",
+        "foreign": "vecchio"
+      },
+      {
+        "native": "schön",
+        "foreign": "bello"
+      },
+      {
+        "native": "hässlich",
+        "foreign": "brutto"
+      },
+      {
+        "native": "lang",
+        "foreign": "lungo"
+      },
+      {
+        "native": "kurz",
+        "foreign": "corto"
+      },
+      {
+        "native": "hoch",
+        "foreign": "alto"
+      },
+      {
+        "native": "niedrig",
+        "foreign": "basso"
+      },
+      {
+        "native": "schwer",
+        "foreign": "pesante"
+      },
+      {
+        "native": "leicht",
+        "foreign": "leggero"
+      },
+      {
+        "native": "stark",
+        "foreign": "forte"
+      },
+      {
+        "native": "schwach",
+        "foreign": "debole"
+      },
+      {
+        "native": "schnell",
+        "foreign": "veloce"
+      },
+      {
+        "native": "langsam",
+        "foreign": "lento"
+      },
+      {
+        "native": "heiß",
+        "foreign": "caldo"
+      },
+      {
+        "native": "kalt",
+        "foreign": "freddo"
+      },
+      {
+        "native": "teuer",
+        "foreign": "caro"
+      },
+      {
+        "native": "billig",
+        "foreign": "economico"
+      },
+      {
+        "native": "reich",
+        "foreign": "ricco"
+      },
+      {
+        "native": "arm",
+        "foreign": "povero"
+      }
+    ]
+  },
+  {
+    "category": "Farben",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "rot",
+        "foreign": "rosso"
+      },
+      {
+        "native": "blau",
+        "foreign": "blu"
+      },
+      {
+        "native": "gelb",
+        "foreign": "giallo"
+      },
+      {
+        "native": "grün",
+        "foreign": "verde"
+      },
+      {
+        "native": "schwarz",
+        "foreign": "nero"
+      },
+      {
+        "native": "weiß",
+        "foreign": "bianco"
+      },
+      {
+        "native": "grau",
+        "foreign": "grigio"
+      },
+      {
+        "native": "braun",
+        "foreign": "marrone"
+      },
+      {
+        "native": "orange",
+        "foreign": "arancione"
+      },
+      {
+        "native": "rosa",
+        "foreign": "rosa"
+      }
+    ]
+  },
+  {
+    "category": "Alltag & Begrüßung",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "Hallo",
+        "foreign": "Ciao"
+      },
+      {
+        "native": "Guten Morgen",
+        "foreign": "Buongiorno"
+      },
+      {
+        "native": "Guten Abend",
+        "foreign": "Buonasera"
+      },
+      {
+        "native": "Bitte",
+        "foreign": "Per favore"
+      },
+      {
+        "native": "Danke",
+        "foreign": "Grazie"
+      },
+      {
+        "native": "Ja",
+        "foreign": "Sì"
+      },
+      {
+        "native": "Nein",
+        "foreign": "No"
+      },
+      {
+        "native": "der Freund",
+        "foreign": "l'amico"
+      },
+      {
+        "native": "die Freundin",
+        "foreign": "l'amica"
+      },
+      {
+        "native": "das Haus",
+        "foreign": "la casa"
+      }
+    ]
+  },
+  {
+    "category": "Zeit & Tage",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "heute",
+        "foreign": "oggi"
+      },
+      {
+        "native": "morgen",
+        "foreign": "domani"
+      },
+      {
+        "native": "gestern",
+        "foreign": "ieri"
+      },
+      {
+        "native": "der Tag",
+        "foreign": "il giorno"
+      },
+      {
+        "native": "die Woche",
+        "foreign": "la settimana"
+      },
+      {
+        "native": "der Monat",
+        "foreign": "il mese"
+      },
+      {
+        "native": "das Jahr",
+        "foreign": "l'anno"
+      },
+      {
+        "native": "die Stunde",
+        "foreign": "l'ora"
+      }
+    ]
+  },
+  {
+    "category": "Reise & Orte",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "das Hotel",
+        "foreign": "l'albergo"
+      },
+      {
+        "native": "das Restaurant",
+        "foreign": "il ristorante"
+      },
+      {
+        "native": "der Bahnhof",
+        "foreign": "la stazione"
+      },
+      {
+        "native": "der Flughafen",
+        "foreign": "l'aeroporto"
+      },
+      {
+        "native": "die Straße",
+        "foreign": "la strada"
+      },
+      {
+        "native": "das Auto",
+        "foreign": "l'automobile"
+      },
+      {
+        "native": "der Zug",
+        "foreign": "il treno"
+      },
+      {
+        "native": "das Ticket",
+        "foreign": "il biglietto"
+      }
+    ]
+  },
+  {
+    "category": "Werkzeuge (Handwerkzeuge)",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "der Hammer",
+        "foreign": "il martello"
+      },
+      {
+        "native": "die Säge",
+        "foreign": "la sega"
+      },
+      {
+        "native": "der Schraubendreher",
+        "foreign": "il cacciavite"
+      },
+      {
+        "native": "die Zange",
+        "foreign": "la pinza"
+      },
+      {
+        "native": "der Schraubenschlüssel",
+        "foreign": "la chiave inglese"
+      },
+      {
+        "native": "der Nagel",
+        "foreign": "il chiodo"
+      },
+      {
+        "native": "die Schraube",
+        "foreign": "la vite"
+      },
+      {
+        "native": "die Mutter (Schraube)",
+        "foreign": "il dado"
+      },
+      {
+        "native": "das Maßband",
+        "foreign": "il metro a nastro"
+      },
+      {
+        "native": "die Wasserwaage",
+        "foreign": "la livella"
+      },
+      {
+        "native": "der Pinsel",
+        "foreign": "il pennello"
+      },
+      {
+        "native": "die Farbrolle",
+        "foreign": "il rullo"
+      },
+      {
+        "native": "der Spachtel",
+        "foreign": "la spatola"
+      },
+      {
+        "native": "die Feile",
+        "foreign": "la lima"
+      },
+      {
+        "native": "der Meißel",
+        "foreign": "lo scalpello"
+      },
+      {
+        "native": "die Axt",
+        "foreign": "l\"ascia"
+      }
+    ]
+  },
+  {
+    "category": "Elektrowerkzeuge",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "die Bohrmaschine",
+        "foreign": "il trapano"
+      },
+      {
+        "native": "der Akkubohrer",
+        "foreign": "il trapano a batteria"
+      },
+      {
+        "native": "die Flex (Winkelschleifer)",
+        "foreign": "la smerigliatrice angolare"
+      },
+      {
+        "native": "die Stichsäge",
+        "foreign": "il seghetto alternativo"
+      },
+      {
+        "native": "die Kreissäge",
+        "foreign": "la sega circolare"
+      },
+      {
+        "native": "die Schleifmaschine",
+        "foreign": "la levigatrice"
+      },
+      {
+        "native": "der Kompressor",
+        "foreign": "il compressore"
+      },
+      {
+        "native": "das Verlängerungskabel",
+        "foreign": "la prolunga"
+      }
+    ]
+  },
+  {
+    "category": "Baustoffe & Materialien",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "das Holz",
+        "foreign": "il legno"
+      },
+      {
+        "native": "das Metall",
+        "foreign": "il metallo"
+      },
+      {
+        "native": "das Eisen",
+        "foreign": "il ferro"
+      },
+      {
+        "native": "der Stahl",
+        "foreign": "l\"acciaio"
+      },
+      {
+        "native": "der Zement",
+        "foreign": "il cemento"
+      },
+      {
+        "native": "der Beton",
+        "foreign": "il calcestruzzo"
+      },
+      {
+        "native": "der Sand",
+        "foreign": "la sabbia"
+      },
+      {
+        "native": "der Kies",
+        "foreign": "la ghiaia"
+      },
+      {
+        "native": "der Ziegelstein",
+        "foreign": "il mattone"
+      },
+      {
+        "native": "der Gips",
+        "foreign": "il gesso"
+      },
+      {
+        "native": "die Farbe",
+        "foreign": "la vernice"
+      },
+      {
+        "native": "der Kleber",
+        "foreign": "la colla"
+      },
+      {
+        "native": "das Silikon",
+        "foreign": "il silicone"
+      },
+      {
+        "native": "der Schaum",
+        "foreign": "la schiuma"
+      },
+      {
+        "native": "das Glas",
+        "foreign": "il vetro"
+      },
+      {
+        "native": "die Fliese",
+        "foreign": "la piastrella"
+      },
+      {
+        "native": "das Rohr",
+        "foreign": "il tubo"
+      },
+      {
+        "native": "das Kabel",
+        "foreign": "il cavo"
+      }
+    ]
+  },
+  {
+    "category": "Bauen & Renovieren",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "bauen",
+        "foreign": "costruire"
+      },
+      {
+        "native": "renovieren",
+        "foreign": "ristrutturare"
+      },
+      {
+        "native": "reparieren",
+        "foreign": "riparare"
+      },
+      {
+        "native": "streichen (malen)",
+        "foreign": "dipingere"
+      },
+      {
+        "native": "bohren",
+        "foreign": "forare"
+      },
+      {
+        "native": "sägen",
+        "foreign": "segare"
+      },
+      {
+        "native": "schrauben",
+        "foreign": "avvitare"
+      },
+      {
+        "native": "messen",
+        "foreign": "misurare"
+      },
+      {
+        "native": "schneiden",
+        "foreign": "tagliare"
+      },
+      {
+        "native": "die Baustelle",
+        "foreign": "il cantiere"
+      },
+      {
+        "native": "der Handwerker",
+        "foreign": "l\"artigiano"
+      },
+      {
+        "native": "der Elektriker",
+        "foreign": "l\"elettricista"
+      },
+      {
+        "native": "der Klempner",
+        "foreign": "l\"idraulico"
+      },
+      {
+        "native": "der Maurer",
+        "foreign": "il muratore"
+      },
+      {
+        "native": "der Tischler",
+        "foreign": "il falegname"
+      },
+      {
+        "native": "der Architekt",
+        "foreign": "l\"architetto"
+      },
+      {
+        "native": "die Wand",
+        "foreign": "il muro"
+      },
+      {
+        "native": "das Dach",
+        "foreign": "il tetto"
+      },
+      {
+        "native": "der Boden",
+        "foreign": "il pavimento"
+      },
+      {
+        "native": "das Fundament",
+        "foreign": "le fondamenta"
+      }
+    ]
+  }
+]

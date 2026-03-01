@@ -1,0 +1,438 @@
+:root {
+  /* Light Theme - Modern & Clean */
+  --bg-color: #f3f4f6;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --card-bg: #ffffff;
+  --primary-color: #4b8ae6; /* Muted blue */
+  --primary-hover: #3a75c4;
+  --wrong-color: #e07a7a; /* Muted pastel red */
+  --wrong-hover: #c96b6b;
+  --right-color: #7bba91; /* Muted pastel green */
+  --right-hover: #67a37d;
+  --border-color: #e5e7eb;
+}
+
+[data-theme='dark'] {
+  /* Dark Theme */
+  --bg-color: #111827;
+  --text-main: #f9fafb;
+  --text-muted: #9ca3af;
+  --card-bg: #1f2937;
+  --primary-color: #5c9cf2;
+  --primary-hover: #7eb3f7;
+  --wrong-color: #cc6c6c; /* Darker muted red for dark mode */
+  --wrong-hover: #e08b8b;
+  --right-color: #6da381; /* Darker muted green for dark mode */
+  --right-hover: #8fc7a4;
+  --border-color: #374151;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  /* Centering everything on the screen */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.app {
+  width: 480px; /* Fixed width prevents shrinking when content changes */
+  max-width: 100%; /* Allows it to scale down on small mobile screens */
+  padding: 16px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* ... existing code ... */
+
+@media (max-width: 480px) {
+  .app-header h1 {
+    font-size: 2rem; /* Slightly smaller title on mobile */
+  }
+  
+  .card-panel {
+    padding: 20px; /* Less internal padding on small screens */
+  }
+  
+  .flashcard h2 {
+    font-size: 1.5rem; /* Ensure long words fit on mobile screens */
+    word-wrap: break-word; /* Prevent text overflow */
+  }
+  
+  .action-buttons {
+    flex-direction: column; /* Stack buttons vertically on very small screens if needed, though side-by-side usually fits up to a point. Let's keep side-by-side but reduce padding */
+    gap: 12px;
+  }
+  
+  .action-buttons button {
+    padding: 14px;
+    font-size: 0.95rem;
+  }
+}
+
+.header-actions {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.icon-btn:hover {
+  background-color: var(--border-color);
+  color: var(--text-main);
+}
+
+/* Forms */
+.input-field {
+  padding: 12px 16px;
+  font-size: 1rem;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-field:focus {
+  border-color: var(--primary-color);
+}
+
+.error-message {
+  color: var(--wrong-color);
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+}
+
+.success-message {
+  color: var(--right-color);
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+}
+
+.toggle-text {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 5px;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  color: var(--text-main);
+}
+
+.subtitle {
+  margin: 5px 0 0 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.card-panel {
+  background: var(--card-bg);
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.card-panel h2 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.form-group {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+select {
+  padding: 12px 16px;
+  font-size: 1rem;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  appearance: none;
+}
+
+select:focus {
+  border-color: var(--primary-color);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* Learning Session */
+.session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.btn-cancel {
+  background: none;
+  border: none;
+  color: var(--text-muted); /* Changed from wrong-color to muted grey */
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btn-cancel:hover {
+  background-color: var(--border-color);
+  color: var(--text-main);
+}
+
+/* Flashcard */
+.flashcard-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  perspective: 1000px;
+  width: 100%; /* Ensure container takes full width */
+}
+
+.flashcard {
+  width: 100%; /* Force full width of the parent container */
+  height: 320px; /* Slightly taller for better proportions */
+  cursor: pointer;
+  perspective: 1000px;
+}
+
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform-style: preserve-3d;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg); /* Ensure background is stable */
+}
+
+.flashcard.flipped .flashcard-inner {
+  transform: rotateY(180deg);
+}
+
+.flashcard-front, .flashcard-back {
+  position: absolute;
+  width: 100%; /* Fill the inner container */
+  height: 100%;
+  top: 0;
+  left: 0;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  background-color: var(--card-bg);
+  box-sizing: border-box; /* Prevent padding from breaking width */
+  padding: 20px;
+}
+
+.flashcard-back {
+  transform: rotateY(180deg);
+}
+
+.flashcard h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  padding: 0 20px;
+  color: var(--text-main);
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-top: 16px;
+  opacity: 0.7;
+}
+
+.audio-btn {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  margin-top: 24px;
+  cursor: pointer;
+  padding: 12px;
+  border-radius: 50%;
+  transition: background-color 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.audio-btn:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.audio-btn:active {
+  transform: scale(0.9);
+}
+
+/* Actions */
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.btn-hidden {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.action-buttons button {
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  background-color: transparent;
+  transition: all 0.2s ease;
+  outline: none; /* Removes default browser focus ring */
+  -webkit-tap-highlight-color: transparent; /* Removes blue highlight on mobile */
+}
+
+.action-buttons button:focus, 
+.action-buttons button:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.action-buttons button:active {
+  transform: scale(0.97);
+}
+
+.btn-wrong {
+  border: 2px solid var(--wrong-color) !important;
+  color: var(--wrong-color);
+}
+
+.btn-wrong:hover {
+  background-color: var(--wrong-color);
+  color: white;
+  border-color: var(--wrong-color) !important;
+}
+
+.btn-right {
+  border: 2px solid var(--right-color) !important;
+  color: var(--right-color);
+}
+
+.btn-right:hover {
+  background-color: var(--right-color);
+  color: white;
+  border-color: var(--right-color) !important;
+}
+
+.fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Reward */
+.text-center {
+  text-align: center;
+}
+
+.confetti-emoji {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
