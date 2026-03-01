@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../api';
 
 export default function Setup({ user, onStart }) {
   const [categories, setCategories] = useState([]);
@@ -8,7 +9,7 @@ export default function Setup({ user, onStart }) {
 
   useEffect(() => {
     // Hole nur Kategorien für die gewählte Zielsprache des Users
-    axios.get(`http://localhost:3001/api/categories?target_language=${user.target_language}`)
+    axios.get(`${API_BASE}/categories?target_language=${user.target_language}`)
       .then(res => {
         setCategories(res.data);
         if (res.data.length > 0) {

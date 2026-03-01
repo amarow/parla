@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import { BASE_URL } from '../api';
 
 export default function Login({ onLogin }) {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -14,7 +15,7 @@ export default function Login({ onLogin }) {
     const endpoint = isRegistering ? '/api/register' : '/api/login';
     
     try {
-      const res = await axios.post(`http://localhost:3001${endpoint}`, { username, password });
+      const res = await axios.post(`${BASE_URL}${endpoint}`, { username, password });
       onLogin(res.data);
     } catch (err) {
       setError(err.response?.data?.error || 'Ein Fehler ist aufgetreten.');

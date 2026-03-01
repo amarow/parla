@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../api';
 
 export default function Settings({ user, onUpdateUser, onCancel }) {
   const [nativeLang, setNativeLang] = useState(user.native_language);
@@ -9,7 +10,7 @@ export default function Settings({ user, onUpdateUser, onCancel }) {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.put(`http://localhost:3001/api/user/${user.id}/settings`, {
+      const res = await axios.put(`${API_BASE}/user/${user.id}/settings`, {
         native_language: nativeLang,
         target_language: targetLang
       });
@@ -77,7 +78,7 @@ export default function Settings({ user, onUpdateUser, onCancel }) {
           onClick={async () => {
             try {
               setMessage('Importiere...');
-              const res = await axios.post('http://localhost:3001/api/import', { lang: targetLang });
+              const res = await axios.post(`${API_BASE}/import`, { lang: targetLang });
               setMessage(res.data.message);
             } catch (err) {
               setMessage(err.response?.data?.error || 'Fehler beim Import.');

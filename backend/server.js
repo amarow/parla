@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 const db = require('./database');
 const bcrypt = require('bcryptjs');
 const googleTTS = require('google-tts-api');
@@ -12,6 +14,9 @@ const PORT = 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// In Produktion servieren wir das Frontend aus dem 'public' Ordner
+app.use(express.static(path.join(__dirname, 'public')));
 
 const upload = multer({ storage: multer.memoryStorage() });
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -113,9 +118,6 @@ app.get('/api/words', (req, res) => {
     res.json(rows);
   });
 });
-
-const fs = require('fs');
-const path = require('path');
 
 // --- Import/Export Features ---
 
@@ -233,6 +235,12 @@ app.post('/api/speech-to-text', upload.single('audio'), async (req, res) => {
     console.error('Speech-to-text Error:', error);
     res.status(500).json({ error: 'Failed to process audio with Gemini', details: error.message });
   }
+});
+
+// Fallback: Alle anderen Anfragen an die Frontend index.html (SPA)
+// Wir nutzen hier in Express 5 direkt eine Regular Expression statt eines Strings
+app.get(/^(?!\/api).*$/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Flashcard from './Flashcard';
+import { API_BASE } from '../api';
 
 export default function LearningSession({ categoryId, direction, onFinish, onCancel }) {
   const [words, setWords] = useState([]);
@@ -8,7 +9,7 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get(`http://localhost:3001/api/words?category_id=${categoryId}`)
+    axios.get(`${API_BASE}/words?category_id=${categoryId}`)
       .then(res => {
         setWords(res.data);
         setLoading(false);
@@ -43,7 +44,7 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
       </div>
       
       <Flashcard 
-        key={currentIndex} // Force re-render if needed, though handled by useEffect in Flashcard
+        key={currentIndex} 
         word={words[currentIndex]} 
         direction={direction} 
         onAnswer={handleAnswer} 

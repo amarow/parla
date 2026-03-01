@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Volume2, Mic } from 'lucide-react';
+import { API_BASE } from '../api';
 
 export default function Flashcard({ word, direction, onAnswer }) {
   const [isFlipped, setIsFlipped] = useState(false);
