@@ -3,12 +3,18 @@ const cors = require('cors');
 const db = require('./database');
 const bcrypt = require('bcryptjs');
 const googleTTS = require('google-tts-api');
+const multer = require('multer');
+require('dotenv').config({ override: true });
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 const PORT = 3001;
 
 app.use(cors());
 app.use(express.json());
+
+const upload = multer({ storage: multer.memoryStorage() });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // --- Authentication & User Settings ---
 
@@ -174,6 +180,58 @@ app.get('/api/tts', async (req, res) => {
   } catch (error) {
     console.error('TTS Error:', error);
     res.status(500).json({ error: 'Failed to generate audio' });
+  }
+});
+
+// --- Speech to Text (Gemini API) ---
+app.post('/api/speech-to-text', upload.single('audio'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No audio file provided' });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'GEMINI_API_KEY ist in backend/.env nicht konfiguriert.' });
+    }
+
+    const lang = req.body.lang || 'it';
+    
+    // Explicitly log to console so we know the new code is running!
+    console.log("---- Speech-To-Text API Called ----");
+    console.log("Using API Key starting with:", process.env.GEMINI_API_KEY.substring(0, 8));
+
+    // Verwende aktuelle 2.5-Modelle
+    let modelName = "gemini-2.5-flash"; 
+    console.log("Trying model:", modelName);
+    let model = genAI.getGenerativeModel({ model: modelName });
+
+    const audioData = {
+      inlineData: {
+        data: req.file.buffer.toString("base64"),
+        mimeType: req.file.mimetype
+      }
+    };
+
+    const prompt = `Listen to this short audio. Transcribe the single word or short phrase spoken. The expected language is ${lang}. Return ONLY the transcribed text, without any quotes, markdown, or extra explanation. If the audio is completely silent or incomprehensible, return nothing.`;
+
+    let result;
+    try {
+      result = await model.generateContent([prompt, audioData]);
+    } catch (e) {
+      console.warn(`Model ${modelName} failed:`, e.message);
+      modelName = "gemini-2.0-flash"; // Härterer Fallback
+      console.log("Fallback to:", modelName);
+      model = genAI.getGenerativeModel({ model: modelName });
+      result = await model.generateContent([prompt, audioData]);
+    }
+
+    const responseText = result.response.text().trim();
+    console.log("Recognized text:", responseText);
+
+    res.json({ transcript: responseText });
+  } catch (error) {
+    console.error('Speech-to-text Error:', error);
+    res.status(500).json({ error: 'Failed to process audio with Gemini', details: error.message });
   }
 });
 

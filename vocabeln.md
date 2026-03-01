@@ -18,12 +18,15 @@ Vor dem Start einer Lern-Session kann der Nutzer wählen:
     *   Muttersprache -> Fremdsprache (Deutsch -> Italienisch)
     *   Fremdsprache -> Muttersprache (Italienisch -> Deutsch)
 
-## Interaktion (Karten-UI)
-*   **Vorderseite:** Zeigt das Wort in der Start-Sprache.
-*   **Aktion:** Klicken/Tippen auf die Karte dreht diese um.
-*   **Rückseite:** Zeigt die Übersetzung in der Zielsprache.
-*   **Audio:** Ein Button auf der Karte spielt die Aussprache der Fremdsprache ab (Technologie: Browser-eigene Web Speech API).
-*   **Bewertung:** Nach dem Umdrehen erscheinen die Buttons "Richtig" und "Falsch".
+## Interaktion & Spracherkennung (Karten-UI)
+*   **Automatischer Ablauf:**
+    *   Beim Erscheinen einer neuen Karte startet die **Spracherkennung automatisch** nach einer kurzen Verzögerung (ca. 800ms).
+    *   Die Web Speech API des Browsers erkennt das Ende des Sprechens automatisch (VAD/Stille-Erkennung).
+    *   Bei **korrekter Aussprache** springt die App nach 500ms **automatisch zur nächsten Karte**, ohne dass der Nutzer klicken muss.
+    *   Bei **falscher Aussprache** wackelt die Karte kurz ("Shake"-Effekt), und die Spracherkennung startet nach 2,5 Sekunden **automatisch neu** für einen weiteren Versuch.
+*   **Vorderseite:** Zeigt das Wort in der Start-Sprache und ein aktives Mikrofon-Icon während der Aufnahme.
+*   **Rückseite:** Zeigt die Übersetzung in der Zielsprache (nach manuellem Umdrehen oder bei Erfolg). Ein Lautsprecher-Button spielt die Aussprache ab.
+*   **Robuster Vergleich:** Die Erkennung ignoriert beim Vergleich Apostrophe, Anführungszeichen, Leerzeichen und Akzente (wichtig für Italienisch, z.B. "l'amico").
 
 ## Datenstruktur (SQLite)
 Es werden grundlegend zwei Tabellen benötigt:
@@ -37,7 +40,8 @@ Es werden grundlegend zwei Tabellen benötigt:
     *   `foreign_word` (Wort in Fremdsprache inkl. Artikel)
 
 ## Technologie-Stack
-*   **Frontend:** React (erstellt mit Vite)
-*   **Backend:** Node.js mit Express
-*   **Datenbank:** SQLite
-*   **Audio:** Web Speech API (Browser)
+*   **Frontend:** React (Vite), Lucide-React (Icons)
+*   **Spracherkennung (STT):** Web Speech API (Browser-nativ, unlimitiert)
+*   **Sprachausgabe (TTS):** Google TTS API (über das Backend)
+*   **Backend:** Node.js (Express)
+*   **Datenbank:** SQLite3

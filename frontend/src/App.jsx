@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Moon, Sun, Settings as SettingsIcon, LogOut } from 'lucide-react';
+import { Moon, Sun, Settings as SettingsIcon, LogOut, MessageCircle } from 'lucide-react';
 import Login from './components/Login';
 import Settings from './components/Settings';
 import Setup from './components/Setup';
@@ -63,10 +63,9 @@ function App() {
       </div>
       
       <header className="app-header">
-        <h1>Parla!</h1>
-        <p className="subtitle">
-          {user ? `Willkommen, ${user.username}` : 'Vokabeltrainer'}
-        </p>
+        <h1 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <MessageCircle size={36} /> Parla
+        </h1>
       </header>
       
       <main className="app-main">

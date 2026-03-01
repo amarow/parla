@@ -28,6 +28,10 @@ export default function Settings({ user, onUpdateUser, onCancel }) {
         <h2>Einstellungen</h2>
         <button onClick={onCancel} className="btn-cancel">Zurück</button>
       </div>
+      
+      <p style={{ textAlign: 'center', marginBottom: '20px', fontSize: '1.1rem', color: 'var(--text-muted)' }}>
+        Willkommen, <strong>{user.username}</strong>!
+      </p>
 
       <form onSubmit={handleSave}>
         <div className="form-group">
