@@ -31,3 +31,4 @@ db.serialize(() => {
 });
 
 module.exports = db;
+export {};

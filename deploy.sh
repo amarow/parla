@@ -31,12 +31,22 @@ rm -rf deploy_tmp
 mkdir -p deploy_tmp
 mkdir -p deploy_tmp/public
 
+echo "🔨 Baue Node Backend lokal..."
+cd backend
+npm install --silent
+npm run build
+if [ $? -ne 0 ]; then
+    echo "❌ Backend Build fehlgeschlagen!"
+    exit 1
+fi
+cd ..
+
 # Backend-Dateien kopieren
 cp backend/package.json deploy_tmp/
 cp backend/package-lock.json deploy_tmp/
-cp backend/server.js deploy_tmp/
-cp backend/database.js deploy_tmp/
-cp backend/seed.js deploy_tmp/
+cp backend/dist/server.js deploy_tmp/
+cp backend/dist/database.js deploy_tmp/
+cp backend/dist/seed.js deploy_tmp/
 cp -r backend/data deploy_tmp/
 
 # Frontend-Build in den 'public' Ordner des Backends kopieren

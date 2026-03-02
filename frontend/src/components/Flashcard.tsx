@@ -50,7 +50,7 @@ export default function Flashcard({ word, direction, onAnswer }) {
   const backText = direction === 'nativeToForeign' ? word.foreign_word : word.native_word;
   const backLang = direction === 'nativeToForeign' ? 'it-IT' : 'de-DE';
 
-  const startListening = (e) => {
+  const startListening = (e?: any) => {
     if (e) e.stopPropagation();
     
     // Helper für Timestamps in der Console
@@ -73,7 +73,7 @@ export default function Flashcard({ word, direction, onAnswer }) {
       return;
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
       alert("Dein Browser unterstützt die integrierte Spracherkennung leider nicht. Bitte benutze Chrome oder Edge.");
