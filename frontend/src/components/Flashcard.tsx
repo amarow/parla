@@ -89,10 +89,14 @@ export default function Flashcard({ word, direction, onAnswer }) {
     
     logTime("Speech recognition initialized for lang: " + backLang);
     
+    // iOS Safari has a bug where continuous=true causes it to rapidly stop/start, 
+    // emitting annoying 'beep' sounds and triggering permission banners repeatedly.
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    
     recognition.lang = backLang; // 'it-IT' oder 'de-DE'
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
-    recognition.continuous = true; // <--- NEU: Hält das Mikrofon offen, auch wenn Pausen entstehen
+    recognition.continuous = !isIOS; // False on iOS to prevent beep loops
 
     recognition.onstart = () => {
       logTime("Speech recognition onstart event fired. Microphone is OPEN.");
