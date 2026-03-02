@@ -1,5 +1,7 @@
 const db = require('./database');
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
+const path = require('path');
 
 const seedData = async () => {
   db.serialize(async () => {
@@ -15,42 +17,32 @@ const seedData = async () => {
       else console.log('Testuser angelegt (username: testuser, passwort: password).');
     });
 
-    // Kategorie anlegen (für Italienisch)
-    db.run(`INSERT INTO categories (id, name, target_language) VALUES (1, 'Essen & Trinken', 'it')`, function(err) {
-      if (err) return console.error(err.message);
-      console.log('Category inserted.');
-      
-      const words = [
-        { native: "der Apfel", foreign: "la mela" },
-        { native: "das Brot", foreign: "il pane" },
-        { native: "das Wasser", foreign: "l'acqua" },
-        { native: "der Wein", foreign: "il vino" },
-        { native: "das Fleisch", foreign: "la carne" },
-        { native: "der Fisch", foreign: "il pesce" },
-        { native: "der Käse", foreign: "il formaggio" },
-        { native: "die Milch", foreign: "il latte" },
-        { native: "der Kaffee", foreign: "il caffè" },
-        { native: "die Pizza", foreign: "la pizza" },
-        { native: "die Nudeln", foreign: "la pasta" },
-        { native: "das Frühstück", foreign: "la colazione" },
-        { native: "das Mittagessen", foreign: "il pranzo" },
-        { native: "das Abendessen", foreign: "la cena" },
-        { native: "das Ei", foreign: "l'uovo" },
-        { native: "die Tomate", foreign: "il pomodoro" },
-        { native: "die Kartoffel", foreign: "la patata" },
-        { native: "das Öl", foreign: "l'olio" },
-        { native: "das Salz", foreign: "il sale" },
-        { native: "der Zucker", foreign: "lo zucchero" }
-      ];
+    const dataPath = path.join(__dirname, 'data', 'it_basic.json');
+    const rawData = fs.readFileSync(dataPath, 'utf-8');
+    const categoriesData = JSON.parse(rawData);
 
-      const stmt = db.prepare(`INSERT INTO words (category_id, native_word, foreign_word) VALUES (1, ?, ?)`);
-      words.forEach(word => {
-        stmt.run(word.native, word.foreign);
+    let categoryId = 1;
+    const stmtCategory = db.prepare(`INSERT INTO categories (id, name, target_language) VALUES (?, ?, ?)`);
+    const stmtWord = db.prepare(`INSERT INTO words (category_id, native_word, foreign_word) VALUES (?, ?, ?)`);
+
+    categoriesData.forEach((catData: any) => {
+      stmtCategory.run(categoryId, catData.category, catData.target_language, function(err: any) {
+        if (err) return console.error(err.message);
+        console.log(`Category '${catData.category}' inserted.`);
       });
-      stmt.finalize();
-      console.log('Words inserted.');
+
+      catData.words.forEach((word: any) => {
+        stmtWord.run(categoryId, word.native, word.foreign);
+      });
+      
+      categoryId++;
     });
+
+    stmtCategory.finalize();
+    stmtWord.finalize();
+    console.log('All words inserted.');
   });
 };
 
-seedData();export {};
+seedData();
+export {};

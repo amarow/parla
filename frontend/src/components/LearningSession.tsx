@@ -21,15 +21,10 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
   }, [categoryId]);
 
   const handleAnswer = (isCorrect) => {
-    if (isCorrect) {
-      if (currentIndex + 1 < words.length) {
-        setCurrentIndex(currentIndex + 1);
-      } else {
-        onFinish();
-      }
+    if (currentIndex + 1 < words.length) {
+      setCurrentIndex(currentIndex + 1);
     } else {
-      // Hardcore Mode: Back to start!
-      setCurrentIndex(0);
+      onFinish();
     }
   };
 

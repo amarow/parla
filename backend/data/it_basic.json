@@ -1106,5 +1106,91 @@
         "foreign": "le fondamenta"
       }
     ]
+  },
+  {
+    "category": "Konjunktionen & Beugungen",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "und",
+        "foreign": "e"
+      },
+      {
+        "native": "oder",
+        "foreign": "o"
+      },
+      {
+        "native": "aber",
+        "foreign": "ma"
+      },
+      {
+        "native": "weil / warum",
+        "foreign": "perché"
+      },
+      {
+        "native": "wenn / ob",
+        "foreign": "se"
+      },
+      {
+        "native": "dass",
+        "foreign": "che"
+      },
+      {
+        "native": "als / wenn (zeitlich)",
+        "foreign": "quando"
+      },
+      {
+        "native": "also / deshalb",
+        "foreign": "quindi"
+      },
+      {
+        "native": "ich bin (sein)",
+        "foreign": "io sono"
+      },
+      {
+        "native": "du bist",
+        "foreign": "tu sei"
+      },
+      {
+        "native": "er/sie/es ist",
+        "foreign": "lui/lei è"
+      },
+      {
+        "native": "wir sind",
+        "foreign": "noi siamo"
+      },
+      {
+        "native": "ihr seid",
+        "foreign": "voi siete"
+      },
+      {
+        "native": "sie sind",
+        "foreign": "loro sono"
+      },
+      {
+        "native": "ich habe (haben)",
+        "foreign": "io ho"
+      },
+      {
+        "native": "du hast",
+        "foreign": "tu hai"
+      },
+      {
+        "native": "er/sie/es hat",
+        "foreign": "lui/lei ha"
+      },
+      {
+        "native": "wir haben",
+        "foreign": "noi abbiamo"
+      },
+      {
+        "native": "ihr habt",
+        "foreign": "voi avete"
+      },
+      {
+        "native": "sie haben",
+        "foreign": "loro hanno"
+      }
+    ]
   }
 ]
