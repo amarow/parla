@@ -205,6 +205,7 @@ app.post('/api/speech-to-text', upload.single('audio'), async (req, res) => {
     // Verwende aktuelle 2.5-Modelle
     let modelName = "gemini-2.5-flash"; 
     console.log("Trying model:", modelName);
+    
     let model = genAI.getGenerativeModel({ model: modelName });
 
     const audioData = {
@@ -227,7 +228,8 @@ app.post('/api/speech-to-text', upload.single('audio'), async (req, res) => {
       result = await model.generateContent([prompt, audioData]);
     }
 
-    const responseText = result.response.text().trim();
+    let responseText = result.response.text().trim();
+    
     console.log("Recognized text:", responseText);
 
     res.json({ transcript: responseText });

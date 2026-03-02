@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Volume2, Mic } from 'lucide-react';
 import { API_BASE } from '../api';
+import writtenNumber from 'written-number';
 
 export default function Flashcard({ word, direction, onAnswer }) {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -120,7 +121,20 @@ export default function Flashcard({ word, direction, onAnswer }) {
       
       // Bereinigung für robusten Vergleich (besonders für Italienisch l'...)
       const normalize = (str) => {
-        return str
+        // Konvertiere Ziffern in Wörter (z.B. "5" -> "cinque" / "fünf")
+        const langCode = backLang.split('-')[0]; // 'it' oder 'de'
+        const words = str.split(' ').map(word => {
+          if (/^\d+$/.test(word)) {
+            try {
+              return writtenNumber(parseInt(word), { lang: langCode === 'it' ? 'it' : 'de' });
+            } catch (e) {
+              return word;
+            }
+          }
+          return word;
+        });
+        
+        return words.join(' ')
           .replace(/[.,!?]/g, '')           // Satzzeichen weg
           .replace(/['’´`"]/g, '')          // Alle Arten von Apostrophen UND Anführungszeichen weg
           .replace(/\s+/g, '')              // Alle Leerzeichen weg
@@ -226,7 +240,7 @@ export default function Flashcard({ word, direction, onAnswer }) {
     // Wir holen uns das Audio nun sicher über unser eigenes Backend
     const langCode = backLang.split('-')[0]; // 'it-IT' wird zu 'it'
     const text = encodeURIComponent(backText);
-    const url = `http://localhost:3001/api/tts?text=${text}&lang=${langCode}`;
+    const url = `${API_BASE}/tts?text=${text}&lang=${langCode}`;
     
     const audio = new Audio(url);
     audio.play().catch(error => {
