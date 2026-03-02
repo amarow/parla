@@ -5,6 +5,7 @@ import { API_BASE } from '../api';
 export default function Settings({ user, onUpdateUser, onCancel }) {
   const [nativeLang, setNativeLang] = useState(user.native_language);
   const [targetLang, setTargetLang] = useState(user.target_language);
+  const [preferredDirection, setPreferredDirection] = useState(user.preferred_direction || 'nativeToForeign');
   const [message, setMessage] = useState('');
 
   const handleSave = async (e) => {
@@ -12,15 +13,26 @@ export default function Settings({ user, onUpdateUser, onCancel }) {
     try {
       const res = await axios.put(`${API_BASE}/user/${user.id}/settings`, {
         native_language: nativeLang,
-        target_language: targetLang
+        target_language: targetLang,
+        preferred_direction: preferredDirection
       });
       // User-Objekt aktualisieren
-      onUpdateUser({ ...user, native_language: res.data.native_language, target_language: res.data.target_language });
+      onUpdateUser({ 
+        ...user, 
+        native_language: res.data.native_language, 
+        target_language: res.data.target_language,
+        preferred_direction: res.data.preferred_direction
+      });
       setMessage('Einstellungen gespeichert!');
       setTimeout(() => onCancel(), 1500); // Zurück zur Hauptansicht
     } catch (err) {
       setMessage('Fehler beim Speichern.');
     }
+  };
+
+  const getLangName = (code) => {
+    const map = { de: 'Deutsch', en: 'Englisch', it: 'Italienisch', es: 'Spanisch', fr: 'Französisch' };
+    return map[code] || code;
   };
 
   return (
@@ -57,7 +69,22 @@ export default function Settings({ user, onUpdateUser, onCancel }) {
           </select>
         </div>
 
-        {message && <div className="success-message">{message}</div>}
+        <div className="form-group">
+          <label>Standard-Lernrichtung:</label>
+          <select 
+            value={preferredDirection} 
+            onChange={(e) => setPreferredDirection(e.target.value)}
+          >
+            <option value="nativeToForeign">
+              {getLangName(nativeLang)} ➔ {getLangName(targetLang)}
+            </option>
+            <option value="foreignToNative">
+              {getLangName(targetLang)} ➔ {getLangName(nativeLang)}
+            </option>
+          </select>
+        </div>
+
+        {message && <div className="success-message" style={{ textAlign: 'center', color: 'var(--right-color)', fontWeight: 'bold', margin: '10px 0' }}>{message}</div>}
 
         <button type="submit" className="btn-primary" style={{ marginTop: '20px' }}>
           Speichern
