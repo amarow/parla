@@ -399,3 +399,11 @@ select {
   visibility: hidden;
   opacity: 0;
 }
+
+.app-footer {
+  text-align: center;
+  padding: 10px;
+  font-size: 0.8rem;
+  color: var(--text-color, #666);
+  opacity: 0.7;
+}

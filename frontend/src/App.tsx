@@ -6,6 +6,7 @@ import Setup from './components/Setup';
 import LearningSession from './components/LearningSession';
 import Reward from './components/Reward';
 import './App.css';
+import pkg from '../package.json';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -90,6 +91,10 @@ function App() {
           <Reward onRestart={cancelSession} />
         )}
       </main>
+      
+      <footer className="app-footer">
+        <p>v{pkg.version}</p>
+      </footer>
     </div>
   );
 }
