@@ -65,7 +65,7 @@ function App() {
       
       <header className="app-header">
         <h1 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          <MessageCircle size={36} /> Parla
+          <MessageCircle size={36} /> Parladino
         </h1>
       </header>
       
