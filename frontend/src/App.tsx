@@ -12,6 +12,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [appState, setAppState] = useState('login'); // 'login', 'setup', 'settings', 'learning', 'reward'
   const [sessionConfig, setSessionConfig] = useState(null);
+  const [sessionStats, setSessionStats] = useState({ flips: 0 });
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
@@ -24,8 +25,8 @@ function App() {
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
-  const handleLogin = (userData) => {
-    setUser(userData);
+  const handleLogin = (loggedInUser) => {
+    setUser(loggedInUser);
     setAppState('setup');
   };
 
@@ -39,7 +40,10 @@ function App() {
     setAppState('learning');
   };
 
-  const finishSession = () => setAppState('reward');
+  const finishSession = (flips = 0) => {
+    setSessionStats({ flips });
+    setAppState('reward');
+  };
   const cancelSession = () => {
     setAppState('setup');
     setSessionConfig(null);
@@ -88,7 +92,7 @@ function App() {
           />
         )}
         {user && appState === 'reward' && (
-          <Reward onRestart={cancelSession} />
+          <Reward onRestart={cancelSession} flips={sessionStats.flips} />
         )}
       </main>
       

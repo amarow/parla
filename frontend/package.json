@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "axios": "^1.13.6",
+    "canvas-confetti": "^1.9.4",
     "hark": "^1.2.3",
     "lucide-react": "^0.575.0",
     "react": "^19.2.0",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^25.3.3",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",

@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Flashcard from './Flashcard';
 import { API_BASE } from '../api';
+import { RotateCcw, List, BookOpen, X } from 'lucide-react';
 
 export default function LearningSession({ categoryId, direction, onFinish, onCancel }) {
   const [words, setWords] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showOverview, setShowOverview] = useState(false);
+  const [flipCount, setFlipCount] = useState(0);
 
   useEffect(() => {
     axios.get(`${API_BASE}/words?category_id=${categoryId}`)
@@ -25,8 +27,12 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
     if (currentIndex + 1 < words.length) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      onFinish();
+      onFinish(flipCount);
     }
+  };
+
+  const handleFlip = () => {
+    setFlipCount(prev => prev + 1);
   };
 
   if (loading) return <div className="loading">Lade Vokabeln...</div>;
@@ -35,12 +41,23 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
   return (
     <div className="learning-session">
       <div className="session-header">
-        <span>Karte {currentIndex + 1} von {words.length}</span>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => setShowOverview(!showOverview)} className="btn-secondary">
-            {showOverview ? 'Lernen' : 'Übersicht'}
+        <div className="progress-text">
+          <span className="desktop-text">Karte {currentIndex + 1} von {words.length}</span>
+          <span className="mobile-text">{currentIndex + 1} / {words.length}</span>
+        </div>
+        <div className="header-buttons" style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={() => setCurrentIndex(0)} className="btn-cancel icon-text-btn" title="Von vorne">
+            <RotateCcw size={16} className="mobile-icon" />
+            <span className="desktop-text">Von vorne</span>
           </button>
-          <button onClick={onCancel} className="btn-cancel">Abbrechen</button>
+          <button onClick={() => setShowOverview(!showOverview)} className="btn-cancel icon-text-btn" title={showOverview ? 'Lernen' : 'Übersicht'}>
+            {showOverview ? <BookOpen size={16} className="mobile-icon" /> : <List size={16} className="mobile-icon" />}
+            <span className="desktop-text">{showOverview ? 'Lernen' : 'Übersicht'}</span>
+          </button>
+          <button onClick={onCancel} className="btn-cancel icon-text-btn" title="Abbrechen">
+            <X size={16} className="mobile-icon" />
+            <span className="desktop-text">Abbrechen</span>
+          </button>
         </div>
       </div>
       
@@ -67,13 +84,13 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
           </div>
         </div>
       ) : (
-        <Flashcard 
-          key={currentIndex} 
-          word={words[currentIndex]} 
-          direction={direction} 
-          onAnswer={handleAnswer} 
+        <Flashcard
+          key={currentIndex}
+          word={words[currentIndex]}
+          direction={direction}
+          onAnswer={handleAnswer}
+          onFlip={handleFlip}
         />
-      )}
-    </div>
+      )}    </div>
   );
 }

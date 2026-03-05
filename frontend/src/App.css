@@ -42,13 +42,19 @@ body {
   overflow-x: hidden;
 }
 
+#root {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 html {
   height: -webkit-fill-available;
 }
 
 .app {
   width: 100%;
-  max-width: 500px; /* Optimal reading/learning width */
+  max-width: 768px; /* Wider for better overview on desktop */
   margin: 0 auto;
   padding: 16px;
   box-sizing: border-box;
@@ -259,6 +265,24 @@ select {
   font-size: 0.9rem;
 }
 
+.mobile-text {
+  display: none;
+}
+
+.desktop-text {
+  display: inline;
+}
+
+.mobile-icon {
+  display: none;
+}
+
+.icon-text-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .btn-cancel {
   grid-column: 3;
   justify-self: end;
@@ -408,6 +432,22 @@ select {
 
 /* Responsive Overrides */
 @media (max-width: 480px) {
+  .desktop-text {
+    display: none;
+  }
+
+  .mobile-text {
+    display: inline;
+  }
+  
+  .mobile-icon {
+    display: inline-block;
+  }
+
+  .icon-text-btn {
+    padding: 8px !important;
+  }
+
   .app {
     padding: 12px;
   }

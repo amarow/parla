@@ -3,7 +3,7 @@ import { Volume2, Mic } from 'lucide-react';
 import { API_BASE } from '../api';
 import writtenNumber from 'written-number';
 
-export default function Flashcard({ word, direction, onAnswer }) {
+export default function Flashcard({ word, direction, onAnswer, onFlip }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -20,7 +20,7 @@ export default function Flashcard({ word, direction, onAnswer }) {
     setSpeechFeedback(null);
     stopRecognition();
 
-    // Automatischer Start der Aufnahme nach einer kurzen Verzögerung,
+    // Wir wollen beim initialen Laden der neuen Karte direkt reinhören, 
     // damit der User Zeit hat, das neue Wort kurz zu lesen.
     const autoStartTimer = setTimeout(() => {
       startListening();
@@ -28,6 +28,15 @@ export default function Flashcard({ word, direction, onAnswer }) {
 
     return () => clearTimeout(autoStartTimer);
   }, [word]);
+
+  const handleFlip = () => {
+    if (!isFlipped) {
+      if (onFlip) onFlip();
+      setIsFlipped(true);
+    } else {
+      setIsFlipped(false);
+    }
+  };
 
   const stopRecognition = () => {
     if (recognitionRef.current) {
@@ -253,7 +262,7 @@ export default function Flashcard({ word, direction, onAnswer }) {
     <div className="flashcard-container">
       <div 
         className={`flashcard ${isFlipped ? 'flipped' : ''} ${speechFeedback === 'incorrect' ? 'shake' : ''}`}
-        onClick={() => setIsFlipped(!isFlipped)}
+        onClick={handleFlip}
       >
         <div className="flashcard-inner">
           <div className="flashcard-front">
@@ -294,13 +303,12 @@ export default function Flashcard({ word, direction, onAnswer }) {
         >
           Falsch
         </button>
-        <button 
-          className="btn-right" 
-          onClick={() => isFlipped ? onAnswer(true) : setIsFlipped(true)}
+        <button
+          className="btn-right"
+          onClick={() => isFlipped ? onAnswer(true) : handleFlip()}
         >
           {isFlipped ? 'Richtig' : 'Aufdecken'}
-        </button>
-      </div>
+        </button>      </div>
     </div>
   );
 }
