@@ -39,6 +39,15 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
   useEffect(() => {
     if (!transcript || isFlipped || isProcessing) return;
 
+    const transcriptLower = transcript.toLowerCase();
+
+    // Commands BEFORE checking the actual word
+    if (transcriptLower.includes('zeig') || transcriptLower.includes('show')) {
+        handleFlip();
+        clearTranscript();
+        return;
+    }
+
     const target = backText.toLowerCase().trim();
 
     const normalize = (str: string) => {
@@ -96,6 +105,31 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
     }
   }, [transcript, backText, backLang, isFlipped, isProcessing, onAnswer, clearTranscript]);
 
+  // Second effect for commands WHEN the card is flipped
+  useEffect(() => {
+      if (!transcript || !isFlipped || isProcessing) return;
+
+      const transcriptLower = transcript.toLowerCase();
+      
+      if (transcriptLower.includes('zurück') || transcriptLower.includes('back')) {
+          handleFlip();
+          clearTranscript();
+          return;
+      }
+
+      if (transcriptLower.includes('weiter') || transcriptLower.includes('richtig') || transcriptLower.includes('next')) {
+          clearTranscript();
+          onAnswer(true);
+          return;
+      }
+
+      if (transcriptLower.includes('falsch') || transcriptLower.includes('wrong') || transcriptLower.includes('nochmal')) {
+          clearTranscript();
+          onAnswer(false);
+          return;
+      }
+  }, [transcript, isFlipped, isProcessing, onAnswer, clearTranscript]);
+
   const toggleListeningLocal = (e: any) => {
     if (e) e.stopPropagation();
     toggleListening();
@@ -142,26 +176,38 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
       </div>
       
       <div className="action-buttons">
-        <button 
-          className={`btn-wrong ${!isFlipped ? 'btn-hidden' : ''}`} 
-          onClick={() => { clearTranscript(); onAnswer(false); }} 
-          disabled={!isFlipped}
-        >
-          Falsch
-        </button>
-        <button
-          className="btn-right"
-          onClick={() => {
-              if (isFlipped) {
-                  clearTranscript();
-                  onAnswer(true);
-              } else {
-                  handleFlip();
-              }
-          }}
-        >
-          {isFlipped ? 'Richtig' : 'Aufdecken'}
-        </button>      
+        {isListening ? (
+          <button 
+            className="btn-primary" 
+            style={{ backgroundColor: 'var(--text-muted)' }}
+            onClick={handleFlip}
+          >
+            {isFlipped ? 'Zurück' : 'Lösung anzeigen'}
+          </button>
+        ) : (
+          <>
+            <button 
+              className={`btn-wrong ${!isFlipped ? 'btn-hidden' : ''}`} 
+              onClick={() => { clearTranscript(); onAnswer(false); }} 
+              disabled={!isFlipped}
+            >
+              Falsch
+            </button>
+            <button
+              className="btn-right"
+              onClick={() => {
+                  if (isFlipped) {
+                      clearTranscript();
+                      onAnswer(true);
+                  } else {
+                      handleFlip();
+                  }
+              }}
+            >
+              {isFlipped ? 'Richtig' : 'Aufdecken'}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

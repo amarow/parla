@@ -1,15 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import Flashcard from './Flashcard';
 import VerbDrill from './VerbDrill';
 import { API_BASE } from '../api';
 import { RotateCcw, List, BookOpen, X } from 'lucide-react';
+import { useVoice } from '../contexts/VoiceContext';
 
 export default function LearningSession({ categoryId, direction, onFinish, onCancel }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOverview, setShowOverview] = useState(false);
   const [flipCount, setFlipCount] = useState(0);
+  const { transcript, clearTranscript } = useVoice();
+
+  // Global Session Commands
+  useEffect(() => {
+    if (!transcript) return;
+    
+    const lower = transcript.toLowerCase();
+    
+    if (lower.includes('abbrechen') || lower.includes('beenden') || lower.includes('zurück')) {
+        clearTranscript();
+        onCancel();
+        return;
+    }
+    
+    if (lower.includes('von vorne') || lower.includes('neustart') || lower.includes('restart')) {
+        clearTranscript();
+        setCurrentIndex(0);
+        return;
+    }
+
+    if (lower.includes('übersicht') || lower.includes('liste')) {
+        clearTranscript();
+        setShowOverview(true);
+        return;
+    }
+
+    if (lower.includes('lernen') || lower.includes('schließen')) {
+        if (showOverview) {
+            clearTranscript();
+            setShowOverview(false);
+            return;
+        }
+    }
+  }, [transcript, onCancel, showOverview, clearTranscript]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['sessionItems', categoryId],

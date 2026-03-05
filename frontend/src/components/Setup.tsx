@@ -2,9 +2,17 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { API_BASE } from '../api';
+import { useVoice } from '../contexts/VoiceContext';
 
 export default function Setup({ user, onStart }) {
   const [selectedCategory, setSelectedCategory] = useState<number | string>('');
+  const { transcript, clearTranscript, setLanguage } = useVoice();
+
+  // Stelle sicher, dass die Spracherkennung hier auf Deutsch (oder die Muttersprache) läuft, 
+  // da die Kategorienamen auf Deutsch sind.
+  useEffect(() => {
+    setLanguage('de-DE');
+  }, [setLanguage]);
 
   const { data: categories = [], isLoading, isError } = useQuery({
     queryKey: ['categories', user.target_language],
@@ -22,6 +30,30 @@ export default function Setup({ user, onStart }) {
       }
     }
   }, [categories]);
+
+  // Voice Command Listener
+  useEffect(() => {
+      if (!transcript || categories.length === 0) return;
+
+      const cleanTranscript = transcript.toLowerCase();
+      
+      // Suche nach dem besten Match
+      const matchedCategory = categories.find(cat => {
+          const catNameLower = cat.name.toLowerCase();
+          
+          // Wir checken auf exakte Übereinstimmungen oder wenn zumindest ein signifikanter Teil (z.B. ein Wort > 4 Buchstaben) übereinstimmt
+          if (cleanTranscript.includes(catNameLower)) return true;
+          
+          // Splitte Kategorienamen in Wörter und prüfe, ob eines davon gerufen wurde
+          const words = catNameLower.split(/[\s&()+-]+/);
+          return words.some(word => word.length > 3 && cleanTranscript.includes(word));
+      });
+
+      if (matchedCategory) {
+          clearTranscript();
+          handleCategoryClick(matchedCategory.id);
+      }
+  }, [transcript, categories, clearTranscript]);
 
   const handleCategoryClick = (id) => {
     localStorage.setItem('last_category_id', id.toString());

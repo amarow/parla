@@ -55,6 +55,27 @@ export default function VerbDrill({ verb, onFinish, direction, onFlip }) {
   useEffect(() => {
     if (!transcript || !conjugation || activeFieldIndex >= 6) return;
 
+    // Command listener
+    const cleanTranscript = transcript.replace(/[.,!?]/g, '').trim().toLowerCase();
+    
+    if (cleanTranscript.includes('zeig') || cleanTranscript.includes('show')) {
+        if (!showSolution) toggleSolution();
+        clearTranscript();
+        return;
+    }
+
+    if (cleanTranscript.includes('zurück') || cleanTranscript.includes('back')) {
+        if (showSolution) toggleSolution();
+        clearTranscript();
+        return;
+    }
+    
+    if (cleanTranscript.includes('überprüf') || cleanTranscript.includes('weiter') || cleanTranscript.includes('check')) {
+        checkAnswers();
+        clearTranscript();
+        return;
+    }
+
     const formKey = formKeys[activeFieldIndex];
     if (feedback[formKey] === 'correct') return; // already got this one
 
@@ -62,8 +83,8 @@ export default function VerbDrill({ verb, onFinish, direction, onFlip }) {
     const expectedPronounStr = expectedPronouns[formKey].toLowerCase();
     const possiblePronouns = expectedPronounStr.split(' ');
 
-    const cleanTranscript = transcript.replace(/[.,!?]/g, '').trim().toLowerCase();
-    const spokenWords = cleanTranscript.split(/\s+/);
+    const actualCleanTranscript = transcript.replace(/[.,!?]/g, '').trim().toLowerCase();
+    const spokenWords = actualCleanTranscript.split(/\s+/);
     
     const hasVerb = spokenWords.includes(expectedVerb);
     const hasPronoun = possiblePronouns.some(p => spokenWords.includes(p));

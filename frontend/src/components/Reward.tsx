@@ -1,7 +1,25 @@
 import { useEffect } from 'react';
 import confetti from 'canvas-confetti';
+import { useVoice } from '../contexts/VoiceContext';
 
 export default function Reward({ onRestart, flips }) {
+  const { transcript, clearTranscript, setLanguage } = useVoice();
+
+  // Stelle sicher, dass die Befehlserkennung hier auf Deutsch läuft
+  useEffect(() => {
+    setLanguage('de-DE');
+  }, [setLanguage]);
+
+  useEffect(() => {
+    if (!transcript) return;
+
+    const lower = transcript.toLowerCase();
+    if (lower.includes('weiter') || lower.includes('nächste') || lower.includes('runde') || lower.includes('starten') || lower.includes('ok')) {
+      clearTranscript();
+      onRestart();
+    }
+  }, [transcript, onRestart, clearTranscript]);
+
   useEffect(() => {
     const duration = 3 * 1000;
     const animationEnd = Date.now() + duration;
