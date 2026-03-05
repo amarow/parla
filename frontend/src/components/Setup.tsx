@@ -36,8 +36,15 @@ export default function Setup({ user, onStart }) {
   if (isLoading) return <div className="setup-container card-panel">Lade Kategorien...</div>;
   if (isError) return <div className="setup-container card-panel">Fehler beim Laden der Kategorien.</div>;
 
-  const grammarCategories = categories.filter(cat => cat.name.toLowerCase().includes('verb') || cat.name.toLowerCase().includes('grammatik') || cat.name.toLowerCase().includes('konjunktionen'));
-  const vocabCategories = categories.filter(cat => !(cat.name.toLowerCase().includes('verb') || cat.name.toLowerCase().includes('grammatik') || cat.name.toLowerCase().includes('konjunktionen')));
+  const isGrammarCat = (name) => {
+    const n = name.toLowerCase();
+    // Wenn es explizit die Grundformen oder Konjunktionen sind, sollen sie zum Wortschatz
+    if (n.includes('grundform') || n.includes('konjunktionen')) return false;
+    return n.includes('verb') || n.includes('grammatik');
+  };
+
+  const grammarCategories = categories.filter(cat => isGrammarCat(cat.name));
+  const vocabCategories = categories.filter(cat => !isGrammarCat(cat.name));
 
   return (
     <div className="setup-container card-panel">
