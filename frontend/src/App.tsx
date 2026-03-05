@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Moon, Sun, Settings as SettingsIcon, LogOut, MessageCircle } from 'lucide-react';
+import { Moon, Sun, Settings as SettingsIcon, LogOut, MessageCircle, Mic, MicOff } from 'lucide-react';
 import Login from './components/Login';
 import Settings from './components/Settings';
 import Setup from './components/Setup';
 import LearningSession from './components/LearningSession';
 import Reward from './components/Reward';
+import { useVoice } from './contexts/VoiceContext';
 import './App.css';
 import pkg from '../package.json';
 
@@ -14,6 +15,7 @@ function App() {
   const [sessionConfig, setSessionConfig] = useState(null);
   const [sessionStats, setSessionStats] = useState({ flips: 0 });
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const { isListening, toggleListening } = useVoice();
 
   useEffect(() => {
     if (isDarkMode) {
@@ -54,6 +56,14 @@ function App() {
       <div className="header-actions">
         {user && (
           <>
+            <button 
+              className={`icon-btn ${isListening ? 'listening-global' : ''}`} 
+              onClick={toggleListening} 
+              title="Sprachsteuerung"
+              style={{ color: isListening ? '#3498db' : 'inherit' }}
+            >
+              {isListening ? <Mic size={20} /> : <MicOff size={20} />}
+            </button>
             <button className="icon-btn" onClick={() => setAppState('settings')} title="Einstellungen">
               <SettingsIcon size={20} />
             </button>

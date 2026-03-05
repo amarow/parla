@@ -1,0 +1,104 @@
+[
+  {
+    "category": "Regelmäßige Verben auf -are (Präsens)",
+    "target_language": "it",
+    "verbs": [
+      {
+        "native": "sprechen",
+        "foreign": "parlare",
+        "conjugations": [
+          {
+            "tense": "present",
+            "form_1s": "parlo",
+            "form_2s": "parli",
+            "form_3s": "parla",
+            "form_1p": "parliamo",
+            "form_2p": "parlate",
+            "form_3p": "parlano"
+          }
+        ]
+      },
+      {
+        "native": "arbeiten",
+        "foreign": "lavorare",
+        "conjugations": [
+          {
+            "tense": "present",
+            "form_1s": "lavoro",
+            "form_2s": "lavori",
+            "form_3s": "lavora",
+            "form_1p": "lavoriamo",
+            "form_2p": "lavorate",
+            "form_3p": "lavorano"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category": "Unregelmäßige Verben (Präsens)",
+    "target_language": "it",
+    "verbs": [
+      {
+        "native": "sein",
+        "foreign": "essere",
+        "conjugations": [
+          {
+            "tense": "present",
+            "form_1s": "sono",
+            "form_2s": "sei",
+            "form_3s": "è",
+            "form_1p": "siamo",
+            "form_2p": "siete",
+            "form_3p": "sono"
+          }
+        ]
+      },
+      {
+        "native": "haben",
+        "foreign": "avere",
+        "conjugations": [
+          {
+            "tense": "present",
+            "form_1s": "ho",
+            "form_2s": "hai",
+            "form_3s": "ha",
+            "form_1p": "abbiamo",
+            "form_2p": "avete",
+            "form_3p": "hanno"
+          }
+        ]
+      },
+      {
+        "native": "gehen",
+        "foreign": "andare",
+        "conjugations": [
+          {
+            "tense": "present",
+            "form_1s": "vado",
+            "form_2s": "vai",
+            "form_3s": "va",
+            "form_1p": "andiamo",
+            "form_2p": "andate",
+            "form_3p": "vanno"
+          }
+        ]
+      },
+      {
+        "native": "machen",
+        "foreign": "fare",
+        "conjugations": [
+          {
+            "tense": "present",
+            "form_1s": "faccio",
+            "form_2s": "fai",
+            "form_3s": "fa",
+            "form_1p": "facciamo",
+            "form_2p": "fate",
+            "form_3p": "fanno"
+          }
+        ]
+      }
+    ]
+  }
+]

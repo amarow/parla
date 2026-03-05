@@ -106,6 +106,17 @@ html {
   border-color: var(--primary-color);
 }
 
+.listening-global {
+  color: #3498db !important;
+  animation: pulse-global 1.5s infinite;
+}
+
+@keyframes pulse-global {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 .app-header {
   text-align: center;
   margin-bottom: 30px;
@@ -193,6 +204,22 @@ html {
   border-color: var(--primary-color);
   color: white;
   box-shadow: 0 4px 12px rgba(75, 138, 230, 0.3);
+}
+
+.grammar-category {
+  border-color: #9b59b6;
+  background: rgba(155, 89, 182, 0.05);
+}
+
+.grammar-category:hover {
+  border-color: #8e44ad;
+}
+
+.grammar-category.active {
+  background: #9b59b6;
+  border-color: #9b59b6;
+  color: white;
+  box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
 }
 
 /* Form Elements */

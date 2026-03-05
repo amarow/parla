@@ -28,6 +28,27 @@ db.serialize(() => {
     foreign_word TEXT NOT NULL,
     FOREIGN KEY (category_id) REFERENCES categories (id)
   )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS verbs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category_id INTEGER,
+    native_infinitive TEXT NOT NULL,
+    foreign_infinitive TEXT NOT NULL,
+    FOREIGN KEY (category_id) REFERENCES categories (id)
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS conjugations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    verb_id INTEGER,
+    tense TEXT NOT NULL,
+    form_1s TEXT,
+    form_2s TEXT,
+    form_3s TEXT,
+    form_1p TEXT,
+    form_2p TEXT,
+    form_3p TEXT,
+    FOREIGN KEY (verb_id) REFERENCES verbs (id)
+  )`);
 });
 
 module.exports = db;
