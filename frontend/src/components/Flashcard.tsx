@@ -37,16 +37,12 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
   }, [backLang, setLanguage]);
 
   useEffect(() => {
-    if (!transcript || isFlipped || isProcessing) return;
+    if (!transcript || isProcessing) return;
 
+    console.log("🗣️ [Flashcard] Transcript gehört:", transcript);
     const transcriptLower = transcript.toLowerCase();
 
-    // Commands BEFORE checking the actual word
-    if (transcriptLower.includes('zeig') || transcriptLower.includes('show')) {
-        handleFlip();
-        clearTranscript();
-        return;
-    }
+    if (isFlipped) return; // Only process answer if not flipped
 
     const target = backText.toLowerCase().trim();
 
@@ -175,39 +171,13 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
         </div>
       </div>
       
-      <div className="action-buttons">
-        {isListening ? (
-          <button 
-            className="btn-primary" 
-            style={{ backgroundColor: 'var(--text-muted)' }}
-            onClick={handleFlip}
-          >
-            {isFlipped ? 'Zurück' : 'Lösung anzeigen'}
-          </button>
-        ) : (
-          <>
-            <button 
-              className={`btn-wrong ${!isFlipped ? 'btn-hidden' : ''}`} 
-              onClick={() => { clearTranscript(); onAnswer(false); }} 
-              disabled={!isFlipped}
-            >
-              Falsch
-            </button>
-            <button
-              className="btn-right"
-              onClick={() => {
-                  if (isFlipped) {
-                      clearTranscript();
-                      onAnswer(true);
-                  } else {
-                      handleFlip();
-                  }
-              }}
-            >
-              {isFlipped ? 'Richtig' : 'Aufdecken'}
-            </button>
-          </>
-        )}
+      <div className="action-buttons" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+        <button
+          className="btn-secondary"
+          onClick={() => { clearTranscript(); onAnswer(true); }}
+        >
+          Weiter
+        </button>
       </div>
     </div>
   );

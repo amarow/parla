@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, CheckCircle, XCircle } from 'lucide-react';
+import { Mic, MicOff, CheckCircle, XCircle, Volume2 } from 'lucide-react';
 import { useVoice } from '../contexts/VoiceContext';
+import { API_BASE } from '../api';
 
 const pronouns = {
   form_1s: 'io (ich)',
@@ -22,7 +23,7 @@ const expectedPronouns: Record<string, string> = {
 
 const formKeys = Object.keys(pronouns);
 
-export default function VerbDrill({ verb, onFinish, direction, onFlip }) {
+export default function VerbDrill({ verb, onFinish, direction, onFlip, onReset }) {
   const [answers, setAnswers] = useState({
     form_1s: '', form_2s: '', form_3s: '', form_1p: '', form_2p: '', form_3p: ''
   });
@@ -35,46 +36,38 @@ export default function VerbDrill({ verb, onFinish, direction, onFlip }) {
 
   const conjugation = verb.conjugations?.[0];
 
-  useEffect(() => {
-    setLanguage('it-IT');
-  }, [setLanguage]);
-
-  useEffect(() => {
+  const resetDrill = () => {
     setAnswers({ form_1s: '', form_2s: '', form_3s: '', form_1p: '', form_2p: '', form_3p: '' });
     setFeedback({});
     setShowSolution(false);
     setActiveFieldIndex(0);
     clearTranscript();
-    
-    const timer = setTimeout(() => {
+    setTimeout(() => {
         if (inputRefs.current[0]) inputRefs.current[0].focus();
     }, 100);
-    return () => clearTimeout(timer);
-  }, [verb, clearTranscript]);
+  };
 
   useEffect(() => {
-    if (!transcript || !conjugation || activeFieldIndex >= 6) return;
+    setLanguage('it-IT');
+  }, [setLanguage]);
 
-    // Command listener
+  useEffect(() => {
+    resetDrill();
+  }, [verb]);
+
+  useEffect(() => {
+    if (onReset) {
+      onReset(resetDrill);
+    }
+  }, [onReset]);
+
+  useEffect(() => {
+    if (!transcript) return;
+
+    console.log("🗣️ [VerbDrill] Transcript gehört:", transcript);
     const cleanTranscript = transcript.replace(/[.,!?]/g, '').trim().toLowerCase();
-    
-    if (cleanTranscript.includes('zeig') || cleanTranscript.includes('show')) {
-        if (!showSolution) toggleSolution();
-        clearTranscript();
-        return;
-    }
 
-    if (cleanTranscript.includes('zurück') || cleanTranscript.includes('back')) {
-        if (showSolution) toggleSolution();
-        clearTranscript();
-        return;
-    }
-    
-    if (cleanTranscript.includes('überprüf') || cleanTranscript.includes('weiter') || cleanTranscript.includes('check')) {
-        checkAnswers();
-        clearTranscript();
-        return;
-    }
+    if (!conjugation || activeFieldIndex >= 6) return;
 
     const formKey = formKeys[activeFieldIndex];
     if (feedback[formKey] === 'correct') return; // already got this one
@@ -103,7 +96,7 @@ export default function VerbDrill({ verb, onFinish, direction, onFlip }) {
          }
        } else {
          setTimeout(() => {
-             document.getElementById('check-verb-btn')?.click();
+             checkAnswers();
          }, 100);
        }
     }
@@ -171,6 +164,19 @@ export default function VerbDrill({ verb, onFinish, direction, onFlip }) {
     }
   };
 
+  const playAudio = (e: any, text: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const langCode = 'it'; // Conjugations are in Italian
+    const encodedText = encodeURIComponent(text);
+    const url = `${API_BASE}/tts?text=${encodedText}&lang=${langCode}`;
+
+    const audio = new Audio(url);
+    audio.play().catch(error => {
+      console.error("Fehler beim Abspielen des Audios:", error);
+    });
+  };
+
   const toggleSolution = () => {
       if (!showSolution && onFlip) {
           onFlip();
@@ -202,6 +208,7 @@ export default function VerbDrill({ verb, onFinish, direction, onFlip }) {
             <div key={formKey} className="verb-input-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{pronouns[formKey]}</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
                 <input 
                     ref={el => { if (el) inputRefs.current[index] = el; }}
                     type="text"
@@ -213,8 +220,9 @@ export default function VerbDrill({ verb, onFinish, direction, onFlip }) {
                     disabled={showSolution || feedback[formKey] === 'correct'}
                     className={`verb-input ${feedback[formKey] || ''}`}
                     style={{ 
-                    flex: 1, 
+                    width: '100%', 
                     padding: '10px', 
+                    paddingRight: '36px',
                     borderRadius: '6px', 
                     border: `1px solid ${
                         feedback[formKey] === 'correct' ? 'var(--right-color)' : 
@@ -227,6 +235,15 @@ export default function VerbDrill({ verb, onFinish, direction, onFlip }) {
                     transition: 'all 0.2s ease-in-out'
                     }}
                 />
+                <button 
+                    type="button" 
+                    onClick={(e) => playAudio(e, displaySolution)}
+                    title="Vorlesen"
+                    style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', opacity: 0.8 }}
+                >
+                    <Volume2 size={18} color="#3498db" />
+                </button>
+                </div>
                 {feedback[formKey] === 'correct' && <CheckCircle size={20} color="var(--right-color)" />}
                 {feedback[formKey] === 'incorrect' && <XCircle size={20} color="var(--wrong-color)" />}
                 </div>
@@ -235,12 +252,12 @@ export default function VerbDrill({ verb, onFinish, direction, onFlip }) {
         })}
       </div>
 
-      <div className="verb-actions" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+      <div className="verb-actions" style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
         <button className="btn-secondary" onClick={toggleSolution}>
           {showSolution ? 'Lösung verbergen' : 'Lösung anzeigen'}
         </button>
-        <button id="check-verb-btn" className="btn-primary" onClick={checkAnswers} style={{ flex: 1 }}>
-          Überprüfen
+        <button className="btn-secondary" onClick={() => onFinish(true)}>
+          Weiter
         </button>
       </div>
     </div>

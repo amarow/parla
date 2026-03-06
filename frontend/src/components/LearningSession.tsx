@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import Flashcard from './Flashcard';
 import VerbDrill from './VerbDrill';
 import { API_BASE } from '../api';
-import { RotateCcw, List, BookOpen, X } from 'lucide-react';
+import { RotateCcw, List, BookOpen, X, Volume2 } from 'lucide-react';
 import { useVoice } from '../contexts/VoiceContext';
 
 export default function LearningSession({ categoryId, direction, onFinish, onCancel }) {
@@ -12,39 +12,14 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
   const [showOverview, setShowOverview] = useState(false);
   const [flipCount, setFlipCount] = useState(0);
   const { transcript, clearTranscript } = useVoice();
+  const resetChildRef = useRef<(() => void) | null>(null);
 
-  // Global Session Commands
-  useEffect(() => {
-    if (!transcript) return;
-    
-    const lower = transcript.toLowerCase();
-    
-    if (lower.includes('abbrechen') || lower.includes('beenden') || lower.includes('zurück')) {
-        clearTranscript();
-        onCancel();
-        return;
+  const handleRestart = () => {
+    setCurrentIndex(0);
+    if (resetChildRef.current) {
+        resetChildRef.current();
     }
-    
-    if (lower.includes('von vorne') || lower.includes('neustart') || lower.includes('restart')) {
-        clearTranscript();
-        setCurrentIndex(0);
-        return;
-    }
-
-    if (lower.includes('übersicht') || lower.includes('liste')) {
-        clearTranscript();
-        setShowOverview(true);
-        return;
-    }
-
-    if (lower.includes('lernen') || lower.includes('schließen')) {
-        if (showOverview) {
-            clearTranscript();
-            setShowOverview(false);
-            return;
-        }
-    }
-  }, [transcript, onCancel, showOverview, clearTranscript]);
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['sessionItems', categoryId],
@@ -86,6 +61,19 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
     setFlipCount(prev => prev + 1);
   };
 
+  const playAudio = (e: any, text: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const langCode = 'it'; // Foreign language is Italian
+    const encodedText = encodeURIComponent(text);
+    const url = `${API_BASE}/tts?text=${encodedText}&lang=${langCode}`;
+
+    const audio = new Audio(url);
+    audio.play().catch(error => {
+      console.error("Fehler beim Abspielen des Audios:", error);
+    });
+  };
+
   if (isLoading) return <div className="loading">Lade Inhalte...</div>;
   if (items.length === 0) return <div className="loading">Keine Inhalte gefunden.</div>;
 
@@ -97,11 +85,11 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
           <span className="mobile-text">{currentIndex + 1} / {items.length}</span>
         </div>
         <div className="header-buttons" style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => setCurrentIndex(0)} className="btn-cancel icon-text-btn" title="Von vorne">
+          <button onClick={handleRestart} className="btn-cancel icon-text-btn" title="Von vorne">
             <RotateCcw size={16} className="mobile-icon" />
             <span className="desktop-text">Von vorne</span>
           </button>
-          <button onClick={() => setShowOverview(!showOverview)} className="btn-cancel icon-text-btn" title={showOverview ? 'Lernen' : 'Übersicht'}>
+          <button onClick={() => setShowOverview(!showOverview)} className="btn-cancel icon-text-btn" title={showOverview ? "Lernen" : "Übersicht"}>
             {showOverview ? <BookOpen size={16} className="mobile-icon" /> : <List size={16} className="mobile-icon" />}
             <span className="desktop-text">{showOverview ? 'Lernen' : 'Übersicht'}</span>
           </button>
@@ -110,9 +98,9 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
             <span className="desktop-text">Abbrechen</span>
           </button>
         </div>
-      </div>
-      
-      {showOverview ? (
+        </div>
+
+        {showOverview ? (
         <div className="overview-container card-panel">
           <h3>Übersicht</h3>
           <div className="words-list" style={{ maxHeight: '60vh', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px' }}>
@@ -129,8 +117,16 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
                     <td style={{ padding: '8px', borderBottom: '1px solid var(--border-color)' }}>
                       {itemType === 'words' ? item.native_word : item.native_infinitive}
                     </td>
-                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border-color)' }}>
-                      {itemType === 'words' ? item.foreign_word : item.foreign_infinitive}
+                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>{itemType === 'words' ? item.foreign_word : item.foreign_infinitive}</span>
+                      <button 
+                        type="button" 
+                        onClick={(e) => playAudio(e, itemType === 'words' ? item.foreign_word : item.foreign_infinitive)}
+                        title="Vorlesen"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', opacity: 0.8 }}
+                      >
+                          <Volume2 size={16} color="#3498db" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -138,7 +134,7 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
             </table>
           </div>
         </div>
-      ) : (
+        ) : (
         itemType === 'words' ? (
           <Flashcard
             word={items[currentIndex]}
@@ -152,8 +148,8 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
             direction={direction}
             onFinish={handleVerbFinish}
             onFlip={handleFlip}
+            onReset={(fn) => { resetChildRef.current = fn; }}
           />
         )
-      )}    </div>
-  );
+        )}    </div>  );
 }

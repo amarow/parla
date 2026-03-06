@@ -44,7 +44,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     recognition.onerror = (e: any) => {
-      if (e.error !== 'no-speech' && e.error !== 'audio-capture') {
+      if (e.error !== 'no-speech' && e.error !== 'audio-capture' && e.error !== 'aborted') {
         shouldListenRef.current = false;
         setIsListening(false);
       }
@@ -95,6 +95,9 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const clearTranscript = useCallback(() => {
     setTranscript('');
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch (e) {}
+    }
   }, []);
 
   return (
