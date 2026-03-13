@@ -37,8 +37,12 @@ function App() {
     setAppState('login');
   };
 
-  const startSession = (categoryId, direction) => {
-    setSessionConfig({ categoryId, direction });
+  const startSession = (categoryId, direction, categories = null) => {
+    setSessionConfig(prev => ({ 
+      categoryId, 
+      direction, 
+      categories: categories || (prev ? prev.categories : []) 
+    }));
     setAppState('learning');
   };
 
@@ -46,6 +50,28 @@ function App() {
     setSessionStats({ flips });
     setAppState('reward');
   };
+
+  const startNextSession = () => {
+    if (sessionConfig && sessionConfig.categories && sessionConfig.categories.length > 0) {
+      const currentIndex = sessionConfig.categories.findIndex(c => c.id === sessionConfig.categoryId);
+      if (currentIndex !== -1 && currentIndex + 1 < sessionConfig.categories.length) {
+        const nextCategoryId = sessionConfig.categories[currentIndex + 1].id;
+        startSession(nextCategoryId, sessionConfig.direction, sessionConfig.categories);
+        return;
+      }
+    }
+    // Fallback falls es keine nächste gibt
+    cancelSession();
+  };
+
+  const restartSession = () => {
+    if (sessionConfig) {
+      startSession(sessionConfig.categoryId, sessionConfig.direction, sessionConfig.categories);
+    } else {
+      cancelSession();
+    }
+  };
+
   const cancelSession = () => {
     setAppState('setup');
     setSessionConfig(null);
@@ -102,7 +128,7 @@ function App() {
           />
         )}
         {user && appState === 'reward' && (
-          <Reward onRestart={cancelSession} flips={sessionStats.flips} />
+          <Reward onCancel={cancelSession} onNext={startNextSession} onRepeat={restartSession} flips={sessionStats.flips} />
         )}
       </main>
       

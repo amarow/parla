@@ -136,6 +136,12 @@ app.post('/api/import', (req, res) => {
 
   try {
     db.serialize(() => {
+      // Vor dem Importieren die alten Daten für diese Sprache löschen, um Duplikate zu vermeiden
+      db.run(`DELETE FROM conjugations WHERE verb_id IN (SELECT id FROM verbs WHERE category_id IN (SELECT id FROM categories WHERE target_language = ?))`, [lang]);
+      db.run(`DELETE FROM verbs WHERE category_id IN (SELECT id FROM categories WHERE target_language = ?)`, [lang]);
+      db.run(`DELETE FROM words WHERE category_id IN (SELECT id FROM categories WHERE target_language = ?)`, [lang]);
+      db.run(`DELETE FROM categories WHERE target_language = ?`, [lang]);
+
       // Import Words
       if (fs.existsSync(wordsFilePath)) {
         const wordsData = JSON.parse(fs.readFileSync(wordsFilePath, 'utf8'));

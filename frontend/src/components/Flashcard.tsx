@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Volume2, Mic, MicOff } from 'lucide-react';
 import { API_BASE } from '../api';
 import writtenNumber from 'written-number';
@@ -7,9 +7,11 @@ import { useVoice } from '../contexts/VoiceContext';
 export default function Flashcard({ word, direction, onAnswer, onFlip }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [speechFeedback, setSpeechFeedback] = useState<string | null>(null);
   
   const { isListening, toggleListening, transcript, setLanguage, clearTranscript } = useVoice();
+  const lastPlayedRef = useRef<string | null>(null);
 
   // Reset states when the word changes
   useEffect(() => {
@@ -17,7 +19,33 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
     setIsProcessing(false);
     setSpeechFeedback(null);
     clearTranscript();
-  }, [word, clearTranscript]);
+
+    if (word) {
+      const frontLangCode = direction === 'nativeToForeign' ? 'de' : 'it';
+      const textToPlay = direction === 'nativeToForeign' ? word.native_word : word.foreign_word;
+      
+      if (textToPlay && lastPlayedRef.current !== textToPlay) {
+        lastPlayedRef.current = textToPlay;
+        const url = `${API_BASE}/tts?text=${encodeURIComponent(textToPlay)}&lang=${frontLangCode}`;
+        const audio = new Audio(url);
+        
+        setIsAudioPlaying(true);
+        audio.onended = () => {
+          clearTranscript();
+          setTimeout(() => setIsAudioPlaying(false), 150);
+        };
+        audio.onerror = () => {
+          clearTranscript();
+          setIsAudioPlaying(false);
+        };
+        
+        audio.play().catch(error => {
+          console.warn("Autoplay blockiert:", error);
+          setIsAudioPlaying(false);
+        });
+      }
+    }
+  }, [word, clearTranscript, direction]);
 
   const handleFlip = () => {
     if (!isFlipped) {
@@ -37,7 +65,7 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
   }, [backLang, setLanguage]);
 
   useEffect(() => {
-    if (!transcript || isProcessing) return;
+    if (!transcript || isProcessing || isAudioPlaying) return;
 
     console.log("🗣️ [Flashcard] Transcript gehört:", transcript);
     const transcriptLower = transcript.toLowerCase();
@@ -99,11 +127,11 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
             onAnswer(true);
         }, 300);
     }
-  }, [transcript, backText, backLang, isFlipped, isProcessing, onAnswer, clearTranscript]);
+  }, [transcript, backText, backLang, isFlipped, isProcessing, isAudioPlaying, onAnswer, clearTranscript]);
 
   // Second effect for commands WHEN the card is flipped
   useEffect(() => {
-      if (!transcript || !isFlipped || isProcessing) return;
+      if (!transcript || !isFlipped || isProcessing || isAudioPlaying) return;
 
       const transcriptLower = transcript.toLowerCase();
       
@@ -124,7 +152,7 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
           onAnswer(false);
           return;
       }
-  }, [transcript, isFlipped, isProcessing, onAnswer, clearTranscript]);
+  }, [transcript, isFlipped, isProcessing, isAudioPlaying, onAnswer, clearTranscript]);
 
   const toggleListeningLocal = (e: any) => {
     if (e) e.stopPropagation();
@@ -138,8 +166,20 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
     const url = `${API_BASE}/tts?text=${text}&lang=${langCode}`;
     
     const audio = new Audio(url);
+    
+    setIsAudioPlaying(true);
+    audio.onended = () => {
+      clearTranscript();
+      setTimeout(() => setIsAudioPlaying(false), 150);
+    };
+    audio.onerror = () => {
+      clearTranscript();
+      setIsAudioPlaying(false);
+    };
+    
     audio.play().catch(error => {
       console.error("Fehler beim Abspielen des Audios:", error);
+      setIsAudioPlaying(false);
       alert("Audio konnte nicht abgespielt werden. Bitte prüfe, ob dein Lautsprecher an ist.");
     });
   };

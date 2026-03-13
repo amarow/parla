@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { useVoice } from '../contexts/VoiceContext';
+import { API_BASE } from '../api';
 
-export default function Reward({ onRestart, flips }) {
+export default function Reward({ onNext, onRepeat, onCancel, flips }) {
   const { transcript, clearTranscript, setLanguage } = useVoice();
+  const hasPlayedAudio = useRef(false);
 
   // Stelle sicher, dass die Befehlserkennung hier auf Deutsch läuft
   useEffect(() => {
@@ -11,14 +13,36 @@ export default function Reward({ onRestart, flips }) {
   }, [setLanguage]);
 
   useEffect(() => {
+    if (hasPlayedAudio.current) return;
+    hasPlayedAudio.current = true;
+
+    let textToPlay = 'Fertig! ';
+    if (flips === 0) {
+      textToPlay += 'Perfekt, keinmal nachgeschaut!';
+    } else {
+      textToPlay += `Du hast ${flips} mal nachgeschaut.`;
+    }
+
+    const url = `${API_BASE}/tts?text=${encodeURIComponent(textToPlay)}&lang=de`;
+    const audio = new Audio(url);
+    audio.play().catch(err => console.warn('Audio konnte nicht abgespielt werden:', err));
+  }, [flips]);
+
+  useEffect(() => {
     if (!transcript) return;
 
     const lower = transcript.toLowerCase();
     if (lower.includes('weiter') || lower.includes('nächste') || lower.includes('runde') || lower.includes('starten') || lower.includes('ok')) {
       clearTranscript();
-      onRestart();
+      onNext();
+    } else if (lower.includes('wiederholen') || lower.includes('nochmal')) {
+      clearTranscript();
+      if (onRepeat) onRepeat();
+    } else if (lower.includes('zurück') || lower.includes('abbrechen') || lower.includes('ende')) {
+      clearTranscript();
+      onCancel();
     }
-  }, [transcript, onRestart, clearTranscript]);
+  }, [transcript, onNext, onRepeat, onCancel, clearTranscript]);
 
   useEffect(() => {
     const duration = 3 * 1000;
@@ -56,9 +80,17 @@ export default function Reward({ onRestart, flips }) {
           Unglaublich! Du hast kein einziges Mal nachgeschaut!
         </p>
       )}
-      <button onClick={onRestart} className="btn-primary" style={{marginTop: '20px'}}>
-        Nächste Runde starten
-      </button>
+      <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '20px', flexWrap: 'wrap' }}>
+        <button onClick={onCancel} className="btn-cancel">
+          Zurück
+        </button>
+        <button onClick={onRepeat} className="btn-secondary">
+          Wiederholen
+        </button>
+        <button onClick={onNext} className="btn-primary">
+          Nächste Runde starten
+        </button>
+      </div>
     </div>
   );
 }

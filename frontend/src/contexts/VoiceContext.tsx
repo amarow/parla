@@ -95,9 +95,6 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const clearTranscript = useCallback(() => {
     setTranscript('');
-    if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch (e) {}
-    }
   }, []);
 
   return (

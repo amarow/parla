@@ -21,7 +21,7 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
     }
   };
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: ['sessionItems', categoryId],
     queryFn: async () => {
       let res = await axios.get(`${API_BASE}/words?category_id=${categoryId}`);
@@ -74,7 +74,7 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
     });
   };
 
-  if (isLoading) return <div className="loading">Lade Inhalte...</div>;
+  if (isLoading || isFetching) return <div className="loading">Lade Inhalte...</div>;
   if (items.length === 0) return <div className="loading">Keine Inhalte gefunden.</div>;
 
   return (

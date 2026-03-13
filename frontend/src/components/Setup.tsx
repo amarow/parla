@@ -33,7 +33,7 @@ export default function Setup({ user, onStart }) {
 
   const handleCategoryClick = (id) => {
     localStorage.setItem('last_category_id', id.toString());
-    onStart(id, user.preferred_direction || 'nativeToForeign');
+    onStart(id, user.preferred_direction || 'nativeToForeign', categories);
   };
 
   const getLangName = (code) => {
