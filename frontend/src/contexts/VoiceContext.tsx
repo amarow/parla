@@ -31,13 +31,20 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
+    let restartTimeout: any = null;
+
     recognition.onstart = () => {
       setIsListening(true);
     };
 
     recognition.onend = () => {
       if (shouldListenRef.current) {
-        try { recognition.start(); } catch (e) {}
+        clearTimeout(restartTimeout);
+        restartTimeout = setTimeout(() => {
+          if (shouldListenRef.current) {
+            try { recognition.start(); } catch (e) {}
+          }
+        }, 400); // 400ms delay to prevent rapid crash loops on mobile
       } else {
         setIsListening(false);
       }
