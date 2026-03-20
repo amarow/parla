@@ -1,13 +1,19 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
-const db = require('./database');
-const bcrypt = require('bcryptjs');
-const googleTTS = require('google-tts-api');
-const multer = require('multer');
-require('dotenv').config({ override: true });
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+import db from './database.js';
+import bcrypt from 'bcryptjs';
+import googleTTS from 'google-tts-api';
+import multer from 'multer';
+import dotenv from 'dotenv';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { fileURLToPath } from 'url';
+
+dotenv.config({ override: true });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3001;
@@ -49,7 +55,7 @@ app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Username und Passwort erforderlich' });
 
-  db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user) => {
+  db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user: any) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!user) return res.status(401).json({ error: 'Ungültige Zugangsdaten' });
 
@@ -85,9 +91,9 @@ app.put('/api/user/:id/settings', (req, res) => {
 
 // Get categories, optionally filtered by target_language
 app.get('/api/categories', (req, res) => {
-  const targetLanguage = req.query.target_language;
+  const targetLanguage = req.query.target_language as string;
   let query = 'SELECT * FROM categories';
-  let params = [];
+  let params: any[] = [];
 
   if (targetLanguage) {
     query += ' WHERE target_language = ?';
@@ -102,9 +108,9 @@ app.get('/api/categories', (req, res) => {
 
 // Get random words for a specific category (max 20)
 app.get('/api/words', (req, res) => {
-  const categoryId = req.query.category_id;
+  const categoryId = req.query.category_id as string;
   let query = 'SELECT * FROM words';
-  const params = [];
+  const params: any[] = [];
 
   if (categoryId) {
     query += ' WHERE category_id = ?';
@@ -145,7 +151,7 @@ app.post('/api/import', (req, res) => {
       // Import Words
       if (fs.existsSync(wordsFilePath)) {
         const wordsData = JSON.parse(fs.readFileSync(wordsFilePath, 'utf8'));
-        wordsData.forEach(categoryGroup => {
+        wordsData.forEach((categoryGroup: any) => {
           db.run(
             `INSERT INTO categories (name, target_language) VALUES (?, ?)`,
             [categoryGroup.category, categoryGroup.target_language],
@@ -154,7 +160,7 @@ app.post('/api/import', (req, res) => {
               const categoryId = this.lastID;
               
               const stmt = db.prepare(`INSERT INTO words (category_id, native_word, foreign_word) VALUES (?, ?, ?)`);
-              categoryGroup.words.forEach(word => {
+              categoryGroup.words.forEach((word: any) => {
                 stmt.run(categoryId, word.native, word.foreign);
               });
               stmt.finalize();
@@ -166,7 +172,7 @@ app.post('/api/import', (req, res) => {
       // Import Verbs
       if (fs.existsSync(verbsFilePath)) {
         const verbsData = JSON.parse(fs.readFileSync(verbsFilePath, 'utf8'));
-        verbsData.forEach(categoryGroup => {
+        verbsData.forEach((categoryGroup: any) => {
           db.run(
             `INSERT INTO categories (name, target_language) VALUES (?, ?)`,
             [categoryGroup.category, categoryGroup.target_language],
@@ -177,13 +183,13 @@ app.post('/api/import', (req, res) => {
               const verbStmt = db.prepare(`INSERT INTO verbs (category_id, native_infinitive, foreign_infinitive) VALUES (?, ?, ?)`);
               const conjStmt = db.prepare(`INSERT INTO conjugations (verb_id, tense, form_1s, form_2s, form_3s, form_1p, form_2p, form_3p) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
               
-              categoryGroup.verbs.forEach(verb => {
-                verbStmt.run(categoryId, verb.native, verb.foreign, function(err) {
+              categoryGroup.verbs.forEach((verb: any) => {
+                verbStmt.run(categoryId, verb.native, verb.foreign, function(err: any) {
                   if (err) return console.error(err.message);
                   const verbId = this.lastID;
                   
                   if (verb.conjugations) {
-                    verb.conjugations.forEach(conj => {
+                    verb.conjugations.forEach((conj: any) => {
                       conjStmt.run(verbId, conj.tense, conj.form_1s, conj.form_2s, conj.form_3s, conj.form_1p, conj.form_2p, conj.form_3p);
                     });
                   }
@@ -206,17 +212,17 @@ app.post('/api/import', (req, res) => {
 
 // Get verbs and their conjugations for a specific category
 app.get('/api/verbs', (req, res) => {
-  const categoryId = req.query.category_id;
+  const categoryId = req.query.category_id as string;
   if (!categoryId) return res.status(400).json({ error: 'category_id required' });
 
-  db.all('SELECT * FROM verbs WHERE category_id = ?', [categoryId], (err, verbs) => {
+  db.all('SELECT * FROM verbs WHERE category_id = ?', [categoryId], (err, verbs: any[]) => {
     if (err) return res.status(500).json({ error: err.message });
     if (verbs.length === 0) return res.json([]);
 
-    const verbIds = verbs.map(v => v.id);
+    const verbIds = verbs.map((v: any) => v.id);
     const placeholders = verbIds.map(() => '?').join(',');
     
-    db.all(`SELECT * FROM conjugations WHERE verb_id IN (${placeholders})`, verbIds, (err, conjugations) => {
+    db.all(`SELECT * FROM conjugations WHERE verb_id IN (${placeholders})`, verbIds, (err, conjugations: any[]) => {
       if (err) return res.status(500).json({ error: err.message });
       
       const verbsWithConjugations = verbs.map(verb => ({
@@ -232,7 +238,8 @@ app.get('/api/verbs', (req, res) => {
 // Generate and stream TTS audio
 app.get('/api/tts', async (req, res) => {
   try {
-    const { text, lang } = req.query;
+    const text = req.query.text as string;
+    const lang = req.query.lang as string;
     if (!text || !lang) {
       return res.status(400).send('Text and language are required');
     }
@@ -287,7 +294,7 @@ app.post('/api/speech-to-text', upload.single('audio'), async (req, res) => {
     let result;
     try {
       result = await model.generateContent([prompt, audioData]);
-    } catch (e) {
+    } catch (e: any) {
       console.warn(`Model ${modelName} failed:`, e.message);
       modelName = "gemini-2.0-flash"; // Härterer Fallback
       console.log("Fallback to:", modelName);
@@ -300,7 +307,7 @@ app.post('/api/speech-to-text', upload.single('audio'), async (req, res) => {
     console.log("Recognized text:", responseText);
 
     res.json({ transcript: responseText });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Speech-to-text Error:', error);
     res.status(500).json({ error: 'Failed to process audio with Gemini', details: error.message });
   }
@@ -315,4 +322,3 @@ app.get(/^(?!\/api).*$/, (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-export {};

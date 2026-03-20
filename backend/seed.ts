@@ -1,7 +1,11 @@
-const db = require('./database');
-const bcrypt = require('bcryptjs');
-const fs = require('fs');
-const path = require('path');
+import db from './database.js';
+import bcrypt from 'bcryptjs';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const seedData = async () => {
   db.serialize(async () => {
@@ -81,4 +85,3 @@ const seedData = async () => {
 };
 
 seedData();
-export {};
