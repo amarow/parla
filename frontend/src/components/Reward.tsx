@@ -67,28 +67,30 @@ export default function Reward({ onNext, onRepeat, onCancel, flips }) {
   }, []);
 
   return (
-    <div className="reward-container card-panel text-center">
-      <div className="confetti-emoji" style={{ fontSize: '4rem', marginBottom: '20px' }}>🎉🎉🎉</div>
-      <h2>Fantastisch!</h2>
-      <p>Du hast die Lektion erfolgreich abgeschlossen!</p>
-      {flips > 0 ? (
-        <p style={{ marginTop: '10px', fontSize: '1.1rem' }}>
-          Du hast <strong>{flips}</strong> {flips === 1 ? 'Mal' : 'Mal'} nachgeschaut.
-        </p>
-      ) : (
-        <p style={{ marginTop: '10px', fontSize: '1.1rem', color: 'var(--right-color)' }}>
-          Unglaublich! Du hast kein einziges Mal nachgeschaut!
-        </p>
-      )}
-      <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '20px', flexWrap: 'wrap' }}>
-        <button onClick={onCancel} className="btn-cancel">
+    <div className="reward-container card-panel text-center" style={{ display: 'flex', flexDirection: 'column', minHeight: '50vh' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div className="confetti-emoji" style={{ fontSize: '4rem', marginBottom: '20px' }}>🎉🎉🎉</div>
+        <h2>Fantastisch!</h2>
+        <p>Du hast die Lektion erfolgreich abgeschlossen!</p>
+        {flips > 0 ? (
+          <p style={{ marginTop: '10px', fontSize: '1.1rem' }}>
+            Du hast <strong>{flips}</strong> {flips === 1 ? 'Mal' : 'Mal'} nachgeschaut.
+          </p>
+        ) : (
+          <p style={{ marginTop: '10px', fontSize: '1.1rem', color: 'var(--right-color)' }}>
+            Unglaublich! Du hast kein einziges Mal nachgeschaut!
+          </p>
+        )}
+      </div>
+      <div style={{ display: 'flex', gap: '10px', marginTop: 'auto', width: '100%' }}>
+        <button onClick={onCancel} className="btn-secondary" style={{ flex: 1, padding: '12px 5px', fontSize: '0.9rem' }}>
           Zurück
         </button>
-        <button onClick={onRepeat} className="btn-secondary">
+        <button onClick={onRepeat} className="btn-secondary" style={{ flex: 1, padding: '12px 5px', fontSize: '0.9rem' }}>
           Wiederholen
         </button>
-        <button onClick={onNext} className="btn-primary">
-          Nächste Runde starten
+        <button onClick={onNext} className="btn-secondary" style={{ flex: 1, padding: '12px 5px', fontSize: '0.9rem' }}>
+          Nächste Runde
         </button>
       </div>
     </div>
