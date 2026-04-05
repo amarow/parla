@@ -21,13 +21,12 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
     clearTranscript();
 
     if (word) {
-      // Spiele immer den deutschen Text ab, wenn eine neue Karte gezeigt wird
-      const textToPlay = word.native_word;
-      const langCode = 'de';
+      const frontLangCode = direction === 'nativeToForeign' ? 'de' : 'it';
+      const textToPlay = direction === 'nativeToForeign' ? word.native_word : word.foreign_word;
       
       if (textToPlay && lastPlayedRef.current !== textToPlay) {
         lastPlayedRef.current = textToPlay;
-        const url = `${API_BASE}/tts?text=${encodeURIComponent(textToPlay)}&lang=${langCode}`;
+        const url = `${API_BASE}/tts?text=${encodeURIComponent(textToPlay)}&lang=${frontLangCode}`;
         const audio = new Audio(url);
         
         setIsAudioPlaying(true);
