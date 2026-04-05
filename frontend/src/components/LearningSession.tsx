@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import Flashcard from './Flashcard';
 import VerbDrill from './VerbDrill';
+import SentenceDrill from './SentenceDrill';
 import { API_BASE } from '../api';
 import { RotateCcw, List, BookOpen, X, Volume2 } from 'lucide-react';
 import { useVoice } from '../contexts/VoiceContext';
@@ -24,6 +25,9 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['sessionItems', categoryId],
     queryFn: async () => {
+      if (categoryId === 'sentences') {
+        return { items: [], type: 'sentences' };
+      }
       let res = await axios.get(`${API_BASE}/words?category_id=${categoryId}`);
       if (res.data && res.data.length > 0) {
         return { items: res.data, type: 'words' };
@@ -31,7 +35,7 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
       res = await axios.get(`${API_BASE}/verbs?category_id=${categoryId}`);
       return { items: res.data || [], type: 'verbs' };
     },
-    staleTime: 0 // Fetch fresh items every time a new session starts
+    staleTime: 0 
   });
 
   const items = data?.items || [];
@@ -49,7 +53,7 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
     if (!isCorrect) {
       setFlipCount(prev => prev + 1);
     }
-    
+
     if (currentIndex + 1 < items.length) {
       setCurrentIndex(currentIndex + 1);
     } else {
@@ -64,7 +68,7 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
   const playAudio = (e: any, text: string) => {
     e.preventDefault();
     e.stopPropagation();
-    const langCode = 'it'; // Foreign language is Italian
+    const langCode = 'it'; 
     const encodedText = encodeURIComponent(text);
     const url = `${API_BASE}/tts?text=${encodedText}&lang=${langCode}`;
 
@@ -75,30 +79,33 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
   };
 
   if (isLoading || isFetching) return <div className="loading">Lade Inhalte...</div>;
-  if (items.length === 0) return <div className="loading">Keine Inhalte gefunden.</div>;
+  if (itemType !== 'sentences' && items.length === 0) return <div className="loading">Keine Inhalte gefunden.</div>;
+
 
   return (
     <div className="learning-session">
-      <div className="session-header">
-        <div className="progress-text">
-          <span className="desktop-text">Karte {currentIndex + 1} von {items.length}</span>
-          <span className="mobile-text">{currentIndex + 1} / {items.length}</span>
+      {itemType !== 'sentences' && (
+        <div className="session-header">
+          <div className="progress-text">
+            <span className="desktop-text">Karte {currentIndex + 1} von {items.length}</span>
+            <span className="mobile-text">{currentIndex + 1} / {items.length}</span>
+          </div>
+          <div className="header-buttons" style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={handleRestart} className="btn-cancel icon-text-btn" title="Von vorne">
+              <RotateCcw size={16} className="mobile-icon" />
+              <span className="desktop-text">Von vorne</span>
+            </button>
+            <button onClick={() => setShowOverview(!showOverview)} className="btn-cancel icon-text-btn" title={showOverview ? "Lernen" : "Übersicht"}>
+              {showOverview ? <BookOpen size={16} className="mobile-icon" /> : <List size={16} className="mobile-icon" />}
+              <span className="desktop-text">{showOverview ? 'Lernen' : 'Übersicht'}</span>
+            </button>
+            <button onClick={onCancel} className="btn-cancel icon-text-btn" title="Abbrechen">
+              <X size={16} className="mobile-icon" />
+              <span className="desktop-text">Abbrechen</span>
+            </button>
+          </div>
         </div>
-        <div className="header-buttons" style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={handleRestart} className="btn-cancel icon-text-btn" title="Von vorne">
-            <RotateCcw size={16} className="mobile-icon" />
-            <span className="desktop-text">Von vorne</span>
-          </button>
-          <button onClick={() => setShowOverview(!showOverview)} className="btn-cancel icon-text-btn" title={showOverview ? "Lernen" : "Übersicht"}>
-            {showOverview ? <BookOpen size={16} className="mobile-icon" /> : <List size={16} className="mobile-icon" />}
-            <span className="desktop-text">{showOverview ? 'Lernen' : 'Übersicht'}</span>
-          </button>
-          <button onClick={onCancel} className="btn-cancel icon-text-btn" title="Abbrechen">
-            <X size={16} className="mobile-icon" />
-            <span className="desktop-text">Abbrechen</span>
-          </button>
-        </div>
-        </div>
+      )}
 
         {showOverview ? (
         <div className="overview-container card-panel">
@@ -142,13 +149,19 @@ export default function LearningSession({ categoryId, direction, onFinish, onCan
             onAnswer={handleAnswer}
             onFlip={handleFlip}
           />
-        ) : (
+        ) : itemType === 'verbs' ? (
           <VerbDrill
             verb={items[currentIndex]}
             direction={direction}
             onFinish={handleVerbFinish}
             onFlip={handleFlip}
             onReset={(fn) => { resetChildRef.current = fn; }}
+          />
+        ) : (
+          <SentenceDrill
+            pronounKey={direction}
+            onFinish={() => onFinish(flipCount)}
+            onCancel={onCancel}
           />
         )
         )}    </div>  );

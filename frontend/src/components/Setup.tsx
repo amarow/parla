@@ -54,6 +54,15 @@ export default function Setup({ user, onStart }) {
   const grammarCategories = categories.filter(cat => isGrammarCat(cat.name));
   const vocabCategories = categories.filter(cat => !isGrammarCat(cat.name));
 
+  const pronouns = [
+    { key: 'form_1s', label: 'io (ich)' },
+    { key: 'form_2s', label: 'tu (du)' },
+    { key: 'form_3s', label: 'lui/lei (er/sie/es)' },
+    { key: 'form_1p', label: 'noi (wir)' },
+    { key: 'form_2p', label: 'voi (ihr)' },
+    { key: 'form_3p', label: 'loro (sie)' }
+  ];
+
   return (
     <div className="setup-container card-panel">
       <h2>Kategorie wählen</h2>
@@ -63,6 +72,23 @@ export default function Setup({ user, onStart }) {
       ) : (
         <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
+          <div>
+            <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Satzbau-Training</h3>
+            <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Wähle ein Pronomen, um gezielt Sätze zu üben:</p>
+            <div className="category-grid">
+              {pronouns.map(p => (
+                <div 
+                  key={p.key} 
+                  className="category-item sentence-category"
+                  onClick={() => onStart('sentences', p.key)}
+                  style={{ backgroundColor: 'rgba(52, 152, 219, 0.1)', borderColor: '#3498db' }}
+                >
+                  {p.label}
+                </div>
+              ))}
+            </div>
+          </div>
+
           {grammarCategories.length > 0 && (
             <div>
               <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Grammatik & Verben</h3>

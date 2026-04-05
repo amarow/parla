@@ -31,20 +31,30 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
+    let restartTimeout: any = null;
+
     recognition.onstart = () => {
       setIsListening(true);
     };
 
     recognition.onend = () => {
       if (shouldListenRef.current) {
-        try { recognition.start(); } catch (e) {}
+        clearTimeout(restartTimeout);
+        restartTimeout = setTimeout(() => {
+          if (shouldListenRef.current) {
+            try { recognition.start(); } catch (e) {}
+          }
+        }, 400); // 400ms delay to prevent rapid crash loops
       } else {
         setIsListening(false);
       }
     };
 
     recognition.onerror = (e: any) => {
-      if (e.error !== 'no-speech' && e.error !== 'audio-capture' && e.error !== 'aborted') {
+      console.warn("Speech Recognition Error:", e.error);
+      // We don't set shouldListenRef to false here unless it's a fatal permanent error.
+      // Most errors (network, no-speech, aborted) should just trigger an onend -> restart cycle.
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
         shouldListenRef.current = false;
         setIsListening(false);
       }

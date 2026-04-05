@@ -235,6 +235,38 @@ app.get('/api/verbs', (req, res) => {
   });
 });
 
+// --- Sentence Logic & Generation ---
+app.get('/api/sentence-logic', (req, res) => {
+  const logicPath = path.join(__dirname, 'data', 'it_sentence_logic.json');
+  if (!fs.existsSync(logicPath)) return res.status(404).json({ error: 'Logic file not found' });
+  
+  const logic = JSON.parse(fs.readFileSync(logicPath, 'utf8'));
+  
+  // We also need the conjugations for these verbs
+  db.all('SELECT * FROM verbs', (err, allVerbs: any[]) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    const relevantVerbInfinitives = logic.map((l: any) => l.verb);
+    const verbs = allVerbs.filter(v => relevantVerbInfinitives.includes(v.foreign_infinitive));
+    
+    if (verbs.length === 0) return res.json({ logic, conjugations: [] });
+
+    const verbIds = verbs.map((v: any) => v.id);
+    const placeholders = verbIds.map(() => '?').join(',');
+
+    db.all(`SELECT * FROM conjugations WHERE verb_id IN (${placeholders})`, verbIds, (err, conjugations: any[]) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      const verbsWithConjugations = verbs.map(verb => ({
+        ...verb,
+        conjugations: conjugations.filter(c => c.verb_id === verb.id)
+      }));
+
+      res.json({ logic, verbs: verbsWithConjugations });
+    });
+  });
+});
+
 // Generate and stream TTS audio
 app.get('/api/tts', async (req, res) => {
   try {

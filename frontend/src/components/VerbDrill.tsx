@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, CheckCircle, XCircle, Volume2 } from 'lucide-react';
+import { CheckCircle, XCircle, Volume2 } from 'lucide-react';
 import { useVoice } from '../contexts/VoiceContext';
 import { API_BASE } from '../api';
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Volume2, Mic, MicOff } from 'lucide-react';
+import { Volume2 } from 'lucide-react';
 import { API_BASE } from '../api';
 import writtenNumber from 'written-number';
 import { useVoice } from '../contexts/VoiceContext';
@@ -10,7 +10,7 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [speechFeedback, setSpeechFeedback] = useState<string | null>(null);
   
-  const { isListening, toggleListening, transcript, setLanguage, clearTranscript } = useVoice();
+  const { transcript, setLanguage, clearTranscript } = useVoice();
   const lastPlayedRef = useRef<string | null>(null);
 
   // Reset states when the word changes
@@ -68,8 +68,7 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
     if (!transcript || isProcessing || isAudioPlaying) return;
 
     console.log("🗣️ [Flashcard] Transcript gehört:", transcript);
-    const transcriptLower = transcript.toLowerCase();
-
+    
     if (isFlipped) return; // Only process answer if not flipped
 
     const target = backText.toLowerCase().trim();
@@ -129,7 +128,6 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
     }
   }, [transcript, backText, backLang, isFlipped, isProcessing, isAudioPlaying, onAnswer, clearTranscript]);
 
-  // Second effect for commands WHEN the card is flipped
   useEffect(() => {
       if (!transcript || !isFlipped || isProcessing || isAudioPlaying) return;
 
@@ -153,11 +151,6 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
           return;
       }
   }, [transcript, isFlipped, isProcessing, isAudioPlaying, onAnswer, clearTranscript]);
-
-  const toggleListeningLocal = (e: any) => {
-    if (e) e.stopPropagation();
-    toggleListening();
-  };
 
   const playAudio = (e: any) => {
     e.stopPropagation();
