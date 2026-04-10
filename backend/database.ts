@@ -16,8 +16,14 @@ db.serialize(() => {
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     native_language TEXT DEFAULT 'de',
-    target_language TEXT DEFAULT 'it'
+    target_language TEXT DEFAULT 'it',
+    preferred_direction TEXT DEFAULT 'nativeToForeign',
+    pause_time INTEGER DEFAULT 800
   )`);
+
+  // Update existing tables if columns are missing
+  db.run(`ALTER TABLE users ADD COLUMN preferred_direction TEXT DEFAULT 'nativeToForeign'`, (err) => {});
+  db.run(`ALTER TABLE users ADD COLUMN pause_time INTEGER DEFAULT 800`, (err) => {});
 
   // Kategorie hat nun eine Ziel-Sprache (z.B. 'it', 'en')
   db.run(`CREATE TABLE IF NOT EXISTS categories (

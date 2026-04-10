@@ -121,6 +121,7 @@ function App() {
         )}
         {user && appState === 'learning' && (
           <LearningSession 
+            user={user}
             categoryId={sessionConfig.categoryId} 
             direction={sessionConfig.direction} 
             onFinish={finishSession}

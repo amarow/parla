@@ -6,6 +6,7 @@ export default function Settings({ user, onUpdateUser, onCancel }) {
   const [nativeLang, setNativeLang] = useState(user.native_language);
   const [targetLang, setTargetLang] = useState(user.target_language);
   const [preferredDirection, setPreferredDirection] = useState(user.preferred_direction || 'nativeToForeign');
+  const [pauseTime, setPauseTime] = useState(user.pause_time || 800);
   const [message, setMessage] = useState('');
 
   const handleSave = async (e) => {
@@ -14,14 +15,16 @@ export default function Settings({ user, onUpdateUser, onCancel }) {
       const res = await axios.put(`${API_BASE}/user/${user.id}/settings`, {
         native_language: nativeLang,
         target_language: targetLang,
-        preferred_direction: preferredDirection
+        preferred_direction: preferredDirection,
+        pause_time: Number(pauseTime)
       });
       // User-Objekt aktualisieren
       onUpdateUser({ 
         ...user, 
         native_language: res.data.native_language, 
         target_language: res.data.target_language,
-        preferred_direction: res.data.preferred_direction
+        preferred_direction: res.data.preferred_direction,
+        pause_time: res.data.pause_time
       });
       setMessage('Einstellungen gespeichert!');
       setTimeout(() => onCancel(), 1500); // Zurück zur Hauptansicht
@@ -81,6 +84,19 @@ export default function Settings({ user, onUpdateUser, onCancel }) {
             <option value="foreignToNative">
               {getLangName(targetLang)} ➔ {getLangName(nativeLang)}
             </option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label>Pausenzeit beim Vorlesen:</label>
+          <select 
+            value={pauseTime} 
+            onChange={(e) => setPauseTime(Number(e.target.value))}
+          >
+            <option value={400}>Kurz (0,4s)</option>
+            <option value={800}>Mittel (0,8s)</option>
+            <option value={1500}>Lang (1,5s)</option>
+            <option value={2200}>Extra Lang (2,2s)</option>
           </select>
         </div>
 

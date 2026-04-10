@@ -30,20 +30,20 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 // --- Authentication & User Settings ---
 
 app.post('/api/register', async (req, res) => {
-  const { username, password, native_language = 'de', target_language = 'it', preferred_direction = 'nativeToForeign' } = req.body;
+  const { username, password, native_language = 'de', target_language = 'it', preferred_direction = 'nativeToForeign', pause_time = 800 } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Username und Passwort erforderlich' });
 
   try {
     const hash = await bcrypt.hash(password, 10);
     db.run(
-      `INSERT INTO users (username, password_hash, native_language, target_language, preferred_direction) VALUES (?, ?, ?, ?, ?)`,
-      [username, hash, native_language, target_language, preferred_direction],
+      `INSERT INTO users (username, password_hash, native_language, target_language, preferred_direction, pause_time) VALUES (?, ?, ?, ?, ?, ?)`,
+      [username, hash, native_language, target_language, preferred_direction, pause_time],
       function(err) {
         if (err) {
           if (err.message.includes('UNIQUE')) return res.status(400).json({ error: 'Username existiert bereits' });
           return res.status(500).json({ error: err.message });
         }
-        res.json({ id: this.lastID, username, native_language, target_language, preferred_direction });
+        res.json({ id: this.lastID, username, native_language, target_language, preferred_direction, pause_time });
       }
     );
   } catch (error) {
@@ -68,21 +68,22 @@ app.post('/api/login', (req, res) => {
       username: user.username, 
       native_language: user.native_language, 
       target_language: user.target_language,
-      preferred_direction: user.preferred_direction
+      preferred_direction: user.preferred_direction,
+      pause_time: user.pause_time
     });
   });
 });
 
 app.put('/api/user/:id/settings', (req, res) => {
-  const { native_language, target_language, preferred_direction } = req.body;
+  const { native_language, target_language, preferred_direction, pause_time } = req.body;
   const userId = req.params.id;
 
   db.run(
-    `UPDATE users SET native_language = ?, target_language = ?, preferred_direction = ? WHERE id = ?`,
-    [native_language, target_language, preferred_direction, userId],
+    `UPDATE users SET native_language = ?, target_language = ?, preferred_direction = ?, pause_time = ? WHERE id = ?`,
+    [native_language, target_language, preferred_direction, pause_time, userId],
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true, native_language, target_language, preferred_direction });
+      res.json({ success: true, native_language, target_language, preferred_direction, pause_time });
     }
   );
 });
