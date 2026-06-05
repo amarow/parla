@@ -77,10 +77,12 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
       };
 
       if (itemType === 'words') {
-        await playPart(item.foreign_word);
+        const wordItem = item as any;
+        await playPart(wordItem.foreign_word);
       } else if (itemType === 'verbs') {
-        const conj = item.conjugations?.[0];
-        await playPart(item.foreign_infinitive);
+        const verbItem = item as any;
+        const conj = verbItem.conjugations?.[0];
+        await playPart(verbItem.foreign_infinitive);
         if (conj) {
           await playPart(`io ${conj.form_1s}`);
           await playPart(`tu ${conj.form_2s}`);
