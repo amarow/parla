@@ -1,0 +1,273 @@
+[
+  {
+    "verb": "mangiare",
+    "native_forms": { "form_1s": "esse", "form_2s": "isst", "form_3s": "isst", "form_1p": "essen", "form_2p": "esst", "form_3p": "essen" },
+    "objects": [
+      {"native": "die Pasta", "foreign": "la pasta"},
+      {"native": "einen Apfel", "foreign": "una mela"},
+      {"native": "Brot", "foreign": "del pane"},
+      {"native": "Pizza", "foreign": "una pizza"},
+      {"native": "Gemüse", "foreign": "della verdura"},
+      {"native": "Fleisch", "foreign": "della carne"},
+      {"native": "den Käse", "foreign": "il formaggio"},
+      {"native": "das Obst", "foreign": "la frutta"}
+    ]
+  },
+  {
+    "verb": "bere",
+    "native_forms": { "form_1s": "trinke", "form_2s": "trinkst", "form_3s": "trinkt", "form_1p": "trinken", "form_2p": "trinkt", "form_3p": "trinken" },
+    "objects": [
+      {"native": "einen Kaffee", "foreign": "un caffè"},
+      {"native": "Wasser", "foreign": "dell'acqua"},
+      {"native": "Wein", "foreign": "del vino"},
+      {"native": "Bier", "foreign": "una birra"},
+      {"native": "Saft", "foreign": "un succo"},
+      {"native": "Tee", "foreign": "un tè"}
+    ]
+  },
+  {
+    "verb": "vedere",
+    "native_forms": { "form_1s": "sehe", "form_2s": "siehst", "form_3s": "sieht", "form_1p": "sehen", "form_2p": "seht", "form_3p": "sehen" },
+    "objects": [
+      {"native": "ein Auto", "foreign": "un'auto"},
+      {"native": "den Vater", "foreign": "il padre"},
+      {"native": "die Mutter", "foreign": "la madre"},
+      {"native": "ein Haus", "foreign": "una casa"},
+      {"native": "einen Hund", "foreign": "un cane"},
+      {"native": "eine Katze", "foreign": "un gatto"},
+      {"native": "das Meer", "foreign": "il mare"},
+      {"native": "den Freund", "foreign": "l'amico"},
+      {"native": "das Fenster", "foreign": "la finestra"},
+      {"native": "die Tür", "foreign": "la porta"},
+      {"native": "den Hammer", "foreign": "il martello"},
+      {"native": "die Baustelle", "foreign": "il cantiere"},
+      {"native": "die Farbe", "foreign": "la vernice"},
+      {"native": "das Holz", "foreign": "il legno"}
+    ]
+  },
+  {
+    "verb": "andare",
+    "native_forms": { "form_1s": "gehe", "form_2s": "gehst", "form_3s": "geht", "form_1p": "gehen", "form_2p": "geht", "form_3p": "gehen" },
+    "objects": [
+      {"native": "ins Restaurant", "foreign": "al ristorante"},
+      {"native": "nach Hause", "foreign": "a casa"},
+      {"native": "zum Bahnhof", "foreign": "in stazione"},
+      {"native": "zum Strand", "foreign": "in spiaggia"},
+      {"native": "zum Supermarkt", "foreign": "al supermercato"},
+      {"native": "ins Hotel", "foreign": "in albergo"},
+      {"native": "zur Arbeit", "foreign": "al lavoro"},
+      {"native": "ins Kino", "foreign": "al cinema"},
+      {"native": "auf die Baustelle", "foreign": "in cantiere"},
+      {"native": "ins Badezimmer", "foreign": "in bagno"},
+      {"native": "in die Küche", "foreign": "in cucina"}
+    ]
+  },
+  {
+    "verb": "fare",
+    "native_forms": { "form_1s": "mache", "form_2s": "machst", "form_3s": "macht", "form_1p": "machen", "form_2p": "macht", "form_3p": "machen" },
+    "objects": [
+      {"native": "die Hausaufgaben", "foreign": "i compiti"},
+      {"native": "ein Foto", "foreign": "una foto"},
+      {"native": "einen Spaziergang", "foreign": "una passeggiata"},
+      {"native": "Frühstück", "foreign": "colazione"},
+      {"native": "eine Pause", "foreign": "una pausa"},
+      {"native": "das Fundament", "foreign": "le fondamenta"}
+    ]
+  },
+  {
+    "verb": "prendere",
+    "native_forms": { "form_1s": "nehme", "form_2s": "nimmst", "form_3s": "nimmt", "form_1p": "nehmen", "form_2p": "nehmt", "form_3p": "nehmen" },
+    "objects": [
+      {"native": "den Zug", "foreign": "il treno"},
+      {"native": "das Taxi", "foreign": "il taxi"},
+      {"native": "einen Kaffee", "foreign": "un caffè"},
+      {"native": "die Schlüssel", "foreign": "le chiavi"},
+      {"native": "das Ticket", "foreign": "il biglietto"},
+      {"native": "den Hammer", "foreign": "il martello"},
+      {"native": "das Maßband", "foreign": "il metro a nastro"},
+      {"native": "die Zange", "foreign": "la pinza"}
+    ]
+  },
+  {
+    "verb": "parlare",
+    "native_forms": { "form_1s": "spreche", "form_2s": "sprichst", "form_3s": "spricht", "form_1p": "sprechen", "form_2p": "sprecht", "form_3p": "sprechen" },
+    "objects": [
+      {"native": "Italienisch", "foreign": "italiano"},
+      {"native": "Deutsch", "foreign": "tedesco"},
+      {"native": "mit dem Freund", "foreign": "con l'amico"},
+      {"native": "mit der Mutter", "foreign": "con la madre"},
+      {"native": "über den Urlaub", "foreign": "della vacanza"},
+      {"native": "mit dem Handwerker", "foreign": "con l'artigiano"},
+      {"native": "mit dem Architekten", "foreign": "con l'architetto"}
+    ]
+  },
+  {
+    "verb": "lavorare",
+    "native_forms": { "form_1s": "arbeite", "form_2s": "arbeitest", "form_3s": "arbeitet", "form_1p": "arbeiten", "form_2p": "arbeitet", "form_3p": "arbeiten" },
+    "objects": [
+      {"native": "im Büro", "foreign": "in ufficio"},
+      {"native": "im Garten", "foreign": "in giardino"},
+      {"native": "heute", "foreign": "oggi"},
+      {"native": "viel", "foreign": "molto"},
+      {"native": "mit dem Vater", "foreign": "con il padre"},
+      {"native": "auf der Baustelle", "foreign": "in cantiere"},
+      {"native": "mit Holz", "foreign": "con il legno"},
+      {"native": "mit Metall", "foreign": "con il metallo"}
+    ]
+  },
+  {
+    "verb": "trovare",
+    "native_forms": { "form_1s": "finde", "form_2s": "findest", "form_3s": "findet", "form_1p": "finden", "form_2p": "findet", "form_3p": "finden" },
+    "objects": [
+      {"native": "die Schlüssel", "foreign": "le chiavi"},
+      {"native": "den Weg", "foreign": "la strada"},
+      {"native": "ein Restaurant", "foreign": "un ristorante"},
+      {"native": "das Hotel", "foreign": "l'albergo"},
+      {"native": "einen Freund", "foreign": "un amico"},
+      {"native": "die Schraube", "foreign": "la vite"},
+      {"native": "den Nagel", "foreign": "il chiodo"}
+    ]
+  },
+  {
+    "verb": "lasciare",
+    "native_forms": { "form_1s": "lasse", "form_2s": "lässt", "form_3s": "lässt", "form_1p": "lassen", "form_2p": "lasst", "form_3p": "lassen" },
+    "objects": [
+      {"native": "das Auto", "foreign": "l'auto"},
+      {"native": "den Schlüssel", "foreign": "la chiave"},
+      {"native": "die Tasche", "foreign": "la borsa"},
+      {"native": "eine Nachricht", "foreign": "un messaggio"},
+      {"native": "das Werkzeug", "foreign": "gli attrezzi"}
+    ]
+  },
+  {
+    "verb": "portare",
+    "native_forms": { "form_1s": "bringe", "form_2s": "bringst", "form_3s": "bringt", "form_1p": "bringen", "form_2p": "bringt", "form_3p": "bringen" },
+    "objects": [
+      {"native": "den Wein", "foreign": "il vino"},
+      {"native": "das Brot", "foreign": "il pane"},
+      {"native": "ein Geschenk", "foreign": "un regalo"},
+      {"native": "die Pizza", "foreign": "la pizza"},
+      {"native": "die Ziegelsteine", "foreign": "i mattoni"},
+      {"native": "das Rohr", "foreign": "il tubo"},
+      {"native": "das Kabel", "foreign": "il cavo"}
+    ]
+  },
+  {
+    "verb": "imparare",
+    "native_forms": { "form_1s": "lerne", "form_2s": "lernst", "form_3s": "lernt", "form_1p": "lernen", "form_2p": "lernt", "form_3p": "lernen" },
+    "objects": [
+      {"native": "Italienisch", "foreign": "l'italiano"},
+      {"native": "neue Wörter", "foreign": "nuove parole"},
+      {"native": "ein Lied", "foreign": "una canzone"},
+      {"native": "viel", "foreign": "molto"},
+      {"native": "bauen", "foreign": "a costruire"}
+    ]
+  },
+  {
+    "verb": "sentire",
+    "native_forms": { "form_1s": "höre", "form_2s": "hörst", "form_3s": "hört", "form_1p": "hören", "form_2p": "hört", "form_3p": "hören" },
+    "objects": [
+      {"native": "die Musik", "foreign": "la musica"},
+      {"native": "einen Lärm", "foreign": "un rumore"},
+      {"native": "die Kälte", "foreign": "il freddo"},
+      {"native": "die Glocken", "foreign": "le campane"},
+      {"native": "den Bohrer", "foreign": "il trapano"}
+    ]
+  },
+  {
+    "verb": "essere",
+    "native_forms": { "form_1s": "bin", "form_2s": "bist", "form_3s": "ist", "form_1p": "sind", "form_2p": "seid", "form_3p": "sind" },
+    "objects": [
+      {"native": "glücklich", "foreign": "felice"},
+      {"native": "müde", "foreign": "stanco"},
+      {"native": "groß", "foreign": "grande"},
+      {"native": "hier", "foreign": "qui"},
+      {"native": "bereit", "foreign": "pronto"},
+      {"native": "rot", "foreign": "rosso"},
+      {"native": "blau", "foreign": "blu"},
+      {"native": "gelb", "foreign": "giallo"},
+      {"native": "grün", "foreign": "verde"},
+      {"native": "neu", "foreign": "nuovo"},
+      {"native": "alt", "foreign": "vecchio"}
+    ]
+  },
+  {
+    "verb": "avere",
+    "native_forms": { "form_1s": "habe", "form_2s": "hast", "form_3s": "hat", "form_1p": "haben", "form_2p": "habt", "form_3p": "haben" },
+    "objects": [
+      {"native": "Hunger", "foreign": "fame"},
+      {"native": "Durst", "foreign": "sete"},
+      {"native": "Zeit", "foreign": "tempo"},
+      {"native": "ein Auto", "foreign": "un'auto"},
+      {"native": "einen Hund", "foreign": "un cane"},
+      {"native": "einen Pinsel", "foreign": "un pennello"},
+      {"native": "eine Säge", "foreign": "una sega"},
+      {"native": "einen Plan", "foreign": "un piano"}
+    ]
+  },
+  {
+    "verb": "comprare",
+    "native_forms": { "form_1s": "kaufe", "form_2s": "kaufst", "form_3s": "kauft", "form_1p": "kaufen", "form_2p": "kauft", "form_3p": "kaufen" },
+    "objects": [
+      {"native": "ein Buch", "foreign": "un libro"},
+      {"native": "Brot", "foreign": "del pane"},
+      {"native": "ein Geschenk", "foreign": "un regalo"},
+      {"native": "neue Schuhe", "foreign": "scarpe nuove"},
+      {"native": "ein Ticket", "foreign": "un biglietto"},
+      {"native": "Zement", "foreign": "del cemento"},
+      {"native": "Farbe", "foreign": "della vernice"},
+      {"native": "eine Bohrmaschine", "foreign": "un trapano"}
+    ]
+  },
+  {
+    "verb": "costruire",
+    "native_forms": { "form_1s": "baue", "form_2s": "baust", "form_3s": "baut", "form_1p": "bauen", "form_2p": "baut", "form_3p": "bauen" },
+    "objects": [
+      {"native": "ein Haus", "foreign": "una casa"},
+      {"native": "eine Wand", "foreign": "un muro"},
+      {"native": "ein Fundament", "foreign": "le fondamenta"},
+      {"native": "ein Bad", "foreign": "un bagno"}
+    ]
+  },
+  {
+    "verb": "riparare",
+    "native_forms": { "form_1s": "repariere", "form_2s": "reparierst", "form_3s": "repariert", "form_1p": "reparieren", "form_2p": "repariert", "form_3p": "reparieren" },
+    "objects": [
+      {"native": "das Fenster", "foreign": "la finestra"},
+      {"native": "die Tür", "foreign": "la porta"},
+      {"native": "das Rohr", "foreign": "il tubo"},
+      {"native": "das Auto", "foreign": "l'auto"}
+    ]
+  },
+  {
+    "verb": "dipingere",
+    "native_forms": { "form_1s": "streiche", "form_2s": "streichst", "form_3s": "streicht", "form_1p": "streichen", "form_2p": "streicht", "form_3p": "streichen" },
+    "objects": [
+      {"native": "die Wand", "foreign": "il muro"},
+      {"native": "das Zimmer", "foreign": "la stanza"},
+      {"native": "das Haus", "foreign": "la casa"},
+      {"native": "rot", "foreign": "di rosso"},
+      {"native": "weiß", "foreign": "di bianco"}
+    ]
+  },
+  {
+    "verb": "tagliare",
+    "native_forms": { "form_1s": "schneide", "form_2s": "schneidest", "form_3s": "schneidet", "form_1p": "schneiden", "form_2p": "schneidet", "form_3p": "schneiden" },
+    "objects": [
+      {"native": "das Holz", "foreign": "il legno"},
+      {"native": "das Brot", "foreign": "il pane"},
+      {"native": "das Rohr", "foreign": "il tubo"},
+      {"native": "das Kabel", "foreign": "il cavo"}
+    ]
+  },
+  {
+    "verb": "pulire",
+    "native_forms": { "form_1s": "putze", "form_2s": "putzt", "form_3s": "putzt", "form_1p": "putzen", "form_2p": "putzt", "form_3p": "putzen" },
+    "objects": [
+      {"native": "die Küche", "foreign": "la cucina"},
+      {"native": "das Bad", "foreign": "il bagno"},
+      {"native": "das Fenster", "foreign": "la finestra"},
+      {"native": "den Boden", "foreign": "il pavimento"}
+    ]
+  }
+]
