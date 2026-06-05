@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { CheckCircle, XCircle, Volume2, RotateCcw, List, BookOpen, Play, Square, SkipForward } from 'lucide-react';
 import { useVoice } from '../contexts/VoiceContext';
-import { API_BASE } from '../api';
-import axios from 'axios';
+import { speakText } from '../api';
+import { dataService } from '../dataService';
 
 const pronounsMap = {
   form_1s: { it: 'io', de: 'ich' },
@@ -24,7 +24,6 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   const [concentratedMode, setConcentratedMode] = useState(false);
   const [lockedVerb, setLockedVerb] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const playingRef = useRef(false);
 
   const pauseTime = user?.pause_time || 800;
@@ -43,17 +42,14 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
     fetchLogic();
     return () => {
       playingRef.current = false;
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
     };
   }, [setLanguage]);
 
   const fetchLogic = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/sentence-logic`);
-      setLogicData(res.data);
-      generateSentence(res.data);
+      const data = await dataService.getSentenceLogic();
+      setLogicData(data);
+      generateSentence(data);
       setLoading(false);
     } catch (e) {
       console.error("Error fetching sentence logic", e);
@@ -113,7 +109,7 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
   };
 
   useEffect(() => {
-    if (!transcript || feedback === 'correct' || showOverview) return;
+    if (!transcript || !currentSentence || feedback === 'correct' || showOverview) return;
 
     const cleanTranscript = transcript.replace(/[.,!?]/g, '').trim().toLowerCase();
     const cleanExpected = currentSentence.foreign.replace(/[.,!?]/g, '').trim().toLowerCase();
@@ -156,21 +152,12 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
     if (isPlayingAll) {
       handleStopPlayingAll();
     }
-    if (audioRef.current) {
-        audioRef.current.pause();
-    }
-    const url = `${API_BASE}/tts?text=${encodeURIComponent(text)}&lang=it`;
-    const audio = new Audio(url);
-    audioRef.current = audio;
-    audio.play().catch(e => console.error(e));
+    speakText(text, 'it');
   };
 
   const stopAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
     setIsPlayingAll(false);
+    playingRef.current = false;
   };
 
   const startPlayingAll = async () => {
@@ -180,18 +167,7 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
 
     for (const s of sentences) {
       if (!playingRef.current) break;
-      
-      await new Promise((resolve) => {
-        const url = `${API_BASE}/tts?text=${encodeURIComponent(s.foreign)}&lang=it`;
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        audio.onended = () => resolve(null);
-        audio.onerror = () => resolve(null);
-        audio.play().catch(e => {
-          console.error(e);
-          resolve(null);
-        });
-      });
+      await speakText(s.foreign, 'it');
       // Small pause between sentences
       if (playingRef.current) {
         await new Promise(r => setTimeout(r, pauseTime));
@@ -200,7 +176,6 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
     
     setIsPlayingAll(false);
     playingRef.current = false;
-    audioRef.current = null;
   };
 
   const handleStopPlayingAll = () => {

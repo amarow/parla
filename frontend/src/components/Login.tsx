@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
-import { BASE_URL } from '../api';
+import { localAuth } from '../api';
 
 export default function Login({ onLogin }) {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -12,13 +11,16 @@ export default function Login({ onLogin }) {
     e.preventDefault();
     setError('');
 
-    const endpoint = isRegistering ? '/api/register' : '/api/login';
-    
     try {
-      const res = await axios.post(`${BASE_URL}${endpoint}`, { username, password });
-      onLogin(res.data);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Ein Fehler ist aufgetreten.');
+      if (isRegistering) {
+        const user = await localAuth.register({ username, password });
+        onLogin(user);
+      } else {
+        const user = await localAuth.login({ username, password });
+        onLogin(user);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Ein Fehler ist aufgetreten.');
     }
   };
 

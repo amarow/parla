@@ -1,9 +1,20 @@
-## Anforderungen
-* Ich möchte eine Sprachlerne-App oder Vokabeltrainer zum lernen und zwar so wie ich ihn mir vorstelle.
-* Es sollte eine reine Vokabel-Lern-Möglichkeit geben. Gehen wir mal von Deutsch und Italienisch aus, in beide Richtungen. Einfaches Wörterlernen.
-* Er sollte eine Möglichkeit geben, zum Beispiel Verben oder einfache Sätze zu beugen, also ich, du, er, sie, es, wir, ihr, sie und dann Gegenwart, Vergangenheit, Zukunft, diese Beugungen.
-* Die Krönung wäre natürlich ein Sprachmodul, also akustisch zum Hören, aber auch über Mikrofon zum Sprechen.
-* Es sollte möglich sein, die wichtigsten 1000 Worte einer Sprache irgendwie aus dem Internet runterladen zu können. Verben und Hauptworte.
-* dann möchte ich Übungssequenzen haben für diese Verbindungsworte, ich weiß nicht wie die heißen, zum Beispiel "In", "an", "auf", "beim", "vor", "nach", "hinter", "über", "unter" und so weiter.
-- lass uns erstmal planen , hierfür stellst du mir nochmal fragen
-- technik: webanwendung react, vite, node-express server, sqlite db, 
+# Parladino - Serverless Edition
+
+Dieses Projekt ist eine statische Web-App zum Sprachenlernen (Italienisch).
+
+## Architektur
+- **Frontend:** React (TypeScript) + Vite
+- **Daten:** Statische JSON-Dateien in `frontend/public/data/`
+- **Speicherung:** Fortschritte und Benutzerdaten werden lokal im Browser (`localStorage`) gespeichert.
+- **Sprachausgabe (TTS):** Native Web Speech API des Browsers.
+- **Spracherkennung (STT):** Native Web Speech API des Browsers.
+
+## Entwicklung
+1. `cd frontend`
+2. `npm install`
+3. `npm run dev`
+
+## Deployment auf GitHub Pages
+1. `./deploy.sh` ausführen.
+2. Den Inhalt von `frontend/dist` auf den `gh-pages` Branch oder in den `docs` Ordner deines Repositories pushen.
+3. Falls die App in einem Unterordner liegt (z.B. `/parladino/`), muss die `base` in `frontend/vite.config.ts` angepasst werden.

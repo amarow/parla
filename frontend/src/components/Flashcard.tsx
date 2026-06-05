@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Volume2 } from 'lucide-react';
-import { API_BASE } from '../api';
+import { speakText } from '../api';
 import writtenNumber from 'written-number';
 import { useVoice } from '../contexts/VoiceContext';
 
@@ -20,31 +20,29 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
     setSpeechFeedback(null);
     clearTranscript();
 
+    let isCurrent = true;
+
     if (word) {
       const frontLangCode = direction === 'nativeToForeign' ? 'de' : 'it';
       const textToPlay = direction === 'nativeToForeign' ? word.native_word : word.foreign_word;
       
       if (textToPlay && lastPlayedRef.current !== textToPlay) {
         lastPlayedRef.current = textToPlay;
-        const url = `${API_BASE}/tts?text=${encodeURIComponent(textToPlay)}&lang=${frontLangCode}`;
-        const audio = new Audio(url);
         
         setIsAudioPlaying(true);
-        audio.onended = () => {
+        speakText(textToPlay, frontLangCode).then(() => {
+          if (!isCurrent) return;
           clearTranscript();
-          setTimeout(() => setIsAudioPlaying(false), 150);
-        };
-        audio.onerror = () => {
-          clearTranscript();
-          setIsAudioPlaying(false);
-        };
-        
-        audio.play().catch(error => {
-          console.warn("Autoplay blockiert:", error);
-          setIsAudioPlaying(false);
+          setTimeout(() => {
+            if (isCurrent) setIsAudioPlaying(false);
+          }, 150);
         });
       }
     }
+
+    return () => {
+      isCurrent = false;
+    };
   }, [word, clearTranscript, direction]);
 
   const handleFlip = () => {
@@ -155,25 +153,11 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
   const playAudio = (e: any) => {
     e.stopPropagation();
     const langCode = backLang.split('-')[0];
-    const text = encodeURIComponent(backText);
-    const url = `${API_BASE}/tts?text=${text}&lang=${langCode}`;
-    
-    const audio = new Audio(url);
     
     setIsAudioPlaying(true);
-    audio.onended = () => {
+    speakText(backText, langCode).then(() => {
       clearTranscript();
       setTimeout(() => setIsAudioPlaying(false), 150);
-    };
-    audio.onerror = () => {
-      clearTranscript();
-      setIsAudioPlaying(false);
-    };
-    
-    audio.play().catch(error => {
-      console.error("Fehler beim Abspielen des Audios:", error);
-      setIsAudioPlaying(false);
-      alert("Audio konnte nicht abgespielt werden. Bitte prüfe, ob dein Lautsprecher an ist.");
     });
   };
 

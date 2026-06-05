@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { CheckCircle, XCircle, Volume2 } from 'lucide-react';
 import { useVoice } from '../contexts/VoiceContext';
-import { API_BASE } from '../api';
+import { speakText } from '../api';
 
 const pronouns = {
   form_1s: 'io (ich)',
@@ -168,13 +168,7 @@ export default function VerbDrill({ verb, onFinish, direction, onFlip, onReset }
     e.preventDefault();
     e.stopPropagation();
     const langCode = 'it'; // Conjugations are in Italian
-    const encodedText = encodeURIComponent(text);
-    const url = `${API_BASE}/tts?text=${encodedText}&lang=${langCode}`;
-
-    const audio = new Audio(url);
-    audio.play().catch(error => {
-      console.error("Fehler beim Abspielen des Audios:", error);
-    });
+    speakText(text, langCode);
   };
 
   const toggleSolution = () => {

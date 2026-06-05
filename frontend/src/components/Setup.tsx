@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
-import { API_BASE } from '../api';
+import { dataService } from '../dataService';
 import { useVoice } from '../contexts/VoiceContext';
 
 export default function Setup({ user, onStart }) {
   const [selectedCategory, setSelectedCategory] = useState<number | string>('');
-  const { transcript, clearTranscript, setLanguage } = useVoice();
+  const { setLanguage } = useVoice();
 
   // Stelle sicher, dass die Spracherkennung hier auf Deutsch (oder die Muttersprache) läuft, 
   // da die Kategorienamen auf Deutsch sind.
@@ -17,8 +16,7 @@ export default function Setup({ user, onStart }) {
   const { data: categories = [], isLoading, isError } = useQuery({
     queryKey: ['categories', user.target_language],
     queryFn: async () => {
-      const res = await axios.get(`${API_BASE}/categories?target_language=${user.target_language}`);
-      return res.data;
+      return await dataService.getCategories(user.target_language);
     }
   });
 

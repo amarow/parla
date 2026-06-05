@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import Flashcard from './Flashcard';
 import VerbDrill from './VerbDrill';
 import SentenceDrill from './SentenceDrill';
-import { API_BASE } from '../api';
+import { dataService } from '../dataService';
+import { speakText } from '../api';
 import { RotateCcw, List, BookOpen, X, Volume2, Play, Square } from 'lucide-react';
 import { useVoice } from '../contexts/VoiceContext';
 
@@ -12,21 +12,17 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOverview, setShowOverview] = useState(false);
   const [flipCount, setFlipCount] = useState(0);
-  const { transcript, clearTranscript } = useVoice();
+  const { clearTranscript } = useVoice();
   const resetChildRef = useRef<(() => void) | null>(null);
 
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   const isPlayingRef = useRef(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const pauseTime = user?.pause_time || 800;
 
   useEffect(() => {
     return () => {
       isPlayingRef.current = false;
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
     };
   }, []);
 
@@ -43,12 +39,14 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
       if (categoryId === 'sentences') {
         return { items: [], type: 'sentences' };
       }
-      let res = await axios.get(`${API_BASE}/words?category_id=${categoryId}`);
-      if (res.data && res.data.length > 0) {
-        return { items: res.data, type: 'words' };
+      
+      const words = await dataService.getWords(categoryId);
+      if (words && words.length > 0) {
+        return { items: words, type: 'words' };
       }
-      res = await axios.get(`${API_BASE}/verbs?category_id=${categoryId}`);
-      return { items: res.data || [], type: 'verbs' };
+      
+      const verbs = await dataService.getVerbs(categoryId);
+      return { items: verbs || [], type: 'verbs' };
     },
     staleTime: 0 
   });
@@ -60,9 +58,6 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
     if (isPlayingRef.current) {
       isPlayingRef.current = false;
       setIsPlayingAll(false);
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
       return;
     }
 
@@ -75,18 +70,7 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
       const langCode = 'it';
       const playPart = async (text: string) => {
         if (!isPlayingRef.current || !text) return;
-        await new Promise<void>((resolve) => {
-          const encodedText = encodeURIComponent(text);
-          const url = `${API_BASE}/tts?text=${encodedText}&lang=${langCode}`;
-          const audio = new Audio(url);
-          audioRef.current = audio;
-          audio.onended = () => resolve();
-          audio.onerror = () => resolve();
-          audio.play().catch(error => {
-            console.error("Fehler beim Abspielen:", error);
-            resolve();
-          });
-        });
+        await speakText(text, langCode);
         if (isPlayingRef.current) {
           await new Promise(r => setTimeout(r, pauseTime));
         }
@@ -140,13 +124,7 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
     e.preventDefault();
     e.stopPropagation();
     const langCode = 'it'; 
-    const encodedText = encodeURIComponent(text);
-    const url = `${API_BASE}/tts?text=${encodedText}&lang=${langCode}`;
-
-    const audio = new Audio(url);
-    audio.play().catch(error => {
-      console.error("Fehler beim Abspielen des Audios:", error);
-    });
+    speakText(text, langCode);
   };
 
   if (isLoading || isFetching) return <div className="loading">Lade Inhalte...</div>;

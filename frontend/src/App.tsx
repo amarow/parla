@@ -15,7 +15,15 @@ function App() {
   const [sessionConfig, setSessionConfig] = useState(null);
   const [sessionStats, setSessionStats] = useState({ flips: 0 });
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const { isListening, toggleListening } = useVoice();
+  const { isListening, toggleListening, setGeminiApiKey } = useVoice();
+
+  useEffect(() => {
+    if (user && user.gemini_api_key) {
+      setGeminiApiKey(user.gemini_api_key);
+    } else {
+      setGeminiApiKey('');
+    }
+  }, [user, setGeminiApiKey]);
 
   useEffect(() => {
     if (isDarkMode) {
