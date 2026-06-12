@@ -196,6 +196,7 @@
           { "tense": "present", "form_1s": "bevo", "form_2s": "bevi", "form_3s": "beve", "form_1p": "beviamo", "form_2p": "bevete", "form_3p": "bevono" }
         ]
       }
+    ]
   },
   {
     "category": "Verben: Zukunft (Futuro Semplice)",
@@ -228,6 +229,27 @@
         "conjugations": [
           { "tense": "future", "form_1s": "avrò", "form_2s": "avrai", "form_3s": "avrà", "form_1p": "avremo", "form_2p": "avrete", "form_3p": "avranno" }
         ]
+      },
+      {
+        "native": "arbeiten",
+        "foreign": "lavorare",
+        "conjugations": [
+          { "tense": "future", "form_1s": "lavorerò", "form_2s": "lavorerai", "form_3s": "lavorerà", "form_1p": "lavoreremo", "form_2p": "lavorerete", "form_3p": "lavoreranno" }
+        ]
+      },
+      {
+        "native": "sehen",
+        "foreign": "vedere",
+        "conjugations": [
+          { "tense": "future", "form_1s": "vedrò", "form_2s": "vedrai", "form_3s": "vedrà", "form_1p": "vedremo", "form_2p": "vedrete", "form_3p": "vedranno" }
+        ]
+      },
+      {
+        "native": "sagen",
+        "foreign": "dire",
+        "conjugations": [
+          { "tense": "future", "form_1s": "dirò", "form_2s": "dirai", "form_3s": "dirà", "form_1p": "diremo", "form_2p": "direte", "form_3p": "diranno" }
+        ]
       }
     ]
   },
@@ -254,6 +276,27 @@
         "foreign": "andare",
         "conjugations": [
           { "tense": "past", "form_1s": "sono andato", "form_2s": "sei andato", "form_3s": "è andato", "form_1p": "siamo andati", "form_2p": "siete andati", "form_3p": "sono andati" }
+        ]
+      },
+      {
+        "native": "sehen",
+        "foreign": "vedere",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho visto", "form_2s": "hai visto", "form_3s": "ha visto", "form_1p": "abbiamo visto", "form_2p": "avete visto", "form_3p": "hanno visto" }
+        ]
+      },
+      {
+        "native": "hören / fühlen",
+        "foreign": "sentire",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho sentito", "form_2s": "hai sentito", "form_3s": "ha sentito", "form_1p": "abbiamo sentito", "form_2p": "avete sentito", "form_3p": "hanno sentito" }
+        ]
+      },
+      {
+        "native": "machen",
+        "foreign": "fare",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho fatto", "form_2s": "hai fatto", "form_3s": "ha fatto", "form_1p": "abbiamo fatto", "form_2p": "avete fatto", "form_3p": "hanno fatto" }
         ]
       }
     ]
