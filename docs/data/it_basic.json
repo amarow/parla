@@ -1192,5 +1192,93 @@
         "foreign": "loro hanno"
       }
     ]
+  },
+  {
+    "category": "Wochentage",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "der Montag",
+        "foreign": "il lunedì"
+      },
+      {
+        "native": "der Dienstag",
+        "foreign": "il martedì"
+      },
+      {
+        "native": "der Mittwoch",
+        "foreign": "il mercoledì"
+      },
+      {
+        "native": "der Donnerstag",
+        "foreign": "il giovedì"
+      },
+      {
+        "native": "der Freitag",
+        "foreign": "il venerdì"
+      },
+      {
+        "native": "der Samstag",
+        "foreign": "il sabato"
+      },
+      {
+        "native": "der Sonntag",
+        "foreign": "la domenica"
+      }
+    ]
+  },
+  {
+    "category": "Monate",
+    "target_language": "it",
+    "words": [
+      {
+        "native": "der Januar",
+        "foreign": "gennaio"
+      },
+      {
+        "native": "der Februar",
+        "foreign": "febbraio"
+      },
+      {
+        "native": "der März",
+        "foreign": "marzo"
+      },
+      {
+        "native": "der April",
+        "foreign": "aprile"
+      },
+      {
+        "native": "der Mai",
+        "foreign": "maggio"
+      },
+      {
+        "native": "der Juni",
+        "foreign": "giugno"
+      },
+      {
+        "native": "der Juli",
+        "foreign": "luglio"
+      },
+      {
+        "native": "der August",
+        "foreign": "agosto"
+      },
+      {
+        "native": "der September",
+        "foreign": "settembre"
+      },
+      {
+        "native": "der Oktober",
+        "foreign": "ottobre"
+      },
+      {
+        "native": "der November",
+        "foreign": "novembre"
+      },
+      {
+        "native": "der Dezember",
+        "foreign": "dicembre"
+      }
+    ]
   }
 ]

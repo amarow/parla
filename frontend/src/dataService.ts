@@ -42,10 +42,11 @@ class DataService {
     const lang = targetLang || 'it';
     console.log(`🔍 Lade Vokabeln für: ${lang}...`);
     try {
+      // Use relative paths so it works on GitHub Pages subfolders
       const [basicRes, verbsRes, logicRes] = await Promise.all([
-        axios.get(`/data/${lang}_basic.json`),
-        axios.get(`/data/${lang}_verbs.json`),
-        axios.get(`/data/it_sentence_logic.json`).catch(() => ({ data: [] }))
+        axios.get(`data/${lang}_basic.json`),
+        axios.get(`data/${lang}_verbs.json`),
+        axios.get(`data/it_sentence_logic.json`).catch(() => ({ data: [] }))
       ]);
 
       console.log(`✅ JSON-Dateien für ${lang} erfolgreich geladen`);
