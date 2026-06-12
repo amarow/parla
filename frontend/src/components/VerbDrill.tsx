@@ -79,7 +79,8 @@ export default function VerbDrill({ verb, onFinish, direction, onFlip, onReset }
     const actualCleanTranscript = transcript.replace(/[.,!?]/g, '').trim().toLowerCase();
     const spokenWords = actualCleanTranscript.split(/\s+/);
     
-    const hasVerb = spokenWords.includes(expectedVerb);
+    const expectedVerbParts = expectedVerb.split(/\s+/);
+    const hasVerb = expectedVerbParts.every(part => spokenWords.includes(part));
     const hasPronoun = possiblePronouns.some(p => spokenWords.includes(p));
 
     if (hasVerb && hasPronoun) {
@@ -115,7 +116,8 @@ export default function VerbDrill({ verb, onFinish, direction, onFlip, onReset }
       const actualClean = actualValue.trim().toLowerCase().replace(/[.,!?]/g, '');
       const actualWords = actualClean.split(/\s+/);
       
-      const hasVerb = actualWords.includes(expectedVerb);
+      const expectedVerbParts = expectedVerb.split(/\s+/);
+      const hasVerb = expectedVerbParts.every(part => actualWords.includes(part));
       const hasPronoun = possiblePronouns.some(p => actualWords.includes(p));
 
       return hasVerb && hasPronoun;

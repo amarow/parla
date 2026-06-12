@@ -196,6 +196,66 @@
           { "tense": "present", "form_1s": "bevo", "form_2s": "bevi", "form_3s": "beve", "form_1p": "beviamo", "form_2p": "bevete", "form_3p": "bevono" }
         ]
       }
+  },
+  {
+    "category": "Verben: Zukunft (Futuro Semplice)",
+    "target_language": "it",
+    "verbs": [
+      {
+        "native": "sprechen",
+        "foreign": "parlare",
+        "conjugations": [
+          { "tense": "future", "form_1s": "parlerò", "form_2s": "parlerai", "form_3s": "parlerà", "form_1p": "parleremo", "form_2p": "parlerete", "form_3p": "parleranno" }
+        ]
+      },
+      {
+        "native": "nehmen",
+        "foreign": "prendere",
+        "conjugations": [
+          { "tense": "future", "form_1s": "prenderò", "form_2s": "prenderai", "form_3s": "prenderà", "form_1p": "prenderemo", "form_2p": "prenderete", "form_3p": "prenderanno" }
+        ]
+      },
+      {
+        "native": "sein",
+        "foreign": "essere",
+        "conjugations": [
+          { "tense": "future", "form_1s": "sarò", "form_2s": "sarai", "form_3s": "sarà", "form_1p": "saremo", "form_2p": "sarete", "form_3p": "saranno" }
+        ]
+      },
+      {
+        "native": "haben",
+        "foreign": "avere",
+        "conjugations": [
+          { "tense": "future", "form_1s": "avrò", "form_2s": "avrai", "form_3s": "avrà", "form_1p": "avremo", "form_2p": "avrete", "form_3p": "avranno" }
+        ]
+      }
+    ]
+  },
+  {
+    "category": "Verben: Vergangenheit (Passato Prossimo)",
+    "target_language": "it",
+    "verbs": [
+      {
+        "native": "sprechen",
+        "foreign": "parlare",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho parlato", "form_2s": "hai parlato", "form_3s": "ha parlato", "form_1p": "abbiamo parlato", "form_2p": "avete parlato", "form_3p": "hanno parlato" }
+        ]
+      },
+      {
+        "native": "essen",
+        "foreign": "mangiare",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho mangiato", "form_2s": "hai mangiato", "form_3s": "ha mangiato", "form_1p": "abbiamo mangiato", "form_2p": "avete mangiato", "form_3p": "hanno mangiato" }
+        ]
+      },
+      {
+        "native": "gehen",
+        "foreign": "andare",
+        "conjugations": [
+          { "tense": "past", "form_1s": "sono andato", "form_2s": "sei andato", "form_3s": "è andato", "form_1p": "siamo andati", "form_2p": "siete andati", "form_3p": "sono andati" }
+        ]
+      }
     ]
   }
 ]
