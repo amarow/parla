@@ -210,10 +210,94 @@
         ]
       },
       {
+        "native": "arbeiten",
+        "foreign": "lavorare",
+        "conjugations": [
+          { "tense": "future", "form_1s": "lavorerò", "form_2s": "lavorerai", "form_3s": "lavorerà", "form_1p": "lavoreremo", "form_2p": "lavorerete", "form_3p": "lavoreranno" }
+        ]
+      },
+      {
+        "native": "finden",
+        "foreign": "trovare",
+        "conjugations": [
+          { "tense": "future", "form_1s": "troverò", "form_2s": "troverai", "form_3s": "troverà", "form_1p": "troveremo", "form_2p": "troverete", "form_3p": "troveranno" }
+        ]
+      },
+      {
+        "native": "lassen",
+        "foreign": "lasciare",
+        "conjugations": [
+          { "tense": "future", "form_1s": "lascerò", "form_2s": "lascerai", "form_3s": "lascerà", "form_1p": "lasceremo", "form_2p": "lascerete", "form_3p": "lasceranno" }
+        ]
+      },
+      {
+        "native": "bringen",
+        "foreign": "portare",
+        "conjugations": [
+          { "tense": "future", "form_1s": "porterò", "form_2s": "porterai", "form_3s": "porterà", "form_1p": "porteremo", "form_2p": "porterete", "form_3p": "porteranno" }
+        ]
+      },
+      {
+        "native": "denken",
+        "foreign": "pensare",
+        "conjugations": [
+          { "tense": "future", "form_1s": "penserò", "form_2s": "penserai", "form_3s": "penserà", "form_1p": "penseremo", "form_2p": "penserete", "form_3p": "penseranno" }
+        ]
+      },
+      {
+        "native": "essen",
+        "foreign": "mangiare",
+        "conjugations": [
+          { "tense": "future", "form_1s": "mangerò", "form_2s": "mangerai", "form_3s": "mangerà", "form_1p": "mangeremo", "form_2p": "mangerete", "form_3p": "mangeranno" }
+        ]
+      },
+      {
+        "native": "lernen",
+        "foreign": "imparare",
+        "conjugations": [
+          { "tense": "future", "form_1s": "imparerò", "form_2s": "imparerai", "form_3s": "imparerà", "form_1p": "impareremo", "form_2p": "imparerete", "form_3p": "impareranno" }
+        ]
+      },
+      {
         "native": "nehmen",
         "foreign": "prendere",
         "conjugations": [
           { "tense": "future", "form_1s": "prenderò", "form_2s": "prenderai", "form_3s": "prenderà", "form_1p": "prenderemo", "form_2p": "prenderete", "form_3p": "prenderanno" }
+        ]
+      },
+      {
+        "native": "glauben",
+        "foreign": "credere",
+        "conjugations": [
+          { "tense": "future", "form_1s": "crederò", "form_2s": "crederai", "form_3s": "crederà", "form_1p": "crederemo", "form_2p": "crederete", "form_3p": "crederanno" }
+        ]
+      },
+      {
+        "native": "sehen",
+        "foreign": "vedere",
+        "conjugations": [
+          { "tense": "future", "form_1s": "vedrò", "form_2s": "vedrai", "form_3s": "vedrà", "form_1p": "vedremo", "form_2p": "vedrete", "form_3p": "vedranno" }
+        ]
+      },
+      {
+        "native": "fühlen / hören",
+        "foreign": "sentire",
+        "conjugations": [
+          { "tense": "future", "form_1s": "sentirò", "form_2s": "sentirai", "form_3s": "sentirà", "form_1p": "sentiremo", "form_2p": "sentirete", "form_3p": "sentiranno" }
+        ]
+      },
+      {
+        "native": "schlafen",
+        "foreign": "dormire",
+        "conjugations": [
+          { "tense": "future", "form_1s": "dormirò", "form_2s": "dormirai", "form_3s": "dormirà", "form_1p": "dormiremo", "form_2p": "dormirete", "form_3p": "dormiranno" }
+        ]
+      },
+      {
+        "native": "verstehen",
+        "foreign": "capire",
+        "conjugations": [
+          { "tense": "future", "form_1s": "capirò", "form_2s": "capirai", "form_3s": "capirà", "form_1p": "capiremo", "form_2p": "capirete", "form_3p": "capiranno" }
         ]
       },
       {
@@ -231,17 +315,17 @@
         ]
       },
       {
-        "native": "arbeiten",
-        "foreign": "lavorare",
+        "native": "gehen",
+        "foreign": "andare",
         "conjugations": [
-          { "tense": "future", "form_1s": "lavorerò", "form_2s": "lavorerai", "form_3s": "lavorerà", "form_1p": "lavoreremo", "form_2p": "lavorerete", "form_3p": "lavoreranno" }
+          { "tense": "future", "form_1s": "andrò", "form_2s": "andrai", "form_3s": "andrà", "form_1p": "andremo", "form_2p": "andrete", "form_3p": "andranno" }
         ]
       },
       {
-        "native": "sehen",
-        "foreign": "vedere",
+        "native": "machen",
+        "foreign": "fare",
         "conjugations": [
-          { "tense": "future", "form_1s": "vedrò", "form_2s": "vedrai", "form_3s": "vedrà", "form_1p": "vedremo", "form_2p": "vedrete", "form_3p": "vedranno" }
+          { "tense": "future", "form_1s": "farò", "form_2s": "farai", "form_3s": "farà", "form_1p": "faremo", "form_2p": "farete", "form_3p": "faranno" }
         ]
       },
       {
@@ -249,6 +333,48 @@
         "foreign": "dire",
         "conjugations": [
           { "tense": "future", "form_1s": "dirò", "form_2s": "dirai", "form_3s": "dirà", "form_1p": "diremo", "form_2p": "direte", "form_3p": "diranno" }
+        ]
+      },
+      {
+        "native": "können",
+        "foreign": "potere",
+        "conjugations": [
+          { "tense": "future", "form_1s": "potrò", "form_2s": "potrai", "form_3s": "potrà", "form_1p": "potremo", "form_2p": "potrete", "form_3p": "potranno" }
+        ]
+      },
+      {
+        "native": "wollen",
+        "foreign": "volere",
+        "conjugations": [
+          { "tense": "future", "form_1s": "vorrò", "form_2s": "vorrai", "form_3s": "vorrà", "form_1p": "vorremo", "form_2p": "vorrete", "form_3p": "vorranno" }
+        ]
+      },
+      {
+        "native": "wissen",
+        "foreign": "sapere",
+        "conjugations": [
+          { "tense": "future", "form_1s": "saprò", "form_2s": "saprai", "form_3s": "saprà", "form_1p": "sapremo", "form_2p": "saprete", "form_3p": "sapranno" }
+        ]
+      },
+      {
+        "native": "geben",
+        "foreign": "dare",
+        "conjugations": [
+          { "tense": "future", "form_1s": "darò", "form_2s": "darai", "form_3s": "darà", "form_1p": "daremo", "form_2p": "darete", "form_3p": "daranno" }
+        ]
+      },
+      {
+        "native": "kommen",
+        "foreign": "venire",
+        "conjugations": [
+          { "tense": "future", "form_1s": "verrò", "form_2s": "verrai", "form_3s": "verrà", "form_1p": "verremo", "form_2p": "verrete", "form_3p": "verranno" }
+        ]
+      },
+      {
+        "native": "trinken",
+        "foreign": "bere",
+        "conjugations": [
+          { "tense": "future", "form_1s": "berrò", "form_2s": "berrai", "form_3s": "berrà", "form_1p": "berremo", "form_2p": "berrete", "form_3p": "berranno" }
         ]
       }
     ]
@@ -265,6 +391,41 @@
         ]
       },
       {
+        "native": "arbeiten",
+        "foreign": "lavorare",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho lavorato", "form_2s": "hai lavorato", "form_3s": "ha lavorato", "form_1p": "abbiamo lavorato", "form_2p": "avete lavorato", "form_3p": "hanno lavorato" }
+        ]
+      },
+      {
+        "native": "finden",
+        "foreign": "trovare",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho trovato", "form_2s": "hai trovato", "form_3s": "ha trovato", "form_1p": "abbiamo trovato", "form_2p": "avete trovato", "form_3p": "hanno trovato" }
+        ]
+      },
+      {
+        "native": "lassen",
+        "foreign": "lasciare",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho lasciato", "form_2s": "hai lasciato", "form_3s": "ha lasciato", "form_1p": "abbiamo lasciato", "form_2p": "avete lasciato", "form_3p": "hanno lasciato" }
+        ]
+      },
+      {
+        "native": "bringen",
+        "foreign": "portare",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho portato", "form_2s": "hai portato", "form_3s": "ha portato", "form_1p": "abbiamo portato", "form_2p": "avete portato", "form_3p": "hanno portato" }
+        ]
+      },
+      {
+        "native": "denken",
+        "foreign": "pensare",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho pensato", "form_2s": "hai pensato", "form_3s": "ha pensato", "form_1p": "abbiamo pensato", "form_2p": "avete pensato", "form_3p": "hanno pensato" }
+        ]
+      },
+      {
         "native": "essen",
         "foreign": "mangiare",
         "conjugations": [
@@ -272,10 +433,24 @@
         ]
       },
       {
-        "native": "gehen",
-        "foreign": "andare",
+        "native": "lernen",
+        "foreign": "imparare",
         "conjugations": [
-          { "tense": "past", "form_1s": "sono andato", "form_2s": "sei andato", "form_3s": "è andato", "form_1p": "siamo andati", "form_2p": "siete andati", "form_3p": "sono andati" }
+          { "tense": "past", "form_1s": "ho imparato", "form_2s": "hai imparato", "form_3s": "ha imparato", "form_1p": "abbiamo imparato", "form_2p": "avete imparato", "form_3p": "hanno imparato" }
+        ]
+      },
+      {
+        "native": "nehmen",
+        "foreign": "prendere",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho preso", "form_2s": "hai preso", "form_3s": "ha preso", "form_1p": "abbiamo preso", "form_2p": "avete preso", "form_3p": "hanno preso" }
+        ]
+      },
+      {
+        "native": "glauben",
+        "foreign": "credere",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho creduto", "form_2s": "hai creduto", "form_3s": "ha creduto", "form_1p": "abbiamo creduto", "form_2p": "avete creduto", "form_3p": "hanno creduto" }
         ]
       },
       {
@@ -286,10 +461,45 @@
         ]
       },
       {
-        "native": "hören / fühlen",
+        "native": "fühlen / hören",
         "foreign": "sentire",
         "conjugations": [
           { "tense": "past", "form_1s": "ho sentito", "form_2s": "hai sentito", "form_3s": "ha sentito", "form_1p": "abbiamo sentito", "form_2p": "avete sentito", "form_3p": "hanno sentito" }
+        ]
+      },
+      {
+        "native": "schlafen",
+        "foreign": "dormire",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho dormito", "form_2s": "hai dormito", "form_3s": "ha dormito", "form_1p": "abbiamo dormito", "form_2p": "avete dormito", "form_3p": "hanno dormito" }
+        ]
+      },
+      {
+        "native": "verstehen",
+        "foreign": "capire",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho capito", "form_2s": "hai capito", "form_3s": "ha capito", "form_1p": "abbiamo capito", "form_2p": "avete capito", "form_3p": "hanno capito" }
+        ]
+      },
+      {
+        "native": "sein",
+        "foreign": "essere",
+        "conjugations": [
+          { "tense": "past", "form_1s": "sono stato", "form_2s": "sei stato", "form_3s": "è stato", "form_1p": "siamo stati", "form_2p": "siete stati", "form_3p": "sono stati" }
+        ]
+      },
+      {
+        "native": "haben",
+        "foreign": "avere",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho avuto", "form_2s": "hai avuto", "form_3s": "ha avuto", "form_1p": "abbiamo avuto", "form_2p": "avete avuto", "form_3p": "hanno avuto" }
+        ]
+      },
+      {
+        "native": "gehen",
+        "foreign": "andare",
+        "conjugations": [
+          { "tense": "past", "form_1s": "sono andato", "form_2s": "sei andato", "form_3s": "è andato", "form_1p": "siamo andati", "form_2p": "siete andati", "form_3p": "sono andati" }
         ]
       },
       {
@@ -297,6 +507,55 @@
         "foreign": "fare",
         "conjugations": [
           { "tense": "past", "form_1s": "ho fatto", "form_2s": "hai fatto", "form_3s": "ha fatto", "form_1p": "abbiamo fatto", "form_2p": "avete fatto", "form_3p": "hanno fatto" }
+        ]
+      },
+      {
+        "native": "sagen",
+        "foreign": "dire",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho detto", "form_2s": "hai detto", "form_3s": "ha detto", "form_1p": "abbiamo detto", "form_2p": "avete detto", "form_3p": "hanno detto" }
+        ]
+      },
+      {
+        "native": "können",
+        "foreign": "potere",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho potuto", "form_2s": "hai potuto", "form_3s": "ha potuto", "form_1p": "abbiamo potuto", "form_2p": "avete potuto", "form_3p": "hanno potuto" }
+        ]
+      },
+      {
+        "native": "wollen",
+        "foreign": "volere",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho voluto", "form_2s": "hai voluto", "form_3s": "ha voluto", "form_1p": "abbiamo voluto", "form_2p": "avete voluto", "form_3p": "hanno voluto" }
+        ]
+      },
+      {
+        "native": "wissen",
+        "foreign": "sapere",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho saputo", "form_2s": "hai saputo", "form_3s": "ha saputo", "form_1p": "abbiamo saputo", "form_2p": "avete saputo", "form_3p": "hanno saputo" }
+        ]
+      },
+      {
+        "native": "geben",
+        "foreign": "dare",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho dato", "form_2s": "hai dato", "form_3s": "ha dato", "form_1p": "abbiamo dato", "form_2p": "avete dato", "form_3p": "hanno dato" }
+        ]
+      },
+      {
+        "native": "kommen",
+        "foreign": "venire",
+        "conjugations": [
+          { "tense": "past", "form_1s": "sono venuto", "form_2s": "sei venuto", "form_3s": "è venuto", "form_1p": "siamo venuti", "form_2p": "siete venuti", "form_3p": "sono venuti" }
+        ]
+      },
+      {
+        "native": "trinken",
+        "foreign": "bere",
+        "conjugations": [
+          { "tense": "past", "form_1s": "ho bevuto", "form_2s": "hai bevuto", "form_3s": "ha bevuto", "form_1p": "abbiamo bevuto", "form_2p": "avete bevuto", "form_3p": "hanno bevuto" }
         ]
       }
     ]
