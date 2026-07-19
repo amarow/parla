@@ -51,7 +51,7 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
     staleTime: 0 
   });
 
-  const items = data?.items || [];
+  const items: any[] = data?.items || [];
   const itemType = data?.type || 'words';
 
   const togglePlayAll = async () => {
