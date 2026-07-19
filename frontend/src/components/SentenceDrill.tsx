@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { CheckCircle, XCircle, Volume2, RotateCcw, List, BookOpen, Play, Square, SkipForward } from 'lucide-react';
+import { CheckCircle, XCircle, Volume2, RotateCcw, List, BookOpen, Play, Square, SkipForward, SkipBack, Mic } from 'lucide-react';
 import { useVoice } from '../contexts/VoiceContext';
 import { speakText } from '../api';
 import { dataService } from '../dataService';
@@ -16,6 +16,7 @@ const pronounsMap = {
 export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) {
   const [logicData, setLogicData] = useState<any>(null);
   const [currentSentence, setCurrentSentence] = useState<any>(null);
+  const [sentenceCount, setSentenceCount] = useState(0);
   const [answer, setAnswer] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showSolution, setShowSolution] = useState(false);
@@ -24,6 +25,8 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   const [concentratedMode, setConcentratedMode] = useState(false);
   const [lockedVerb, setLockedVerb] = useState<string | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const playingRef = useRef(false);
 
   const pauseTime = user?.pause_time || 800;
@@ -58,6 +61,20 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
 
   const generateSentence = (data = logicData, forceNewVerb = false) => {
     if (!data || !data.logic || data.logic.length === 0) return;
+    
+    // Wenn wir in der Historie zurückgegangen sind und einfach "Weiter" klicken, zeigen wir den nächsten Satz der Historie
+    if (historyIndex < history.length - 1 && data === logicData && !forceNewVerb) {
+       const nextIndex = historyIndex + 1;
+       setHistoryIndex(nextIndex);
+       setCurrentSentence(history[nextIndex]);
+       setSentenceCount(prev => prev + 1);
+       setAnswer('');
+       setFeedback(null);
+       setShowSolution(false);
+       clearTranscript();
+       setTimeout(() => inputRef.current?.focus(), 100);
+       return;
+    }
     
     let logicEntry;
     if (concentratedMode && lockedVerb && !forceNewVerb) {
@@ -94,18 +111,39 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
     const nativeSentence = `${pronounDe} ${nativeVerb} ${objectEntry.native}.`;
     const foreignSentence = `${pronounIt} ${conjugation} ${objectEntry.foreign}`;
 
-    setCurrentSentence({
+    const newSentence = {
       native: nativeSentence,
       foreign: foreignSentence,
       verb: logicEntry.verb,
       object: objectEntry.foreign
-    });
+    };
+
+    const newHistory = [...history.slice(0, historyIndex + 1), newSentence];
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+
+    setCurrentSentence(newSentence);
     
+    setSentenceCount(prev => prev + 1);
     setAnswer('');
     setFeedback(null);
     setShowSolution(false);
     clearTranscript();
     setTimeout(() => inputRef.current?.focus(), 100);
+  };
+
+  const goBack = () => {
+    if (historyIndex > 0) {
+      const prevIndex = historyIndex - 1;
+      setHistoryIndex(prevIndex);
+      setCurrentSentence(history[prevIndex]);
+      setSentenceCount(prev => prev - 1);
+      setAnswer('');
+      setFeedback(null);
+      setShowSolution(false);
+      clearTranscript();
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
   };
 
   useEffect(() => {
@@ -136,7 +174,7 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
     
     if (cleanActual === cleanExpected) {
       setFeedback('correct');
-      setTimeout(() => generateSentence(), 1000);
+      setTimeout(() => generateSentence(), 1500);
     } else {
       setFeedback('incorrect');
     }
@@ -211,10 +249,9 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
 
   return (
     <div className="sentence-drill-container card-panel">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <div>
-          <h2 style={{ fontSize: '1.8rem', marginBottom: '8px' }}>Sätze üben</h2>
-          <p className="text-muted">Fokus auf Pronomen: <strong>{pronounsMap[pronounKey].it} ({pronounsMap[pronounKey].de})</strong></p>
+          <h2 style={{ margin: 0 }}>Sätze üben: {pronounsMap[pronounKey].it}</h2>
         </div>
         <div className="header-buttons" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {!showOverview && (
@@ -235,11 +272,11 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
             className="btn-cancel icon-text-btn" 
             title={showOverview ? "Lernen" : "Übersicht"}
           >
-            {showOverview ? <BookOpen size={16} className="mobile-icon" /> : <List size={16} className="mobile-icon" />}
+            {showOverview ? <BookOpen size={20} /> : <List size={20} />}
             <span className="desktop-text">{showOverview ? 'Lernen' : 'Übersicht'}</span>
           </button>
           <button onClick={onCancel} className="btn-cancel icon-text-btn" title="Beenden">
-            <XCircle size={16} className="mobile-icon" />
+            <XCircle size={20} />
             <span className="desktop-text">Beenden</span>
           </button>
         </div>
@@ -287,78 +324,131 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
         </div>
       ) : (
         <>
-          <div className="sentence-box" style={{ 
-            padding: '30px', 
-            textAlign: 'center', 
-            backgroundColor: 'rgba(52, 152, 219, 0.05)', 
-            borderRadius: '12px',
-            border: '1px solid var(--border-color)',
-            marginBottom: '25px'
-          }}>
-            <div style={{ fontSize: '1.4rem', fontWeight: '500', marginBottom: '10px' }}>
-              {currentSentence.native}
-            </div>
-            {showSolution && (
-              <div style={{ fontSize: '1.2rem', color: 'var(--right-color)', fontWeight: 'bold', marginTop: '10px' }}>
-                {currentSentence.foreign}
+          <div className="flashcard-container" style={{ marginBottom: '25px', minHeight: '200px' }}>
+            <div 
+              className={`flashcard ${showSolution ? 'flipped' : ''}`}
+              onClick={() => setShowSolution(!showSolution)}
+            >
+              <div className="flashcard-inner">
+                <div className="flashcard-front" style={{ 
+                  backgroundColor: feedback === 'correct' ? 'rgba(46, 204, 113, 0.1)' : 'var(--card-bg)',
+                  border: `1px solid ${feedback === 'correct' ? 'var(--right-color)' : 'var(--border-color)'}`,
+                  boxShadow: feedback === 'correct' ? '0 0 15px rgba(46, 204, 113, 0.3)' : undefined,
+                  transition: 'all 0.3s ease'
+                }}>
+                  <h2 style={{ fontSize: '1.4rem', fontWeight: '500', margin: 0 }}>{currentSentence.native}</h2>
+                </div>
+                <div className="flashcard-back" style={{ 
+                  backgroundColor: feedback === 'correct' ? 'rgba(46, 204, 113, 0.1)' : 'var(--card-bg)', 
+                  display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+                  border: `1px solid ${feedback === 'correct' ? 'var(--right-color)' : 'var(--border-color)'}`,
+                  boxShadow: feedback === 'correct' ? '0 0 15px rgba(46, 204, 113, 0.3)' : undefined,
+                  transition: 'all 0.3s ease'
+                }}>
+                  <h2 style={{ fontSize: '1.4rem', margin: 0, color: feedback === 'correct' ? 'var(--right-color)' : 'var(--text-color)' }}>{currentSentence.foreign}</h2>
+                  <div className="media-controls" style={{ marginTop: '20px' }}>
+                    <button 
+                      className="audio-btn" 
+                      onClick={(e) => { e.stopPropagation(); playAudio(currentSentence.foreign); }} 
+                      title="Vorlesen"
+                    >
+                      <Volume2 size={32} />
+                    </button>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
           </div>
 
           <div className="input-section" style={{ position: 'relative' }}>
-            <input
-              ref={inputRef}
-              type="text"
-              className={`verb-input ${feedback || ''}`}
-              placeholder="Übersetze den Satz..."
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={feedback === 'correct'}
-              style={{
-                width: '100%',
-                padding: '15px',
-                fontSize: '1.1rem',
-                borderRadius: '8px',
-                border: `2px solid ${
-                  feedback === 'correct' ? 'var(--right-color)' : 
-                  feedback === 'incorrect' ? 'var(--wrong-color)' : 
-                  'var(--border-color)'
-                }`
-              }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginTop: '20px' }}>
-              <button className="btn-secondary" onClick={() => setShowSolution(!showSolution)}>
-                {showSolution ? 'Verbergen' : 'Lösung'}
-              </button>
-              
-              <button className="btn-secondary" onClick={() => playAudio(currentSentence.foreign)}>
-                <Volume2 size={20} />
-              </button>
+            {!isListening ? (
+              <input
+                ref={inputRef}
+                type="text"
+                className={`verb-input ${feedback || ''}`}
+                placeholder="Übersetze den Satz..."
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={feedback === 'correct'}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: '15px',
+                  fontSize: '1.1rem',
+                  borderRadius: '8px',
+                  border: `2px solid ${
+                    feedback === 'correct' ? 'var(--right-color)' : 
+                    feedback === 'incorrect' ? 'var(--wrong-color)' : 
+                    'var(--border-color)'
+                  }`
+                }}
+              />
+            ) : (
+              <div style={{ 
+                width: '100%', 
+                boxSizing: 'border-box', 
+                padding: '20px 15px', 
+                borderRadius: '8px', 
+                backgroundColor: 'rgba(52, 152, 219, 0.05)', 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '80px'
+              }}>
+                <div className="listening-global" style={{ color: 'var(--primary-color)' }}>
+                  <Mic size={32} />
+                </div>
+              </div>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginTop: 'auto', paddingTop: '20px' }}>
+              <div className="text-muted" style={{ fontSize: '1.2rem', fontWeight: 'bold', textAlign: 'left' }}>
+                {sentenceCount}
+              </div>
 
-              <button className="btn-secondary" onClick={() => generateSentence()}>
-                <RotateCcw size={20} />
-              </button>
-
-              {concentratedMode && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px' }}>
                 <button 
-                  className="btn-secondary" 
-                  onClick={() => generateSentence(logicData, true)}
-                  title="Nächstes Verb"
-                  style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                  className="icon-btn" 
+                  onClick={goBack} 
+                  disabled={historyIndex <= 0}
+                  style={{ backgroundColor: 'var(--bg-secondary)', width: '48px', height: '48px', opacity: historyIndex <= 0 ? 0.5 : 1 }}
+                  title="Vorheriger Satz"
                 >
-                  <SkipForward size={20} />
-                  <span style={{ fontSize: '0.9rem' }}>Nächstes Verb</span>
+                  <SkipBack size={24} />
                 </button>
-              )}
+                
+                <button 
+                  className="icon-btn" 
+                  onClick={() => generateSentence()} 
+                  style={{ backgroundColor: 'var(--bg-secondary)', width: '48px', height: '48px' }}
+                  title="Nächster Satz"
+                >
+                  <SkipForward size={24} />
+                </button>
+
+                {concentratedMode && (
+                  <button 
+                    className="btn-secondary" 
+                    onClick={() => generateSentence(logicData, true)}
+                    title="Nächstes Verb"
+                    style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '48px' }}
+                  >
+                    <SkipForward size={20} />
+                    <span style={{ fontSize: '0.9rem' }}>Nächstes Verb</span>
+                  </button>
+                )}
+              </div>
+              <div></div>
             </div>
           </div>
 
-          {feedback === 'correct' && (
-            <div style={{ textAlign: 'center', marginTop: '20px', color: 'var(--right-color)', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <CheckCircle size={24} /> Richtig!
-            </div>
-          )}
+          <div style={{ height: '44px', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {feedback === 'correct' && (
+              <div style={{ textAlign: 'center', color: 'var(--right-color)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle size={24} /> Richtig!
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>

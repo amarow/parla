@@ -1,16 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { Volume2 } from 'lucide-react';
+import { Volume2, SkipForward, SkipBack, Mic } from 'lucide-react';
 import { speakText } from '../api';
 import writtenNumber from 'written-number';
 import { useVoice } from '../contexts/VoiceContext';
 
-export default function Flashcard({ user, word, direction, onAnswer, onFlip }) {
+export default function Flashcard({ user, word, direction, onAnswer, onBack, onFlip, progress }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [speechFeedback, setSpeechFeedback] = useState<string | null>(null);
   
-  const { transcript, setLanguage, clearTranscript } = useVoice();
+  const [answer, setAnswer] = useState('');
+  const { transcript, setLanguage, clearTranscript, isListening } = useVoice();
   const lastPlayedRef = useRef<string | null>(null);
 
   // Reset states when the word changes
@@ -18,6 +19,7 @@ export default function Flashcard({ user, word, direction, onAnswer, onFlip }) {
     setIsFlipped(false);
     setIsProcessing(false);
     setSpeechFeedback(null);
+    setAnswer('');
     clearTranscript();
 
     let isCurrent = true;
@@ -122,7 +124,7 @@ export default function Flashcard({ user, word, direction, onAnswer, onFlip }) {
             setIsProcessing(false);
             clearTranscript();
             onAnswer(true);
-        }, 300);
+        }, 1000);
     }
   }, [transcript, backText, backLang, isFlipped, isProcessing, isAudioPlaying, onAnswer, clearTranscript]);
 
@@ -150,6 +152,32 @@ export default function Flashcard({ user, word, direction, onAnswer, onFlip }) {
       }
   }, [transcript, isFlipped, isProcessing, isAudioPlaying, onAnswer, clearTranscript]);
 
+  const checkAnswer = () => {
+    const target = backText.toLowerCase().trim();
+    const cleanActual = answer.trim().toLowerCase().replace(/[.,!?]/g, '');
+    const cleanExpected = target.replace(/[.,!?]/g, '');
+    
+    if (cleanActual === cleanExpected) {
+      setSpeechFeedback('correct');
+      setIsProcessing(true);
+      setTimeout(() => {
+        setSpeechFeedback(null);
+        setIsProcessing(false);
+        clearTranscript();
+        onAnswer(true);
+      }, 1000);
+    } else {
+      setSpeechFeedback('incorrect');
+      setTimeout(() => setSpeechFeedback(null), 1000);
+    }
+  };
+
+  const handleKeyDown = (e: any) => {
+    if (e.key === 'Enter') {
+      checkAnswer();
+    }
+  };
+
   const playAudio = (e: any) => {
     e.stopPropagation();
     const langCode = backLang.split('-')[0];
@@ -168,14 +196,24 @@ export default function Flashcard({ user, word, direction, onAnswer, onFlip }) {
         onClick={handleFlip}
       >
         <div className="flashcard-inner">
-          <div className="flashcard-front">
-            <h2>{frontText}</h2>
+          <div className="flashcard-front" style={{ 
+            backgroundColor: speechFeedback === 'correct' ? 'rgba(46, 204, 113, 0.1)' : 'var(--card-bg)', 
+            transition: 'all 0.3s ease',
+            border: `1px solid ${speechFeedback === 'correct' ? 'var(--right-color)' : 'var(--border-color)'}`,
+            boxShadow: speechFeedback === 'correct' ? '0 0 15px rgba(46, 204, 113, 0.3)' : undefined
+          }}>
+            <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '500' }}>{frontText}</h2>
             <div className={`speech-result error-text ${speechFeedback === 'incorrect' && !isFlipped ? 'show-feedback' : ''}`} style={{ marginTop: '30px' }}>
               Versuch es noch einmal.
             </div>
           </div>
-          <div className="flashcard-back">
-            <h2>{backText}</h2>
+          <div className="flashcard-back" style={{ 
+            backgroundColor: speechFeedback === 'correct' ? 'rgba(46, 204, 113, 0.1)' : 'var(--card-bg)', 
+            transition: 'all 0.3s ease',
+            border: `1px solid ${speechFeedback === 'correct' ? 'var(--right-color)' : 'var(--border-color)'}`,
+            boxShadow: speechFeedback === 'correct' ? '0 0 15px rgba(46, 204, 113, 0.3)' : undefined
+          }}>
+            <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '500', color: speechFeedback === 'correct' ? 'var(--right-color)' : 'var(--text-color)' }}>{backText}</h2>
             <div className="media-controls">
               <button className="audio-btn" onClick={playAudio} title="Vorlesen">
                 <Volume2 size={32} />
@@ -188,13 +226,74 @@ export default function Flashcard({ user, word, direction, onAnswer, onFlip }) {
         </div>
       </div>
       
-      <div className="action-buttons" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-        <button
-          className="btn-secondary"
-          onClick={() => { clearTranscript(); onAnswer(true); }}
-        >
-          Weiter
-        </button>
+      <div className="input-section" style={{ position: 'relative', marginTop: '25px' }}>
+        {!isListening ? (
+          <input
+            type="text"
+            className={`verb-input ${speechFeedback || ''}`}
+            placeholder="Übersetze die Vokabel..."
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={speechFeedback === 'correct'}
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              padding: '15px',
+              fontSize: '1.1rem',
+              borderRadius: '8px',
+              border: `2px solid ${
+                speechFeedback === 'correct' ? 'var(--right-color)' : 
+                speechFeedback === 'incorrect' ? 'var(--wrong-color)' : 
+                'var(--border-color)'
+              }`
+            }}
+          />
+        ) : (
+          <div style={{ 
+            width: '100%', 
+            boxSizing: 'border-box', 
+            padding: '20px 15px', 
+            borderRadius: '8px', 
+            backgroundColor: 'rgba(52, 152, 219, 0.05)', 
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '80px'
+          }}>
+            <div className="listening-global" style={{ color: 'var(--primary-color)' }}>
+              <Mic size={32} />
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <div className="action-buttons" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginTop: '20px' }}>
+        <div className="text-muted" style={{ fontSize: '1.2rem', fontWeight: 'bold', textAlign: 'left' }}>
+          {progress}
+        </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+          <button 
+            className="icon-btn" 
+            onClick={() => { clearTranscript(); if (onBack) onBack(); }}
+            style={{ backgroundColor: 'var(--bg-secondary)', width: '48px', height: '48px' }}
+            title="Vorherige Vokabel"
+          >
+            <SkipBack size={24} />
+          </button>
+          
+          <button 
+            className="icon-btn" 
+            onClick={() => { clearTranscript(); onAnswer(true); }}
+            style={{ backgroundColor: 'var(--bg-secondary)', width: '48px', height: '48px' }}
+            title="Nächste Vokabel"
+          >
+            <SkipForward size={24} />
+          </button>
+        </div>
+
+        <div></div>
       </div>
     </div>
   );

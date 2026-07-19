@@ -184,10 +184,7 @@ export default function IslandPlayer({ user, islandId, onCancel }) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <div>
-          <h2 style={{ margin: 0 }}>{island.title}</h2>
-          <span className="text-muted" style={{ fontSize: '0.9rem' }}>
-            Satz {currentIndex + 1} von {sentences.length}
-          </span>
+          <h2 style={{ margin: 0 }}>Textinsel: {island.title}</h2>
         </div>
         <button onClick={onCancel} className="btn-cancel icon-text-btn" title="Beenden">
           <XCircle size={20} />
@@ -280,28 +277,36 @@ export default function IslandPlayer({ user, islandId, onCancel }) {
       </div>
 
       {/* Controls */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '20px' }}>
-        <button className="icon-btn" onClick={skipBack} style={{ backgroundColor: 'var(--bg-secondary)' }}>
-          <SkipBack size={24} />
-        </button>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginTop: 'auto', paddingTop: '20px' }}>
+        <div className="text-muted" style={{ fontSize: '1.2rem', fontWeight: 'bold', textAlign: 'left' }}>
+          {currentIndex + 1}/{sentences.length}
+        </div>
         
-        <button 
-          className="icon-btn" 
-          onClick={togglePlay} 
-          style={{ 
-            backgroundColor: isPlaying ? 'var(--wrong-color)' : 'var(--primary-color)', 
-            color: 'white',
-            width: '64px',
-            height: '64px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-          }}
-        >
-          {isPlaying ? <Square size={28} /> : <Play size={28} style={{ marginLeft: '4px' }} />}
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
+          <button className="icon-btn" onClick={skipBack} style={{ backgroundColor: 'var(--bg-secondary)' }}>
+            <SkipBack size={24} />
+          </button>
+          
+          <button 
+            className="icon-btn" 
+            onClick={togglePlay} 
+            style={{ 
+              backgroundColor: isPlaying ? 'var(--wrong-color)' : 'var(--primary-color)', 
+              color: 'white',
+              width: '64px',
+              height: '64px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            }}
+          >
+            {isPlaying ? <Square size={28} /> : <Play size={28} style={{ marginLeft: '4px' }} />}
+          </button>
 
-        <button className="icon-btn" onClick={skipForward} style={{ backgroundColor: 'var(--bg-secondary)' }}>
-          <SkipForward size={24} />
-        </button>
+          <button className="icon-btn" onClick={skipForward} style={{ backgroundColor: 'var(--bg-secondary)' }}>
+            <SkipForward size={24} />
+          </button>
+        </div>
+        
+        <div></div>
       </div>
 
     </div>

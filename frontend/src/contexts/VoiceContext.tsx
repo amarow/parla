@@ -60,7 +60,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     recognition.onerror = (event: any) => {
       console.warn("Speech Recognition Error:", event.error);
       if (event.error === 'no-speech') return; // Ignore and let it continue
-      if (event.error === 'not-allowed') {
+      if (['not-allowed', 'network', 'service-not-allowed', 'aborted', 'audio-capture'].includes(event.error)) {
         shouldListenRef.current = false;
         setIsListening(false);
       }

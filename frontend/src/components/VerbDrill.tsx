@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { CheckCircle, XCircle, Volume2 } from 'lucide-react';
+import { CheckCircle, XCircle, Volume2, SkipForward, SkipBack } from 'lucide-react';
 import { useVoice } from '../contexts/VoiceContext';
 import { speakText } from '../api';
 
@@ -23,12 +23,13 @@ const expectedPronouns: Record<string, string> = {
 
 const formKeys = Object.keys(pronouns);
 
-export default function VerbDrill({ user, verb, onFinish, direction, onFlip, onReset }) {
+export default function VerbDrill({ user, verb, onFinish, onBack, direction, onFlip, onReset, progress }) {
   const [answers, setAnswers] = useState({
     form_1s: '', form_2s: '', form_3s: '', form_1p: '', form_2p: '', form_3p: ''
   });
   const [feedback, setFeedback] = useState<Record<string, string | null>>({});
   const [showSolution, setShowSolution] = useState(false);
+  const [revealedRows, setRevealedRows] = useState<Record<string, boolean>>({});
   const [activeFieldIndex, setActiveFieldIndex] = useState(0);
   
   const inputRefs = useRef<HTMLInputElement[]>([]);
@@ -40,6 +41,7 @@ export default function VerbDrill({ user, verb, onFinish, direction, onFlip, onR
     setAnswers({ form_1s: '', form_2s: '', form_3s: '', form_1p: '', form_2p: '', form_3p: '' });
     setFeedback({});
     setShowSolution(false);
+    setRevealedRows({});
     setActiveFieldIndex(0);
     clearTranscript();
     setTimeout(() => {
@@ -183,16 +185,11 @@ export default function VerbDrill({ user, verb, onFinish, direction, onFlip, onR
   if (!conjugation) return <div>Keine Konjugationsdaten für dieses Verb gefunden.</div>;
 
   return (
-    <div className="verb-drill-container card-panel">
-      <div className="verb-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-            <h2 style={{ marginBottom: '5px' }}>
-            {direction === 'nativeToForeign' ? verb.native_infinitive : verb.foreign_infinitive}
-            </h2>
-            <p className="text-muted">
-            Übersetze und konjugiere das Verb ({conjugation.tense}) mit Pronomen
-            </p>
-        </div>
+    <div className="verb-drill-container">
+      <div style={{ marginBottom: '15px' }}>
+        <p className="text-muted" style={{ margin: 0 }}>
+          Übersetze und konjugiere das Verb ({conjugation.tense}) mit Pronomen
+        </p>
       </div>
 
       <div className="verb-forms-grid" style={{ display: 'grid', gap: '12px', marginTop: '20px' }}>
@@ -201,45 +198,83 @@ export default function VerbDrill({ user, verb, onFinish, direction, onFlip, onR
             const displaySolution = `${expectedPronounStr} ${conjugation[formKey]}`;
 
             return (
-            <div key={formKey} className="verb-input-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{pronouns[formKey]}</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
-                <input 
-                    ref={el => { if (el) inputRefs.current[index] = el; }}
-                    type="text"
-                    value={showSolution ? displaySolution : answers[formKey]}
-                    onChange={(e) => handleChange(formKey, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(e, formKey, index)}
-                    onBlur={() => handleBlur(formKey)}
-                    onFocus={() => setActiveFieldIndex(index)}
-                    disabled={showSolution || feedback[formKey] === 'correct'}
-                    className={`verb-input ${feedback[formKey] || ''}`}
-                    style={{ 
-                    width: '100%', 
-                    padding: '10px', 
-                    paddingRight: '36px',
-                    borderRadius: '6px', 
-                    border: `1px solid ${
-                        feedback[formKey] === 'correct' ? 'var(--right-color)' : 
-                        feedback[formKey] === 'incorrect' ? 'var(--wrong-color)' : 
-                        (activeFieldIndex === index && isListening ? '#3498db' : 'var(--border-color)')
-                    }`,
-                    backgroundColor: feedback[formKey] === 'correct' ? 'rgba(46, 204, 113, 0.1)' : 'var(--bg-color)',
-                    color: showSolution ? 'var(--right-color)' : 'inherit',
-                    boxShadow: activeFieldIndex === index && isListening ? '0 0 5px rgba(52, 152, 219, 0.5)' : 'none',
-                    transition: 'all 0.2s ease-in-out'
-                    }}
-                />
-                <button 
-                    type="button" 
-                    onClick={(e) => playAudio(e, displaySolution)}
-                    title="Vorlesen"
-                    style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', opacity: 0.8 }}
-                >
-                    <Volume2 size={18} color="#3498db" />
-                </button>
-                </div>
+            <div key={formKey} className="verb-input-group" style={{ 
+              display: 'flex', 
+              flexDirection: isListening ? 'row' : 'column', 
+              alignItems: isListening ? 'center' : 'stretch',
+              gap: isListening ? '12px' : '4px' 
+            }}>
+                <label style={{ 
+                  fontSize: '0.9rem', 
+                  fontWeight: 'bold',
+                  width: isListening ? '150px' : 'auto',
+                  flexShrink: 0
+                }}>
+                  {pronouns[formKey]}
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                {!isListening ? (
+                  <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                  <input 
+                      ref={el => { if (el) inputRefs.current[index] = el; }}
+                      type="text"
+                      value={showSolution ? displaySolution : answers[formKey]}
+                      onChange={(e) => handleChange(formKey, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, formKey, index)}
+                      onBlur={() => handleBlur(formKey)}
+                      onFocus={() => setActiveFieldIndex(index)}
+                      disabled={showSolution || feedback[formKey] === 'correct'}
+                      className={`verb-input ${feedback[formKey] || ''}`}
+                      style={{ 
+                      width: '100%', 
+                      padding: '10px', 
+                      paddingRight: '36px',
+                      borderRadius: '6px', 
+                      border: `1px solid ${
+                          feedback[formKey] === 'correct' ? 'var(--right-color)' : 
+                          feedback[formKey] === 'incorrect' ? 'var(--wrong-color)' : 
+                          (activeFieldIndex === index && isListening ? '#3498db' : 'var(--border-color)')
+                      }`,
+                      backgroundColor: feedback[formKey] === 'correct' ? 'rgba(46, 204, 113, 0.1)' : 'var(--bg-color)',
+                      color: showSolution ? 'var(--right-color)' : 'inherit',
+                      boxShadow: activeFieldIndex === index && isListening ? '0 0 5px rgba(52, 152, 219, 0.5)' : 'none',
+                      transition: 'all 0.2s ease-in-out'
+                      }}
+                  />
+                  <button 
+                      type="button" 
+                      onClick={(e) => playAudio(e, displaySolution)}
+                      title="Vorlesen"
+                      style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', opacity: 0.8 }}
+                  >
+                      <Volume2 size={18} color="#3498db" />
+                  </button>
+                  </div>
+                ) : (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', minHeight: '42px', paddingLeft: '8px' }}>
+                    {feedback[formKey] === 'correct' || showSolution || revealedRows[formKey] ? (
+                      <div style={{ fontSize: '1.2rem', color: feedback[formKey] === 'correct' || showSolution ? 'var(--right-color)' : 'var(--text-color)', fontWeight: 'bold' }}>
+                        {displaySolution}
+                      </div>
+                    ) : (
+                      <button 
+                        className="btn-secondary" 
+                        style={{ padding: '6px 12px', fontSize: '0.9rem', opacity: 0.8 }} 
+                        onClick={() => setRevealedRows(prev => ({ ...prev, [formKey]: true }))}
+                      >
+                        Lösung anzeigen
+                      </button>
+                    )}
+                    <button 
+                        type="button" 
+                        onClick={(e) => playAudio(e, displaySolution)}
+                        title="Vorlesen"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', opacity: 0.8 }}
+                    >
+                        <Volume2 size={18} color="#3498db" />
+                    </button>
+                  </div>
+                )}
                 {feedback[formKey] === 'correct' && <CheckCircle size={20} color="var(--right-color)" />}
                 {feedback[formKey] === 'incorrect' && <XCircle size={20} color="var(--wrong-color)" />}
                 </div>
@@ -248,13 +283,36 @@ export default function VerbDrill({ user, verb, onFinish, direction, onFlip, onR
         })}
       </div>
 
-      <div className="verb-actions" style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
-        <button className="btn-secondary" onClick={toggleSolution}>
-          {showSolution ? 'Lösung verbergen' : 'Lösung anzeigen'}
-        </button>
-        <button className="btn-secondary" onClick={() => onFinish(true)}>
-          Weiter
-        </button>
+      <div className="verb-actions" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginTop: '20px' }}>
+        <div className="text-muted" style={{ fontSize: '1.2rem', fontWeight: 'bold', textAlign: 'left' }}>
+          {progress}
+        </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+          <button 
+            className="icon-btn" 
+            onClick={() => { clearTranscript(); if (onBack) onBack(); }}
+            style={{ backgroundColor: 'var(--bg-secondary)', width: '48px', height: '48px' }}
+            title="Vorheriges Verb"
+          >
+            <SkipBack size={24} />
+          </button>
+          
+          <button 
+            className="icon-btn" 
+            onClick={() => onFinish(true)}
+            style={{ backgroundColor: 'var(--bg-secondary)', width: '48px', height: '48px' }}
+            title="Nächstes Verb"
+          >
+            <SkipForward size={24} />
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn-secondary" onClick={toggleSolution} style={{ fontSize: '0.9rem', padding: '6px 12px' }}>
+            {showSolution ? 'Alle verbergen' : 'Alle Lösungen'}
+          </button>
+        </div>
       </div>
     </div>
   );

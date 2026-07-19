@@ -5,7 +5,7 @@ import VerbDrill from './VerbDrill';
 import SentenceDrill from './SentenceDrill';
 import { dataService } from '../dataService';
 import { speakText } from '../api';
-import { RotateCcw, List, BookOpen, X, Volume2, Play, Square } from 'lucide-react';
+import { RotateCcw, List, BookOpen, XCircle, Volume2, Play, Square } from 'lucide-react';
 import { useVoice } from '../contexts/VoiceContext';
 
 export default function LearningSession({ user, categoryId, direction, onFinish, onCancel }) {
@@ -106,6 +106,12 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
     }
   };
 
+  const handleBack = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
   const handleVerbFinish = (isCorrect) => {
     if (!isCorrect) {
       setFlipCount(prev => prev + 1);
@@ -134,32 +140,33 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
 
 
   return (
-    <div className="learning-session">
+    <div className={`learning-session ${itemType !== 'sentences' ? 'card-panel' : ''}`} style={itemType !== 'sentences' ? { display: 'flex', flexDirection: 'column', minHeight: '60vh' } : undefined}>
       {itemType !== 'sentences' && (
-        <div className="session-header">
-          <div className="progress-text">
-            <span className="desktop-text">Karte {currentIndex + 1} von {items.length}</span>
-            <span className="mobile-text">{currentIndex + 1} / {items.length}</span>
+        <div className="session-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+          <div>
+            <h2 style={{ margin: 0 }}>
+              {itemType === 'words' ? 'Vokabeln lernen' : `Verben üben: ${direction === 'nativeToForeign' ? items[currentIndex]?.native_infinitive : items[currentIndex]?.foreign_infinitive}`}
+            </h2>
           </div>
-          <div className="header-buttons" style={{ display: 'flex', gap: '8px' }}>
+          <div className="header-buttons" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button onClick={handleRestart} className="btn-cancel icon-text-btn" title="Von vorne">
-              <RotateCcw size={16} className="mobile-icon" />
+              <RotateCcw size={20} />
               <span className="desktop-text">Von vorne</span>
             </button>
             <button onClick={() => setShowOverview(!showOverview)} className="btn-cancel icon-text-btn" title={showOverview ? "Lernen" : "Übersicht"}>
-              {showOverview ? <BookOpen size={16} className="mobile-icon" /> : <List size={16} className="mobile-icon" />}
+              {showOverview ? <BookOpen size={20} /> : <List size={20} />}
               <span className="desktop-text">{showOverview ? 'Lernen' : 'Übersicht'}</span>
             </button>
-            <button onClick={onCancel} className="btn-cancel icon-text-btn" title="Abbrechen">
-              <X size={16} className="mobile-icon" />
-              <span className="desktop-text">Abbrechen</span>
+            <button onClick={onCancel} className="btn-cancel icon-text-btn" title="Beenden">
+              <XCircle size={20} />
+              <span className="desktop-text">Beenden</span>
             </button>
           </div>
         </div>
       )}
 
         {showOverview ? (
-        <div className="overview-container card-panel">
+        <div className="overview-container">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h3 style={{ margin: 0 }}>Übersicht</h3>
             <button 
@@ -227,7 +234,9 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
             word={items[currentIndex]}
             direction={direction}
             onAnswer={handleAnswer}
+            onBack={handleBack}
             onFlip={handleFlip}
+            progress={`${currentIndex + 1}/${items.length}`}
           />
         ) : itemType === 'verbs' ? (
           <VerbDrill
@@ -235,8 +244,10 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
             verb={items[currentIndex]}
             direction={direction}
             onFinish={handleVerbFinish}
+            onBack={handleBack}
             onFlip={handleFlip}
             onReset={(fn) => { resetChildRef.current = fn; }}
+            progress={`${currentIndex + 1}/${items.length}`}
           />
         ) : (
           <SentenceDrill

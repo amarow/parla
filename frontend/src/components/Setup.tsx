@@ -72,39 +72,22 @@ export default function Setup({ user, onStart }) {
       ) : (
         <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          <div>
-            <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Textinseln</h3>
-            <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Kurze Dialoge & Texte hören und nachsprechen:</p>
-            <div className="category-grid">
-              {textIslands.map((island) => (
-                <div 
-                  key={island.id}
-                  className="category-item"
-                  onClick={() => onStart('text_islands', island.id)}
-                  style={{ backgroundColor: 'rgba(75, 138, 230, 0.1)', borderColor: 'var(--primary-color)' }}
-                >
-                  {island.title}
-                </div>
-              ))}
+          {vocabCategories.length > 0 && (
+            <div>
+              <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Wortschatz</h3>
+              <div className="category-grid">
+                {vocabCategories.map(cat => (
+                  <div 
+                    key={cat.id} 
+                    className={`category-item ${selectedCategory === cat.id ? 'active' : ''}`}
+                    onClick={() => handleCategoryClick(cat.id)}
+                  >
+                    {cat.name}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-
-          <div>
-            <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Satzbau-Training</h3>
-            <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Wähle ein Pronomen, um gezielt Sätze zu üben:</p>
-            <div className="category-grid">
-              {pronouns.map(p => (
-                <div 
-                  key={p.key} 
-                  className="category-item sentence-category"
-                  onClick={() => onStart('sentences', p.key)}
-                  style={{ backgroundColor: 'rgba(52, 152, 219, 0.1)', borderColor: '#3498db' }}
-                >
-                  {p.label}
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
 
           {grammarCategories.length > 0 && (
             <div>
@@ -123,22 +106,39 @@ export default function Setup({ user, onStart }) {
             </div>
           )}
 
-          {vocabCategories.length > 0 && (
-            <div>
-              <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Wortschatz</h3>
-              <div className="category-grid">
-                {vocabCategories.map(cat => (
-                  <div 
-                    key={cat.id} 
-                    className={`category-item ${selectedCategory === cat.id ? 'active' : ''}`}
-                    onClick={() => handleCategoryClick(cat.id)}
-                  >
-                    {cat.name}
-                  </div>
-                ))}
-              </div>
+          <div>
+            <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Satzbau-Training</h3>
+            <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Wähle ein Pronomen, um gezielt Sätze zu üben:</p>
+            <div className="category-grid">
+              {pronouns.map(p => (
+                <div 
+                  key={p.key} 
+                  className="category-item sentence-category"
+                  onClick={() => onStart('sentences', p.key)}
+                  style={{ backgroundColor: 'rgba(52, 152, 219, 0.1)', borderColor: '#3498db' }}
+                >
+                  {p.label}
+                </div>
+              ))}
             </div>
-          )}
+          </div>
+
+          <div>
+            <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Textinseln</h3>
+            <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Kurze Dialoge & Texte hören und nachsprechen:</p>
+            <div className="category-grid">
+              {textIslands.map((island) => (
+                <div 
+                  key={island.id}
+                  className="category-item"
+                  onClick={() => onStart('text_islands', island.id)}
+                  style={{ backgroundColor: 'rgba(75, 138, 230, 0.1)', borderColor: 'var(--primary-color)' }}
+                >
+                  {island.title}
+                </div>
+              ))}
+            </div>
+          </div>
 
         </div>
       )}
