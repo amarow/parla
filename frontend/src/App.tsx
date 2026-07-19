@@ -5,6 +5,7 @@ import Settings from './components/Settings';
 import Setup from './components/Setup';
 import LearningSession from './components/LearningSession';
 import Reward from './components/Reward';
+import IslandPlayer from './components/IslandPlayer';
 import { useVoice } from './contexts/VoiceContext';
 import './App.css';
 import pkg from '../package.json';
@@ -15,15 +16,12 @@ function App() {
   const [sessionConfig, setSessionConfig] = useState(null);
   const [sessionStats, setSessionStats] = useState({ flips: 0 });
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const { isListening, toggleListening, setGeminiApiKey } = useVoice();
+  const { isListening, toggleListening } = useVoice();
 
   useEffect(() => {
-    if (user && user.gemini_api_key) {
-      setGeminiApiKey(user.gemini_api_key);
-    } else {
-      setGeminiApiKey('');
-    }
-  }, [user, setGeminiApiKey]);
+    // If the user has a gemini key, we might initialize something here
+    // Currently purely browser based
+  }, [user]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -127,7 +125,14 @@ function App() {
         {user && appState === 'setup' && (
           <Setup user={user} onStart={startSession} />
         )}
-        {user && appState === 'learning' && (
+        {user && appState === 'learning' && sessionConfig.categoryId === 'text_islands' && (
+          <IslandPlayer
+            user={user}
+            islandId={sessionConfig.direction}
+            onCancel={cancelSession}
+          />
+        )}
+        {user && appState === 'learning' && sessionConfig.categoryId !== 'text_islands' && (
           <LearningSession 
             user={user}
             categoryId={sessionConfig.categoryId} 

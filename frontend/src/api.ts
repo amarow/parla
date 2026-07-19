@@ -16,6 +16,9 @@ export const localAuth = {
       target_language: 'it',
       preferred_direction: 'nativeToForeign',
       pause_time: 800,
+      speech_rate: 0.85,
+      voice_it: '',
+      voice_de: '',
       ...userData, 
       id: Date.now() 
     };
@@ -42,7 +45,7 @@ export const localAuth = {
 };
 
 // --- Clean Browser-only TTS Service ---
-export const speakText = async (text: string, langCode: string): Promise<void> => {
+export const speakText = async (text: string, langCode: string, rate: number = 1.0, voiceURI?: string): Promise<void> => {
   return new Promise((resolve) => {
     // 1. Cancel any ongoing speech immediately
     window.speechSynthesis.cancel();
@@ -50,11 +53,21 @@ export const speakText = async (text: string, langCode: string): Promise<void> =
     // 2. Create the utterance
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = langCode === 'it' ? 'it-IT' : 'de-DE';
+    utterance.rate = rate;
     
     // Optional: Select a better voice if available
     const voices = window.speechSynthesis.getVoices();
-    // Prefer Google voices as they often sound more natural even in the browser
-    const preferredVoice = voices.find(v => v.lang.startsWith(langCode) && v.name.includes('Google'));
+    let preferredVoice;
+    
+    if (voiceURI) {
+      preferredVoice = voices.find(v => v.voiceURI === voiceURI);
+    }
+    
+    if (!preferredVoice) {
+      // Prefer Google voices as they often sound more natural even in the browser
+      preferredVoice = voices.find(v => v.lang.startsWith(langCode) && v.name.includes('Google'));
+    }
+    
     if (preferredVoice) utterance.voice = preferredVoice;
 
     // 3. Resolve when finished

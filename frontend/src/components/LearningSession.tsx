@@ -70,7 +70,7 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
       const langCode = 'it';
       const playPart = async (text: string) => {
         if (!isPlayingRef.current || !text) return;
-        await speakText(text, langCode);
+        await speakText(text, langCode, user?.speech_rate || 1.0, user?.voice_it);
         if (isPlayingRef.current) {
           await new Promise(r => setTimeout(r, pauseTime));
         }
@@ -126,7 +126,7 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
     e.preventDefault();
     e.stopPropagation();
     const langCode = 'it'; 
-    speakText(text, langCode);
+    speakText(text, langCode, user?.speech_rate || 1.0, user?.voice_it);
   };
 
   if (isLoading || isFetching) return <div className="loading">Lade Inhalte...</div>;
@@ -223,6 +223,7 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
         ) : (
         itemType === 'words' ? (
           <Flashcard
+            user={user}
             word={items[currentIndex]}
             direction={direction}
             onAnswer={handleAnswer}
@@ -230,6 +231,7 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
           />
         ) : itemType === 'verbs' ? (
           <VerbDrill
+            user={user}
             verb={items[currentIndex]}
             direction={direction}
             onFinish={handleVerbFinish}

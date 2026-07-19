@@ -152,7 +152,7 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
     if (isPlayingAll) {
       handleStopPlayingAll();
     }
-    speakText(text, 'it');
+    speakText(text, 'it', user?.speech_rate || 1.0, user?.voice_it);
   };
 
   const stopAudio = () => {
@@ -167,7 +167,7 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
 
     for (const s of sentences) {
       if (!playingRef.current) break;
-      await speakText(s.foreign, 'it');
+      await speakText(s.foreign, 'it', user?.speech_rate || 1.0, user?.voice_it);
       // Small pause between sentences
       if (playingRef.current) {
         await new Promise(r => setTimeout(r, pauseTime));

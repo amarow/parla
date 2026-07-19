@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { dataService } from '../dataService';
 import { useVoice } from '../contexts/VoiceContext';
 
+import textIslands from '../data/textIslands.json';
+
 export default function Setup({ user, onStart }) {
   const [selectedCategory, setSelectedCategory] = useState<number | string>('');
   const { setLanguage } = useVoice();
@@ -70,6 +72,23 @@ export default function Setup({ user, onStart }) {
       ) : (
         <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
+          <div>
+            <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Textinseln</h3>
+            <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Kurze Dialoge & Texte hören und nachsprechen:</p>
+            <div className="category-grid">
+              {textIslands.map((island) => (
+                <div 
+                  key={island.id}
+                  className="category-item"
+                  onClick={() => onStart('text_islands', island.id)}
+                  style={{ backgroundColor: 'rgba(75, 138, 230, 0.1)', borderColor: 'var(--primary-color)' }}
+                >
+                  {island.title}
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div>
             <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Satzbau-Training</h3>
             <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Wähle ein Pronomen, um gezielt Sätze zu üben:</p>

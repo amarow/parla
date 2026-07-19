@@ -4,7 +4,7 @@ import { speakText } from '../api';
 import writtenNumber from 'written-number';
 import { useVoice } from '../contexts/VoiceContext';
 
-export default function Flashcard({ word, direction, onAnswer, onFlip }) {
+export default function Flashcard({ user, word, direction, onAnswer, onFlip }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
@@ -30,7 +30,7 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
         lastPlayedRef.current = textToPlay;
         
         setIsAudioPlaying(true);
-        speakText(textToPlay, frontLangCode).then(() => {
+        speakText(textToPlay, frontLangCode, user?.speech_rate || 1.0, frontLangCode === 'it' ? user?.voice_it : user?.voice_de).then(() => {
           if (!isCurrent) return;
           clearTranscript();
           setTimeout(() => {
@@ -155,7 +155,7 @@ export default function Flashcard({ word, direction, onAnswer, onFlip }) {
     const langCode = backLang.split('-')[0];
     
     setIsAudioPlaying(true);
-    speakText(backText, langCode).then(() => {
+    speakText(backText, langCode, user?.speech_rate || 1.0, langCode === 'it' ? user?.voice_it : user?.voice_de).then(() => {
       clearTranscript();
       setTimeout(() => setIsAudioPlaying(false), 150);
     });

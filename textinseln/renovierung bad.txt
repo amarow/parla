@@ -1,0 +1,29 @@
+Titel:  Renovierung bad
+Beschreibung: Arbeiten zur renovierung der sanitären anlagen
+
+Das aktuelle Bad befindet sich im Erdgeschoss. 
+Es ist viel zu klein. 
+Wir wollen es vergrößern. 
+Wir werden eine Wand versetzen. 
+Im Bad soll weiterhin eine Toilette sein. 
+Außerdem soll ein Waschbecken und eine Dusche vorhanden sein. 
+Es muss auch eine Wasser- und eine Abwasserleitung in den zweiten Stock verlegt werden. 
+Im zweiten Stock soll eine kleine Toilette eingebaut werden. 
+Es muss auch eine Wasser- und Abwasserleitung in das oberste Zimmer gelegt werden. 
+Beim Durchbruch in das oberste Zimmer gibt es ein Problem. 
+Die Decke zum obersten Zimmer ist eine Gewölbedecke. 
+Hier muss darauf geachtet werden, dass diese nicht strukturell zerstört wird. 
+Im obersten Stock brauchen wir Wasser und Abwasser. 
+Letztendlich brauchen wir noch Wasser und Abwasser auf der Terrasse. 
+Hier müssen neue Leitung verlegt werden. 
+In Bosa ist der Wasserdruck zu gering für die oberen Etagen. 
+Wir müssen deshalb ein Wasserreservoir einsetzen. 
+Das ist ein Tank mit einer Pumpe, die den Wasserdruck erhöht.
+Wir wollen auch eine Solarthermie Anlage nutzen. 
+Sie soll warmes Wasser für die Dusche bereitstellen. 
+Das Solarpanel kann auf dem kleinen Häuschen auf der Terrasse installiert werden. 
+Es gibt ein paar Auflagen für diese Solaranlage. 
+Es darf nicht von der Straße aus sichtbar sein. 
+Sie darf auch keine reflektierenden Flächen haben.
+
+

@@ -23,7 +23,7 @@ const expectedPronouns: Record<string, string> = {
 
 const formKeys = Object.keys(pronouns);
 
-export default function VerbDrill({ verb, onFinish, direction, onFlip, onReset }) {
+export default function VerbDrill({ user, verb, onFinish, direction, onFlip, onReset }) {
   const [answers, setAnswers] = useState({
     form_1s: '', form_2s: '', form_3s: '', form_1p: '', form_2p: '', form_3p: ''
   });
@@ -170,7 +170,7 @@ export default function VerbDrill({ verb, onFinish, direction, onFlip, onReset }
     e.preventDefault();
     e.stopPropagation();
     const langCode = 'it'; // Conjugations are in Italian
-    speakText(text, langCode);
+    speakText(text, langCode, user?.speech_rate || 1.0, user?.voice_it);
   };
 
   const toggleSolution = () => {

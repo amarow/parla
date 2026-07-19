@@ -1,13 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { localAuth } from '../api';
 
 export default function Settings({ user, onUpdateUser, onCancel }) {
-  const [nativeLang, setNativeLang] = useState(user.native_language);
-  const [targetLang, setTargetLang] = useState(user.target_language);
+  const [nativeLang, setNativeLang] = useState(user.native_language || 'de');
+  const [targetLang, setTargetLang] = useState(user.target_language || 'it');
   const [preferredDirection, setPreferredDirection] = useState(user.preferred_direction || 'nativeToForeign');
   const [pauseTime, setPauseTime] = useState(user.pause_time || 800);
-  const [geminiApiKey, setGeminiApiKey] = useState(user.gemini_api_key || '');
+  const [speechRate, setSpeechRate] = useState(user.speech_rate || 0.85);
+  const [voiceIt, setVoiceIt] = useState(user.voice_it || '');
+  const [voiceDe, setVoiceDe] = useState(user.voice_de || '');
   const [message, setMessage] = useState('');
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  useEffect(() => {
+    const loadVoices = () => {
+      setAvailableVoices(window.speechSynthesis.getVoices());
+    };
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }, []);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -17,7 +28,9 @@ export default function Settings({ user, onUpdateUser, onCancel }) {
         target_language: targetLang,
         preferred_direction: preferredDirection,
         pause_time: Number(pauseTime),
-        gemini_api_key: geminiApiKey
+        speech_rate: Number(speechRate),
+        voice_it: voiceIt,
+        voice_de: voiceDe
       });
       // User-Objekt aktualisieren
       onUpdateUser(updatedUser);
@@ -96,17 +109,47 @@ export default function Settings({ user, onUpdateUser, onCancel }) {
         </div>
 
         <div className="form-group">
-          <label>Gemini API Key (für bessere Spracherkennung):</label>
-          <input 
-            type="password"
-            value={geminiApiKey}
-            onChange={(e) => setGeminiApiKey(e.target.value)}
-            placeholder="Dein Google Gemini API Key"
-            className="input-field"
-          />
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Erforderlich für hochwertiges Speech-to-Text. Der Key wird nur lokal in deinem Browser gespeichert.
-          </p>
+          <label>Vorlesegeschwindigkeit:</label>
+          <select 
+            value={speechRate} 
+            onChange={(e) => setSpeechRate(Number(e.target.value))}
+          >
+            <option value={1.0}>Normal (100%)</option>
+            <option value={0.9}>Leicht verlangsamt (90%)</option>
+            <option value={0.85}>Deutlich (85%)</option>
+            <option value={0.75}>Langsam (75%)</option>
+            <option value={0.65}>Sehr langsam (65%)</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label>Vorlesestimme (Italienisch):</label>
+          <select 
+            value={voiceIt} 
+            onChange={(e) => setVoiceIt(e.target.value)}
+          >
+            <option value="">Standard-Stimme des Browsers</option>
+            {availableVoices.filter(v => v.lang.startsWith('it')).map(v => (
+              <option key={v.voiceURI} value={v.voiceURI}>
+                {v.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label>Vorlesestimme (Deutsch):</label>
+          <select 
+            value={voiceDe} 
+            onChange={(e) => setVoiceDe(e.target.value)}
+          >
+            <option value="">Standard-Stimme des Browsers</option>
+            {availableVoices.filter(v => v.lang.startsWith('de')).map(v => (
+              <option key={v.voiceURI} value={v.voiceURI}>
+                {v.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {message && <div className="success-message" style={{ textAlign: 'center', color: 'var(--right-color)', fontWeight: 'bold', margin: '10px 0' }}>{message}</div>}

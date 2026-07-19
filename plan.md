@@ -50,8 +50,8 @@
   - **Aktions-Buttons:** Start, Pause, Abbrechen, Nächster/Vorheriger Satz (optional).
 
 ## 4. Implementierungsschritte
-- [ ] **Schritt 1: Datenstruktur anlegen.** Erstellen der `textIslands.json` mit der ersten Textinsel ("Wer bin ich?").
-- [ ] **Schritt 2: UI-Komponenten bauen (Teil 1 - Layout).** Erstellen des `IslandSelector` und des grundlegenden Layouts für den `IslandPlayer`.
-- [ ] **Schritt 3: Abspiel-Logik entwickeln (Timer & State).** Implementieren der State-Maschine (Lesen (IT) -> Pause (Mikrofon pulsiert) -> Lesen (IT) -> Pause -> Nächster Satz -> Loop am Ende).
-- [ ] **Schritt 4: Navigation.** Das Modul in das Hauptmenü (`App.tsx` oder wo relevant) integrieren.
+- [x] **Schritt 1: Datenstruktur anlegen.** Erstellen der `textIslands.json` mit der ersten Textinsel ("Wer bin ich?").
+- [x] **Schritt 2: UI-Komponenten bauen (Teil 1 - Layout).** Erstellen des `IslandSelector` und des grundlegenden Layouts für den `IslandPlayer`.
+- [x] **Schritt 3: Abspiel-Logik entwickeln (Timer & State).** Implementieren der State-Maschine (Lesen (IT) -> Pause (Mikrofon pulsiert) -> Lesen (IT) -> Pause -> Nächster Satz -> Loop am Ende).
+- [x] **Schritt 4: Navigation.** Das Modul in das Hauptmenü (`App.tsx` oder wo relevant) integrieren.
 - [ ] **Schritt 5: Test & Feinschliff.** Timing der Pausen überprüfen (z.B. Lesegeschwindigkeit simulieren) und Animationen polieren.

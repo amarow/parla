@@ -8,7 +8,6 @@ type VoiceContextType = {
   setLanguage: (lang: string) => void;
   transcript: string;
   clearTranscript: () => void;
-  setGeminiApiKey: (key: string) => void;
 };
 
 const VoiceContext = createContext<VoiceContextType | undefined>(undefined);
@@ -20,6 +19,8 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   
   const recognitionRef = useRef<any>(null);
   const shouldListenRef = useRef(false);
+  const rawTranscriptRef = useRef('');
+  const ignoredPrefixRef = useRef('');
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -43,10 +44,17 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         combinedTranscript += event.results[i][0].transcript;
       }
-      const text = combinedTranscript.trim().toLowerCase();
-      if (text) {
-        setTranscript(text);
+      
+      rawTranscriptRef.current = combinedTranscript;
+      
+      let displayTranscript = combinedTranscript;
+      if (ignoredPrefixRef.current && displayTranscript.startsWith(ignoredPrefixRef.current)) {
+        displayTranscript = displayTranscript.slice(ignoredPrefixRef.current.length);
       }
+      
+      const text = displayTranscript.trim().toLowerCase();
+      // Always set transcript so it can become empty if needed
+      setTranscript(text);
     };
 
     recognition.onerror = (event: any) => {
@@ -113,11 +121,9 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [isListening]);
 
   const clearTranscript = useCallback(() => {
+    ignoredPrefixRef.current = rawTranscriptRef.current;
     setTranscript('');
   }, []);
-
-  // Dummy to keep compatibility with components that might still call it
-  const setGeminiApiKey = () => {};
 
   return (
     <VoiceContext.Provider value={{ 
@@ -127,8 +133,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       language, 
       setLanguage, 
       transcript, 
-      clearTranscript,
-      setGeminiApiKey
+      clearTranscript
     }}>
       {children}
     </VoiceContext.Provider>

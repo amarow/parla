@@ -1,0 +1,15 @@
+Titel: Im Restaurant
+Beschreibung: Einen Tisch bestellen und bezahlen.
+
+Guten Abend. Wir möchten gerne einen Tisch für zwei Personen.
+Haben Sie eine Speisekarte auf Englisch?
+Haben Sie eine Speisekarte auf Deutsch?
+Ich warte noch auf Jemanden.
+Ich hätte gerne die Spaghetti Carbonara.
+Bringen Sie uns bitte noch eine Flasche Wasser.
+Welchen Rotweine können Sie empfehlen?
+Haben sie auch vegetarische Gerichte.
+Die Rechnung, bitte.
+Ich bezahle in Bar. 
+Ich bezahle mit der Karte.
+Vielen Dank und auf Wiedersehen.
