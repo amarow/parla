@@ -4,3 +4,4 @@ database.sqlite
 .env
 dist/
 *.tsbuildinfo
+graphify-out/
