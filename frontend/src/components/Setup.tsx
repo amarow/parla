@@ -74,7 +74,7 @@ export default function Setup({ user, onStart }) {
           
           {vocabCategories.length > 0 && (
             <div>
-              <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Wortschatz</h3>
+              <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Vokabeln</h3>
               <div className="category-grid">
                 {vocabCategories.map(cat => (
                   <div 
@@ -91,7 +91,7 @@ export default function Setup({ user, onStart }) {
 
           {grammarCategories.length > 0 && (
             <div>
-              <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Grammatik & Verben</h3>
+              <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Konjugationen</h3>
               <div className="category-grid">
                 {grammarCategories.map(cat => (
                   <div 
@@ -107,7 +107,7 @@ export default function Setup({ user, onStart }) {
           )}
 
           <div>
-            <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Satzbau-Training</h3>
+            <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Sätze & Pronomen</h3>
             <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Wähle ein Pronomen, um gezielt Sätze zu üben:</p>
             <div className="category-grid">
               {pronouns.map(p => (
@@ -124,7 +124,7 @@ export default function Setup({ user, onStart }) {
           </div>
 
           <div>
-            <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Textinseln</h3>
+            <h3 style={{ marginBottom: '12px', fontSize: '1.2rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>Themen</h3>
             <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Kurze Dialoge & Texte hören und nachsprechen:</p>
             <div className="category-grid">
               {textIslands.map((island) => (

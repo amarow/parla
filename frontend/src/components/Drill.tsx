@@ -1,19 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Flashcard from './Flashcard';
-import VerbDrill from './VerbDrill';
+import VocabDrill from './VocabDrill';
+import ConjugationDrill from './ConjugationDrill';
 import SentenceDrill from './SentenceDrill';
 import { dataService } from '../dataService';
 import { speakText } from '../api';
-import { RotateCcw, List, BookOpen, XCircle, Volume2, Play, Square } from 'lucide-react';
+import { ArrowLeftRight, List, BookOpen, XCircle, Volume2, Play, Square } from 'lucide-react';
 import { useVoice } from '../contexts/VoiceContext';
+import { statsService } from '../utils/statsService';
 
-export default function LearningSession({ user, categoryId, direction, onFinish, onCancel }) {
+export default function Drill({ user, categoryId, direction, onFinish, onCancel }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOverview, setShowOverview] = useState(false);
   const [flipCount, setFlipCount] = useState(0);
+  const [alwaysShowTranslation, setAlwaysShowTranslation] = useState(false);
   const { clearTranscript } = useVoice();
   const resetChildRef = useRef<(() => void) | null>(null);
+  const [currentDirection, setCurrentDirection] = useState(direction);
 
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   const isPlayingRef = useRef(false);
@@ -26,11 +29,8 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
     };
   }, []);
 
-  const handleRestart = () => {
-    setCurrentIndex(0);
-    if (resetChildRef.current) {
-        resetChildRef.current();
-    }
+  const toggleDirection = () => {
+    setCurrentDirection(prev => prev === 'nativeToForeign' ? 'foreignToNative' : 'nativeToForeign');
   };
 
   const { data, isLoading, isFetching } = useQuery({
@@ -53,6 +53,12 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
 
   const items: any[] = data?.items || [];
   const itemType = data?.type || 'words';
+
+  useEffect(() => {
+    if (items && items.length > 0) {
+      statsService.startSession(categoryId, items.length);
+    }
+  }, [categoryId, items]);
 
   const togglePlayAll = async () => {
     if (isPlayingRef.current) {
@@ -140,43 +146,31 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
 
 
   return (
-    <div className={`learning-session ${itemType !== 'sentences' ? 'card-panel' : ''}`} style={itemType !== 'sentences' ? { display: 'flex', flexDirection: 'column', minHeight: '60vh' } : undefined}>
-      {itemType !== 'sentences' && (
-        <div className="session-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-          <div>
-            <h2 style={{ margin: 0 }}>
-              {itemType === 'words' ? 'Vokabeln lernen' : `Verben üben: ${direction === 'nativeToForeign' ? items[currentIndex]?.native_infinitive : items[currentIndex]?.foreign_infinitive}`}
-            </h2>
-          </div>
-          <div className="header-buttons" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button onClick={handleRestart} className="btn-cancel icon-text-btn" title="Von vorne">
-              <RotateCcw size={20} />
-              <span className="desktop-text">Von vorne</span>
-            </button>
-            <button onClick={() => setShowOverview(!showOverview)} className="btn-cancel icon-text-btn" title={showOverview ? "Lernen" : "Übersicht"}>
-              {showOverview ? <BookOpen size={20} /> : <List size={20} />}
-              <span className="desktop-text">{showOverview ? 'Lernen' : 'Übersicht'}</span>
-            </button>
-            <button onClick={onCancel} className="btn-cancel icon-text-btn" title="Beenden">
-              <XCircle size={20} />
-              <span className="desktop-text">Beenden</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-        {showOverview ? (
+    <div className="learning-session" style={{ display: 'flex', flexDirection: 'column', minHeight: '60vh' }}>
+      {showOverview ? (
         <div className="overview-container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h3 style={{ margin: 0 }}>Übersicht</h3>
-            <button 
-              className="btn-secondary" 
-              onClick={togglePlayAll}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              {isPlayingAll ? <Square size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
-              {isPlayingAll ? 'Stop' : 'Alle vorlesen'}
-            </button>
+          <div className="headline" style={{ marginBottom: '16px' }}>
+            <div className="meta-info">
+              <h2 className="text-large" style={{ margin: 0 }}>
+                {itemType === 'words' ? 'Vokabeln (Übersicht)' : 'Konjugationen (Übersicht)'}
+              </h2>
+            </div>
+            <div className="headline-buttons">
+              <button 
+                className="btn-secondary" 
+                onClick={togglePlayAll}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
+              >
+                {isPlayingAll ? <Square size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
+                {isPlayingAll ? 'Stop' : 'Alle vorlesen'}
+              </button>
+              <button onClick={() => setShowOverview(false)} className="icon-btn" title="Lernen">
+                <BookOpen size={20} />
+              </button>
+              <button onClick={onCancel} className="icon-btn" title="Beenden">
+                <XCircle size={20} />
+              </button>
+            </div>
           </div>
           <div className="words-list" style={{ maxHeight: '60vh', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px' }}>
             <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
@@ -229,32 +223,47 @@ export default function LearningSession({ user, categoryId, direction, onFinish,
         </div>
         ) : (
         itemType === 'words' ? (
-          <Flashcard
+          <VocabDrill
             user={user}
             word={items[currentIndex]}
-            direction={direction}
+            direction={currentDirection}
             onAnswer={handleAnswer}
             onBack={handleBack}
             onFlip={handleFlip}
             progress={`${currentIndex + 1}/${items.length}`}
+            alwaysShowTranslation={alwaysShowTranslation}
+            setAlwaysShowTranslation={setAlwaysShowTranslation}
+            onToggleDirection={toggleDirection}
+            onToggleOverview={() => setShowOverview(!showOverview)}
+            showOverview={showOverview}
+            onCancel={onCancel}
           />
         ) : itemType === 'verbs' ? (
-          <VerbDrill
+          <ConjugationDrill
             user={user}
             verb={items[currentIndex]}
-            direction={direction}
+            direction={currentDirection}
             onFinish={handleVerbFinish}
             onBack={handleBack}
             onFlip={handleFlip}
             onReset={(fn) => { resetChildRef.current = fn; }}
             progress={`${currentIndex + 1}/${items.length}`}
+            alwaysShowTranslation={alwaysShowTranslation}
+            setAlwaysShowTranslation={setAlwaysShowTranslation}
+            onToggleDirection={toggleDirection}
+            onToggleOverview={() => setShowOverview(!showOverview)}
+            showOverview={showOverview}
+            onCancel={onCancel}
           />
         ) : (
           <SentenceDrill
             user={user}
-            pronounKey={direction}
+            pronounKey={currentDirection}
             onFinish={() => onFinish(flipCount)}
             onCancel={onCancel}
+            onFlip={handleFlip}
+            alwaysShowTranslation={alwaysShowTranslation}
+            setAlwaysShowTranslation={setAlwaysShowTranslation}
           />
         )
         )}    </div>  );

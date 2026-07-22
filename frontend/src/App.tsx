@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Moon, Sun, Settings as SettingsIcon, LogOut, MessageCircle, Mic, MicOff } from 'lucide-react';
+import { Moon, Sun, Settings as SettingsIcon, LogOut, MessageCircle, BookOpen, RotateCcw, Target, Map as MapIcon } from 'lucide-react';
 import Login from './components/Login';
 import Settings from './components/Settings';
 import Setup from './components/Setup';
-import LearningSession from './components/LearningSession';
+import Drill from './components/Drill';
 import Reward from './components/Reward';
-import IslandPlayer from './components/IslandPlayer';
+import ThemeDrill from './components/ThemeDrill';
 import { useVoice } from './contexts/VoiceContext';
+import { statsService } from './utils/statsService';
 import './App.css';
 import pkg from '../package.json';
 
@@ -14,9 +15,9 @@ function App() {
   const [user, setUser] = useState(null);
   const [appState, setAppState] = useState('login'); // 'login', 'setup', 'settings', 'learning', 'reward'
   const [sessionConfig, setSessionConfig] = useState(null);
-  const [sessionStats, setSessionStats] = useState({ flips: 0 });
+  const [sessionStats, setSessionStats] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const { isListening, toggleListening } = useVoice();
+  const { isListening, toggleListening, transcript } = useVoice();
 
   useEffect(() => {
     // If the user has a gemini key, we might initialize something here
@@ -44,16 +45,23 @@ function App() {
   };
 
   const startSession = (categoryId, direction, categories = null) => {
+    const categoryList = [
+      { id: 'all_words', name: 'Vokabeln', icon: BookOpen, type: 'words' },
+      { id: 'verbs', name: 'Konjugationen', icon: RotateCcw, type: 'verbs' },
+      { id: 'sentences', name: 'Sätze & Pronomen', icon: Target, type: 'sentences' },
+      { id: 'text_islands', name: 'Themen', icon: MapIcon, type: 'text_islands' }
+    ];
     setSessionConfig(prev => ({ 
       categoryId, 
       direction, 
-      categories: categories || (prev ? prev.categories : []) 
+      categories: categories || categoryList
     }));
     setAppState('learning');
   };
 
-  const finishSession = (flips = 0) => {
-    setSessionStats({ flips });
+  const finishSession = () => {
+    const statsResult = statsService.endSession();
+    setSessionStats(statsResult);
     setAppState('reward');
   };
 
@@ -84,36 +92,34 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <div className="header-actions">
-        {user && (
-          <>
-            <button 
-              className={`icon-btn ${isListening ? 'listening-global' : ''}`} 
-              onClick={toggleListening} 
-              title="Sprachsteuerung"
-              style={{ color: isListening ? '#3498db' : 'inherit' }}
-            >
-              {isListening ? <Mic size={20} /> : <MicOff size={20} />}
-            </button>
+    <div className={`app state-${appState}`}>
+      <div className="config-line">
+        <div className="brand-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h1 className="application-title" style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <MessageCircle size={18} color="var(--topic-color)" />
+            <span>Parladino</span>
+          </h1>
+          <span className="version-info" style={{ fontSize: '0.8rem', opacity: 0.6, color: 'var(--text-meta)' }}>
+            v{pkg.version}
+          </span>
+        </div>
+
+        <div className="header-buttons" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {user && (
             <button className="icon-btn" onClick={() => setAppState('settings')} title="Einstellungen">
               <SettingsIcon size={20} />
             </button>
+          )}
+          <button className="icon-btn" onClick={toggleTheme} title="Theme wechseln">
+            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+          {user && (
             <button className="icon-btn" onClick={handleLogout} title="Logout">
               <LogOut size={20} />
             </button>
-          </>
-        )}
-        <button className="icon-btn" onClick={toggleTheme} title="Theme wechseln">
-          {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
+          )}
+        </div>
       </div>
-      
-      <header className="app-header">
-        <h1 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          <MessageCircle size={36} /> Parladino
-        </h1>
-      </header>
       
       <main className="app-main">
         {!user && appState === 'login' && (
@@ -126,14 +132,14 @@ function App() {
           <Setup user={user} onStart={startSession} />
         )}
         {user && appState === 'learning' && sessionConfig.categoryId === 'text_islands' && (
-          <IslandPlayer
+          <ThemeDrill
             user={user}
             islandId={sessionConfig.direction}
             onCancel={cancelSession}
           />
         )}
         {user && appState === 'learning' && sessionConfig.categoryId !== 'text_islands' && (
-          <LearningSession 
+          <Drill 
             user={user}
             categoryId={sessionConfig.categoryId} 
             direction={sessionConfig.direction} 
@@ -142,13 +148,34 @@ function App() {
           />
         )}
         {user && appState === 'reward' && (
-          <Reward onCancel={cancelSession} onNext={startNextSession} onRepeat={restartSession} flips={sessionStats.flips} />
+          <Reward 
+            onCancel={cancelSession} 
+            onNext={startNextSession} 
+            onRepeat={restartSession} 
+            stats={sessionStats} 
+          />
         )}
       </main>
       
-      <footer className="app-footer">
-        <p>v{pkg.version}</p>
-      </footer>
+      {transcript && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          width: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          color: 'var(--right-color)',
+          padding: '8px 16px',
+          textAlign: 'center',
+          zIndex: 9999,
+          fontSize: '1.2rem',
+          fontWeight: 'bold',
+          pointerEvents: 'none',
+          boxShadow: '0 -2px 10px rgba(0,0,0,0.2)'
+        }}>
+          {transcript}
+        </div>
+      )}
     </div>
   );
 }

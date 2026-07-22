@@ -71,10 +71,17 @@ export const speakText = async (text: string, langCode: string, rate: number = 1
     if (preferredVoice) utterance.voice = preferredVoice;
 
     // 3. Resolve when finished
-    utterance.onend = () => resolve();
-    utterance.onerror = () => resolve();
+    utterance.onend = () => {
+      window.dispatchEvent(new Event('tts-end'));
+      resolve();
+    };
+    utterance.onerror = () => {
+      window.dispatchEvent(new Event('tts-end'));
+      resolve();
+    };
 
     // 4. Start speaking
+    window.dispatchEvent(new Event('tts-start'));
     window.speechSynthesis.speak(utterance);
   });
 };

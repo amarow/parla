@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Square, SkipForward, SkipBack, MessageCircle, XCircle, Mic, CheckCircle } from 'lucide-react';
+import { MessageCircle, XCircle, Volume2, Eye, EyeOff } from 'lucide-react';
 import { speakText } from '../api';
 import { useVoice } from '../contexts/VoiceContext';
 import textIslands from '../data/textIslands.json';
+import { TransportBar } from './TransportBar';
+import { checkAllWordsPresent, checkFuzzyMatch, normalizeText } from '../utils/speechMatch';
 
-export default function IslandPlayer({ user, islandId, onCancel }) {
+export default function ThemeDrill({ user, islandId, onCancel }: any) {
   const island = textIslands.find(i => i.id === islandId);
   const sentences = island?.sentences || [];
 
@@ -22,7 +24,7 @@ export default function IslandPlayer({ user, islandId, onCancel }) {
   const earlyResolveRef = useRef<(() => void) | null>(null);
   const feedbackRef = useRef<'correct' | null>(null);
 
-  const { transcript, clearTranscript, setLanguage } = useVoice();
+  const { isListening, toggleListening, transcript, clearTranscript, setLanguage } = useVoice();
 
   useEffect(() => {
     setLanguage('it-IT');
@@ -35,30 +37,46 @@ export default function IslandPlayer({ user, islandId, onCancel }) {
   }, [setLanguage]);
 
   useEffect(() => {
+    playingRef.current = isListening;
+    setIsPlaying(isListening);
+    if (!isListening) {
+      window.speechSynthesis.cancel();
+      if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
+      if (earlyResolveRef.current) earlyResolveRef.current();
+      setPhase('idle');
+      setFeedback(null);
+    }
+  }, [isListening]);
+
+  useEffect(() => {
     if (!transcript || phase !== 'listening' || feedback === 'correct') return;
 
     const currentSentence = sentences[currentIndex];
     if (!currentSentence) return;
 
-    const cleanTranscript = transcript.replace(/[.,!?]/g, '').trim().toLowerCase();
-    const cleanExpected = currentSentence.it.replace(/[.,!?]/g, '').trim().toLowerCase();
+    const target = currentSentence.it;
+    const cleanTranscript = normalizeText(transcript, 'it');
+    const cleanTarget = normalizeText(target, 'it');
 
-    const expectedWords = cleanExpected.split(/\s+/);
-    const spokenWords = cleanTranscript.split(/\s+/);
-    
-    const allWordsPresent = expectedWords.every(word => spokenWords.includes(word));
+    const spokenWords = cleanTranscript.split(/\s+/).filter(Boolean);
+    const targetWords = cleanTarget.split(/\s+/).filter(Boolean);
 
-    if (allWordsPresent) {
+    const wordCountDiff = Math.abs(spokenWords.length - targetWords.length);
+    const hasValidWordCount = wordCountDiff <= 1;
+    const allWordsPresent = targetWords.length > 0 && targetWords.every(word => spokenWords.includes(word));
+
+    if (hasValidWordCount && allWordsPresent) {
       setFeedback('correct');
       feedbackRef.current = 'correct';
+      setShowTranslation(true);
       clearTranscript();
       
-      // Wait 1 second to show the green checkmark, then advance
+      // Wait 1.2 seconds to show green feedback, then advance
       setTimeout(() => {
         if (earlyResolveRef.current) {
           earlyResolveRef.current();
         }
-      }, 1000);
+      }, 1200);
     }
   }, [transcript, phase, currentIndex, sentences, clearTranscript, feedback]);
 
@@ -137,17 +155,7 @@ export default function IslandPlayer({ user, islandId, onCancel }) {
   }, [currentIndex, isPlaying]);
 
   const togglePlay = () => {
-    if (isPlaying) {
-      setIsPlaying(false);
-      playingRef.current = false;
-      window.speechSynthesis.cancel();
-      setPhase('idle');
-    } else {
-      setIsPlaying(true);
-      playingRef.current = true;
-      // Start cycle immediately on the current index
-      playCycle(currentIndex);
-    }
+    toggleListening();
   };
 
   const skipForward = () => {
@@ -174,141 +182,121 @@ export default function IslandPlayer({ user, islandId, onCancel }) {
     setCurrentIndex((prev) => (prev - 1 + sentences.length) % sentences.length);
   };
 
+  const playAudio = (text: string) => {
+    speakText(text, 'it', user?.speech_rate || 1.0, user?.voice_it);
+  };
+
   if (!island) return <div className="card-panel">Textinsel nicht gefunden.</div>;
 
   const currentSentence = sentences[currentIndex];
+  const displaySolution = showTranslation || alwaysShowTranslation;
 
   return (
-    <div className="island-player-container card-panel" style={{ display: 'flex', flexDirection: 'column', minHeight: '60vh' }}>
-      
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <div>
-          <h2 style={{ margin: 0 }}>Textinsel: {island.title}</h2>
-        </div>
-        <button onClick={onCancel} className="btn-cancel icon-text-btn" title="Beenden">
-          <XCircle size={20} />
-          <span className="desktop-text">Beenden</span>
-        </button>
-      </div>
-
-      {/* Main Content Area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '30px' }}>
-        
-        {/* Sentence Display */}
-        <div style={{ 
-            textAlign: 'center', 
-            padding: '40px 20px', 
-            backgroundColor: feedback === 'correct' ? 'rgba(46, 204, 113, 0.1)' : 'var(--bg-secondary)', 
-            border: feedback === 'correct' ? '2px solid var(--right-color)' : '2px solid transparent',
-            borderRadius: '16px',
-            width: '100%',
-            minHeight: '200px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-            transition: 'all 0.3s ease'
-        }}>
-          <div style={{ fontSize: '1.8rem', fontWeight: '500', color: 'var(--text-main)', marginBottom: '15px' }}>
-            {currentSentence.it}
+    <div className="island-player-container">
+      <div className="drill-panel" style={{ backgroundColor: feedback === 'correct' ? 'rgba(46, 204, 113, 0.15)' : 'var(--card-bg)', transition: 'background-color 0.3s' }}>
+        {/* Header Row inside Card Panel */}
+        <div className="drill-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '36px', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span className="progress-indicator" style={{ position: 'static', padding: '4px 10px', fontSize: '0.9rem', borderRadius: '12px' }}>
+              {currentIndex + 1}/{sentences.length}
+            </span>
+            <span style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--text-meta)' }}>
+              Thema: {island.title}
+            </span>
           </div>
-          
-          <div style={{ minHeight: '30px' }}>
-            {showTranslation ? (
-              <div style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>
-                {currentSentence.de}
-              </div>
-            ) : (
-              <button 
-                className="btn-secondary" 
-                style={{ fontSize: '0.9rem', padding: '4px 12px', opacity: 0.7 }}
-                onClick={() => {
-                  setShowTranslation(true);
-                  setAlwaysShowTranslation(true);
-                }}
-              >
-                Übersetzung anzeigen
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button 
+              type="button" 
+              className="icon-btn" 
+              onClick={() => {
+                const nextState = !alwaysShowTranslation;
+                setAlwaysShowTranslation(nextState);
+                setShowTranslation(nextState);
+              }} 
+              style={{ width: '32px', height: '32px' }} 
+              title={alwaysShowTranslation ? "Übersetzung ausblenden" : "Übersetzung anzeigen"}
+            >
+              {alwaysShowTranslation ? <EyeOff size={16} color="var(--topic-color)" /> : <Eye size={16} />}
+            </button>
+            {onCancel && (
+              <button onClick={onCancel} className="icon-btn" style={{ width: '32px', height: '32px' }} title="Beenden">
+                <XCircle size={16} />
               </button>
             )}
           </div>
         </div>
 
-        {/* Visual Feedback (Microphone) */}
+        {/* Subjekt (Italienischer Satz) */}
+        <div className="subjekt" style={{ marginTop: '8px', marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+            <h2 style={{ margin: 0, textAlign: 'center', fontSize: '1.45rem', fontWeight: 700, color: feedback === 'correct' ? 'var(--right-color)' : 'var(--topic-color)' }}>
+              {currentSentence?.it}
+            </h2>
+            <button 
+              type="button"
+              onClick={() => playAudio(currentSentence?.it)} 
+              title="Vorlesen" 
+              style={{ background: 'transparent', border: 'none', boxShadow: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.85 }}
+            >
+              <Volume2 size={20} color={feedback === 'correct' ? 'var(--right-color)' : 'var(--topic-color)'} />
+            </button>
+          </div>
+        </div>
+
+        {/* Lösung (Deutscher Satz) */}
+        <div className="loesung" style={{ minHeight: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px', marginBottom: '16px' }}>
+          {displaySolution && (
+            <div className="solution-content fade-in" style={{ textAlign: 'center' }}>
+              <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 600, color: 'var(--right-color)' }}>
+                {currentSentence?.de}
+              </h2>
+            </div>
+          )}
+        </div>
+
+        {/* Visual Feedback (Microphone & Phase) */}
         <div style={{ 
-          height: '80px', 
+          height: '40px', 
           display: 'flex', 
           flexDirection: 'column',
           alignItems: 'center', 
           justifyContent: 'center',
-          gap: '10px',
-          width: '100%'
+          gap: '8px',
+          width: '100%',
+          marginTop: '10px'
         }}>
           {phase === 'listening' && feedback !== 'correct' && (
             <>
-              <div className="listening-global" style={{ color: 'var(--primary-color)' }}>
-                <Mic size={32} />
-              </div>
               <div style={{ width: '60%', height: '4px', backgroundColor: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
                 <div style={{ 
                   height: '100%', 
-                  backgroundColor: 'var(--primary-color)', 
+                  backgroundColor: 'var(--topic-color)', 
                   width: `${100 - progress}%`,
                   transition: 'width 0.1s linear'
                 }} />
               </div>
-              <span style={{ fontSize: '0.85rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>Jetzt bist du dran!</span>
+              <span className="text-small" style={{ color: 'var(--topic-color)', fontWeight: 'bold' }}>Jetzt bist du dran!</span>
             </>
-          )}
-          {feedback === 'correct' && (
-            <div style={{ color: 'var(--right-color)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', fontWeight: 'bold' }}>
-              <CheckCircle size={32} />
-              Perfekt!
-            </div>
           )}
           {phase === 'speaking' && (
             <div style={{ color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <MessageCircle size={24} />
-              <span style={{ fontWeight: '500' }}>Hör genau zu...</span>
+              <MessageCircle size={20} color="var(--topic-color)" />
+              <span style={{ fontWeight: '500', fontSize: '0.9rem' }}>Hör genau zu...</span>
             </div>
           )}
         </div>
 
+
       </div>
 
-      {/* Controls */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginTop: 'auto', paddingTop: '20px' }}>
-        <div className="text-muted" style={{ fontSize: '1.2rem', fontWeight: 'bold', textAlign: 'left' }}>
-          {currentIndex + 1}/{sentences.length}
-        </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
-          <button className="icon-btn" onClick={skipBack} style={{ backgroundColor: 'var(--bg-secondary)' }}>
-            <SkipBack size={24} />
-          </button>
-          
-          <button 
-            className="icon-btn" 
-            onClick={togglePlay} 
-            style={{ 
-              backgroundColor: isPlaying ? 'var(--wrong-color)' : 'var(--primary-color)', 
-              color: 'white',
-              width: '64px',
-              height: '64px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-            }}
-          >
-            {isPlaying ? <Square size={28} /> : <Play size={28} style={{ marginLeft: '4px' }} />}
-          </button>
-
-          <button className="icon-btn" onClick={skipForward} style={{ backgroundColor: 'var(--bg-secondary)' }}>
-            <SkipForward size={24} />
-          </button>
-        </div>
-        
-        <div></div>
-      </div>
-
+      <TransportBar
+        onBack={skipBack}
+        onForward={skipForward}
+        onMainAction={toggleListening}
+        mainActionType="mic"
+        mainActionActive={isListening}
+      />
     </div>
   );
 }

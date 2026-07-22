@@ -4,6 +4,8 @@ type VoiceContextType = {
   isListening: boolean;
   isProcessing: boolean; // Not really used for browser API but kept for compatibility
   toggleListening: () => void;
+  startListening: () => void;
+  stopListening: () => void;
   language: string;
   setLanguage: (lang: string) => void;
   transcript: string;
@@ -47,6 +49,11 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       rawTranscriptRef.current = combinedTranscript;
       
+      if (ttsPlayingRef.current) {
+        ignoredPrefixRef.current = combinedTranscript;
+        return;
+      }
+      
       let displayTranscript = combinedTranscript;
       if (ignoredPrefixRef.current && displayTranscript.startsWith(ignoredPrefixRef.current)) {
         displayTranscript = displayTranscript.slice(ignoredPrefixRef.current.length);
@@ -60,7 +67,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     recognition.onerror = (event: any) => {
       console.warn("Speech Recognition Error:", event.error);
       if (event.error === 'no-speech') return; // Ignore and let it continue
-      if (['not-allowed', 'network', 'service-not-allowed', 'aborted', 'audio-capture'].includes(event.error)) {
+      if (['not-allowed', 'service-not-allowed'].includes(event.error)) {
         shouldListenRef.current = false;
         setIsListening(false);
       }
@@ -87,6 +94,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     return () => {
       shouldListenRef.current = false;
+      setIsListening(false);
       try { recognition.stop(); } catch (e) {}
     };
   }, []);
@@ -97,28 +105,57 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const wasListening = isListening;
       if (wasListening) {
         // Stop briefly to change language
-        recognitionRef.current.stop();
+        try { recognitionRef.current.stop(); } catch(e) {}
       }
       recognitionRef.current.lang = language;
-      if (wasListening) {
-        // Restart will be handled by onend -> shouldListenRef
-      }
     }
   }, [language]);
 
-  const toggleListening = useCallback(() => {
-    if (isListening) {
-      shouldListenRef.current = false;
-      recognitionRef.current?.stop();
-    } else {
-      shouldListenRef.current = true;
-      try {
-        recognitionRef.current?.start();
-      } catch (e) {
-        console.error("Failed to start recognition:", e);
-      }
+  // Handle TTS pause/resume
+  const ttsPlayingRef = useRef(false);
+  useEffect(() => {
+    const handleTtsStart = () => {
+      ttsPlayingRef.current = true;
+    };
+    const handleTtsEnd = () => {
+      setTimeout(() => {
+        ttsPlayingRef.current = false;
+        if (rawTranscriptRef.current) {
+          ignoredPrefixRef.current = rawTranscriptRef.current;
+          setTranscript('');
+        }
+      }, 500);
+    };
+    window.addEventListener('tts-start', handleTtsStart);
+    window.addEventListener('tts-end', handleTtsEnd);
+    return () => {
+      window.removeEventListener('tts-start', handleTtsStart);
+      window.removeEventListener('tts-end', handleTtsEnd);
+    };
+  }, []);
+
+  const startListening = useCallback(() => {
+    shouldListenRef.current = true;
+    setIsListening(true);
+    try { recognitionRef.current?.start(); } catch (e: any) {
+      if (e.name !== 'InvalidStateError') console.error("Failed to start recognition:", e);
     }
-  }, [isListening]);
+  }, []);
+
+  const stopListening = useCallback(() => {
+    shouldListenRef.current = false;
+    setIsListening(false);
+    window.speechSynthesis.cancel();
+    try { recognitionRef.current?.stop(); } catch(e) {}
+  }, []);
+
+  const toggleListening = useCallback(() => {
+    if (shouldListenRef.current || isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  }, [isListening, startListening, stopListening]);
 
   const clearTranscript = useCallback(() => {
     ignoredPrefixRef.current = rawTranscriptRef.current;
@@ -129,7 +166,9 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <VoiceContext.Provider value={{ 
       isListening, 
       isProcessing: false,
-      toggleListening, 
+      toggleListening,
+      startListening,
+      stopListening,
       language, 
       setLanguage, 
       transcript, 

@@ -1,57 +1,40 @@
-# Plan: "Textinseln" (Text Islands) Modul
+# auto play button 
+- alle drills sollen unten den blauen play button bekommen,
+- wenn aktiviert wird auf gesprochene antwort gewartet
+- nach richtiger antwort, textantwort einblenden, kleine pausse, weiter
+- nach falscher(keiner) antwort, wird lösung angezeigt, erneut auf spracheingabe gewartet      
+- wenn immer noch keine richtige antwort gesagt, wird lösung angesagt, nach pause weiter zum nächste eintrag
+- die Wendekacheln sind nett , sollen aber der einheitlichkeit wegen weg 
 
-## 1. Konzept & Zielsetzung
-- **Ziel:** Ein Sprachübungswiederholmodus anhand kleiner, thematisch zusammenhängender "Textinseln" (z.B. "Wer bin ich?").
-- **Ablauf einer Übung:**
-  1. Ein Satz wird von der App auf Italienisch vorgelesen (Text-to-Speech).
-  2. Es folgt eine Pause, in der der Nutzer den Satz selbst laut liest/nachspricht. Die Dauer der Pause wird **automatisch** basierend auf der Länge des Textes berechnet. Während dieser Pause ist ein **pulsierendes Mikrofon-Icon** zu sehen.
-  3. Dieser Vorgang (Vorsprechen -> Pause -> Nachsprechen) wird pro Satz **zweimal** ausgeführt.
-  4. Danach geht es zum nächsten Satz der jeweiligen Textinsel.
-  5. Ist die Insel zu Ende, **fängt sie von vorne an (Loop)**, bis der Nutzer sie manuell beendet.
-- **Sprach-Fokus:** Es wird standardmäßig **nur der italienische Text** angezeigt und vorgelesen. Der deutsche Text dient nur als Hilfe und kann bei Bedarf eingeblendet werden.
+# keine Texteingaen 
+- es soll keine Texteingaben über due Tastatur mehr geben
+- nur mikro und maus (touch) als eingabe
+- damit wird das mikro mit dem play button eingeschaltet, kann oben weg
 
-## 2. Datenstruktur & Inhalt
-- **Inhaltserstellung:** Die Texte werden in einer JSON Datei (`src/data/textIslands.json`) abgelegt.
-- **Struktur-Entwurf:**
-  ```json
-  [
-    {
-      "id": "wer_bin_ich",
-      "title": "Wer bin ich?",
-      "description": "Eine kurze Vorstellung der eigenen Person.",
-      "sentences": [
-        {
-          "de": "Ich bin Andreas Marocco.",
-          "it": "Sono Andreas Marocco."
-        },
-        {
-          "de": "Ich habe eine Familie und lebe in Hamburg.",
-          "it": "Ho una famiglia e vivo ad Amburgo."
-        },
-        {
-          "de": "Ich habe eine Frau und zwei Söhne.",
-          "it": "Ho una moglie e due figli."
-        },
-        {
-          "de": "Ich bin 64 Jahre alt und mein Beruf ist Elektroingenieur.",
-          "it": "Ho 64 anni e sono ingegnere elettrotecnico."
-        }
-      ]
-    }
-  ]
-  ```
+# weniger fonts und fontgrössen
+- nur noch: sehr groß, groß, normal, button, klein
+- farben: normal (schwarz), button (grau), lösungen immer grün 
+- kachel überschrift meta bleibt , überschrift topik blau
 
-## 3. UI/UX & Komponenten
-- **IslandSelector (Auswahlmenü):** Übersicht der verfügbaren Textinseln (Karten-Design).
-- **IslandPlayer (Übungsmodus):**
-  - **Textanzeige:** Groß und lesbar, primär auf Italienisch. Ein Button "Hilfe / Übersetzung" blendet den deutschen Text ein.
-  - **Audio-Steuerung:** Nutzt den `VoiceContext` (Web Speech API).
-  - **Visuelles Feedback:** Pulsierendes Mikrofon in den Sprech-Pausen.
-  - **Aktions-Buttons:** Start, Pause, Abbrechen, Nächster/Vorheriger Satz (optional).
+# buttons 
+- alle buttons nur noch symbole 
+- alle buttons bekommen tooltips
+- logout button ganz nach rechts
+- der von forne butten kann weg
 
-## 4. Implementierungsschritte
-- [x] **Schritt 1: Datenstruktur anlegen.** Erstellen der `textIslands.json` mit der ersten Textinsel ("Wer bin ich?").
-- [x] **Schritt 2: UI-Komponenten bauen (Teil 1 - Layout).** Erstellen des `IslandSelector` und des grundlegenden Layouts für den `IslandPlayer`.
-- [x] **Schritt 3: Abspiel-Logik entwickeln (Timer & State).** Implementieren der State-Maschine (Lesen (IT) -> Pause (Mikrofon pulsiert) -> Lesen (IT) -> Pause -> Nächster Satz -> Loop am Ende).
-- [x] **Schritt 4: Navigation.** Das Modul in das Hauptmenü (`App.tsx` oder wo relevant) integrieren.
-- [ ] **Schritt 5: Test & Feinschliff.** Timing der Pausen überprüfen (z.B. Lesegeschwindigkeit simulieren) und Animationen polieren.
+# responsivenes
+- auf iphone 11 oder kleiner wird ui abgeschnitten , skaliert nicht    
+
+# lernrichtung 
+- die lernrichtung soll immer umgedreht werden können, nicht mehr in den einstellungen   
+
+# layout
+- versuche eingenrelles layout auf allen drills gleich einzusetzen
+- die version kann dezent oben in eine ecke
+- die abfrage kacheln zeigen nur das subjekt
+- die steuer buttons kommen darunter in eine Zeile 
+
+# fehlerhafte spracherkennung (extra thema)
+- es scheint so, das akustische ausgabe auch in den eingabe-buffer übertragen werden, und dann 
+   natürlich als richtig interpretiert werden, auch bei kopfhörer  
+- bitte nicht das mikro an und abschalten , dan gibt es bei mobile devices nervige messages

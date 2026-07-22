@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { CheckCircle, XCircle, Volume2, RotateCcw, List, BookOpen, Play, Square, SkipForward, SkipBack, Mic } from 'lucide-react';
+import { Volume2, Play, Square, List, XCircle, Eye, EyeOff } from 'lucide-react';
 import { useVoice } from '../contexts/VoiceContext';
 import { speakText } from '../api';
 import { dataService } from '../dataService';
+import { TransportBar } from './TransportBar';
+import { checkAllWordsPresent, checkSkipOrWrong } from '../utils/speechMatch';
+import { statsService } from '../utils/statsService';
 
-const pronounsMap = {
+const pronounsMap: Record<string, any> = {
   form_1s: { it: 'io', de: 'ich' },
   form_2s: { it: 'tu', de: 'du' },
   form_3s: { it: 'lui/lei', de: 'er/sie/es' },
@@ -13,13 +16,22 @@ const pronounsMap = {
   form_3p: { it: 'loro', de: 'sie' }
 };
 
-export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) {
+const TOTAL_SENTENCES = 10;
+
+export default function SentenceDrill({ 
+  user, 
+  pronounKey, 
+  onFinish, 
+  onCancel, 
+  onFlip,
+  alwaysShowTranslation = false,
+  setAlwaysShowTranslation
+}: any) {
   const [logicData, setLogicData] = useState<any>(null);
   const [currentSentence, setCurrentSentence] = useState<any>(null);
   const [sentenceCount, setSentenceCount] = useState(0);
-  const [answer, setAnswer] = useState('');
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [showSolution, setShowSolution] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showOverview, setShowOverview] = useState(false);
   const [isPlayingAll, setIsPlayingAll] = useState(false);
@@ -27,31 +39,50 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
   const [lockedVerb, setLockedVerb] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const playingRef = useRef(false);
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
+  const playingRef = useRef(false);
+  const lastPlayedRef = useRef<string | null>(null);
+  const isSessionActiveRef = useRef(false);
   const pauseTime = user?.pause_time || 800;
   
   const { isListening, toggleListening, transcript, setLanguage, clearTranscript } = useVoice();
-  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync ref and handle session pause / stop
+  useEffect(() => {
+    isSessionActiveRef.current = isListening;
+    if (!isListening) {
+      window.speechSynthesis.cancel();
+      setIsProcessing(false);
+      setIsAudioPlaying(false);
+    }
+  }, [isListening]);
+
+  // Unmount cleanup
+  useEffect(() => {
+    return () => {
+      isSessionActiveRef.current = false;
+      window.speechSynthesis.cancel();
+      playingRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
-    if (!concentratedMode) {
-      setLockedVerb(null);
-    }
+    if (!concentratedMode) setLockedVerb(null);
   }, [concentratedMode]);
 
   useEffect(() => {
     setLanguage('it-IT');
     fetchLogic();
-    return () => {
-      playingRef.current = false;
-    };
   }, [setLanguage]);
 
   const fetchLogic = async () => {
     try {
       const data = await dataService.getSentenceLogic();
       setLogicData(data);
+      statsService.startSession('sentences', TOTAL_SENTENCES);
       generateSentence(data);
       setLoading(false);
     } catch (e) {
@@ -59,53 +90,49 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
     }
   };
 
+  const handleNext = (isCorrect = false) => {
+    if (sentenceCount >= TOTAL_SENTENCES) {
+      if (onFinish) onFinish(isCorrect);
+    } else {
+      generateSentence();
+    }
+  };
+
   const generateSentence = (data = logicData, forceNewVerb = false) => {
     if (!data || !data.logic || data.logic.length === 0) return;
     
-    // Wenn wir in der Historie zurückgegangen sind und einfach "Weiter" klicken, zeigen wir den nächsten Satz der Historie
     if (historyIndex < history.length - 1 && data === logicData && !forceNewVerb) {
        const nextIndex = historyIndex + 1;
        setHistoryIndex(nextIndex);
        setCurrentSentence(history[nextIndex]);
        setSentenceCount(prev => prev + 1);
-       setAnswer('');
        setFeedback(null);
        setShowSolution(false);
+       setAttemptCount(0);
        clearTranscript();
-       setTimeout(() => inputRef.current?.focus(), 100);
+       lastPlayedRef.current = null;
        return;
     }
     
     let logicEntry;
     if (concentratedMode && lockedVerb && !forceNewVerb) {
-      // Find the entry for the locked verb
-      logicEntry = data.logic.find(entry => entry.verb === lockedVerb);
-      if (!logicEntry) {
-          // If for some reason the verb is not found, fallback to random
-          logicEntry = data.logic[Math.floor(Math.random() * data.logic.length)];
-      }
+      logicEntry = data.logic.find((entry: any) => entry.verb === lockedVerb);
+      if (!logicEntry) logicEntry = data.logic[Math.floor(Math.random() * data.logic.length)];
     } else {
-      // Pick a random verb logic entry
       logicEntry = data.logic[Math.floor(Math.random() * data.logic.length)];
     }
     
-    // Update the locked verb for the next call if in concentrated mode
     setLockedVerb(logicEntry.verb);
-    
-    // Pick a random object
     const objectEntry = logicEntry.objects[Math.floor(Math.random() * logicEntry.objects.length)];
-    
-    // Get the conjugation
-    const verbData = data.verbs.find(v => v.foreign_infinitive === logicEntry.verb);
+    const verbData = data.verbs.find((v: any) => v.foreign_infinitive === logicEntry.verb);
     if (!verbData || !verbData.conjugations[0]) {
-        // Fallback or retry
         generateSentence(data);
         return;
     }
     
     const conjugation = verbData.conjugations[0][pronounKey];
     const nativeVerb = logicEntry.native_forms[pronounKey];
-    const pronounIt = pronounsMap[pronounKey].it.split('/')[0]; // Use lui for lui/lei
+    const pronounIt = pronounsMap[pronounKey].it.split('/')[0];
     const pronounDe = pronounsMap[pronounKey].de.split('/')[0];
 
     const nativeSentence = `${pronounDe} ${nativeVerb} ${objectEntry.native}.`;
@@ -121,15 +148,13 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
     const newHistory = [...history.slice(0, historyIndex + 1), newSentence];
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-
     setCurrentSentence(newSentence);
-    
     setSentenceCount(prev => prev + 1);
-    setAnswer('');
     setFeedback(null);
     setShowSolution(false);
+    setAttemptCount(0);
     clearTranscript();
-    setTimeout(() => inputRef.current?.focus(), 100);
+    lastPlayedRef.current = null;
   };
 
   const goBack = () => {
@@ -138,317 +163,316 @@ export default function SentenceDrill({ user, pronounKey, onFinish, onCancel }) 
       setHistoryIndex(prevIndex);
       setCurrentSentence(history[prevIndex]);
       setSentenceCount(prev => prev - 1);
-      setAnswer('');
       setFeedback(null);
       setShowSolution(false);
+      setAttemptCount(0);
       clearTranscript();
-      setTimeout(() => inputRef.current?.focus(), 100);
+      lastPlayedRef.current = null;
     }
   };
 
+  // Read sentence prompt aloud when active (isListening)
   useEffect(() => {
-    if (!transcript || !currentSentence || feedback === 'correct' || showOverview) return;
+    if (!currentSentence || !isListening) return;
 
-    const cleanTranscript = transcript.replace(/[.,!?]/g, '').trim().toLowerCase();
-    const cleanExpected = currentSentence.foreign.replace(/[.,!?]/g, '').trim().toLowerCase();
-
-    // Check if the transcript contains the key parts (pronoun, verb, object)
-    const expectedWords = cleanExpected.split(/\s+/);
-    const spokenWords = cleanTranscript.split(/\s+/);
+    let isCurrent = true;
+    const textToPlay = currentSentence.native;
     
-    const allWordsPresent = expectedWords.every(word => spokenWords.includes(word));
+    if (textToPlay && lastPlayedRef.current !== textToPlay) {
+      lastPlayedRef.current = textToPlay;
+      setIsAudioPlaying(true);
+      speakText(textToPlay, 'de', user?.speech_rate || 1.0, user?.voice_de).then(() => {
+        if (!isCurrent || !isSessionActiveRef.current) return;
+        clearTranscript();
+        setTimeout(() => {
+          if (isCurrent && isSessionActiveRef.current) setIsAudioPlaying(false);
+        }, 150);
+      });
+    }
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [currentSentence, isListening, user]);
+
+  // 3-second no-input timeout logic
+  useEffect(() => {
+    if (!isListening || isAudioPlaying || isProcessing || !currentSentence) return;
+
+    const noInputTimer = setTimeout(() => {
+      if (!isSessionActiveRef.current) return;
+
+      if (attemptCount === 0) {
+        // Step 1: 3s without input -> Show solution, mark incorrect
+        setFeedback('incorrect');
+        setShowSolution(true);
+        setAttemptCount(1);
+        statsService.recordAttempt(false, true);
+        clearTranscript();
+        
+        setTimeout(() => {
+          if (isSessionActiveRef.current) setFeedback(null);
+        }, 1000);
+      } else {
+        // Step 2: Still no correct answer after another 3s -> Read solution aloud & advance
+        setIsProcessing(true);
+        setFeedback('incorrect');
+        
+        speakText(currentSentence.foreign, 'it', user?.speech_rate || 1.0, user?.voice_it).then(() => {
+          if (!isSessionActiveRef.current) return;
+          setTimeout(() => {
+            if (!isSessionActiveRef.current) return;
+            setFeedback(null);
+            setIsProcessing(false);
+            clearTranscript();
+            handleNext(false);
+          }, 1500);
+        });
+      }
+    }, 3000);
+
+    return () => clearTimeout(noInputTimer);
+  }, [isListening, isAudioPlaying, isProcessing, currentSentence, attemptCount, clearTranscript, user, sentenceCount]);
+
+  // Speech evaluation
+  useEffect(() => {
+    if (!transcript || isProcessing || isAudioPlaying || !isListening || !currentSentence) return;
+
+    const allWordsPresent = checkAllWordsPresent(transcript, currentSentence.foreign);
 
     if (allWordsPresent) {
-      setAnswer(currentSentence.foreign);
       setFeedback('correct');
-      clearTranscript();
+      setIsProcessing(true);
+      setShowSolution(true);
+      statsService.recordAttempt(true, showSolution || alwaysShowTranslation);
+
       setTimeout(() => {
-          generateSentence();
+          if (!isSessionActiveRef.current) return;
+          setFeedback(null);
+          setIsProcessing(false);
+          clearTranscript();
+          handleNext(true);
       }, 1500);
-    }
-  }, [transcript, currentSentence, feedback, clearTranscript, showOverview]);
-
-  const checkAnswer = () => {
-    const cleanActual = answer.trim().toLowerCase().replace(/[.,!?]/g, '');
-    const cleanExpected = currentSentence.foreign.trim().toLowerCase().replace(/[.,!?]/g, '');
-    
-    if (cleanActual === cleanExpected) {
-      setFeedback('correct');
-      setTimeout(() => generateSentence(), 1500);
     } else {
-      setFeedback('incorrect');
+        if (checkSkipOrWrong(transcript, 5, false)) {
+            setFeedback('incorrect');
+            if (!showSolution && onFlip) onFlip();
+            setShowSolution(true);
+            setAttemptCount(1);
+            statsService.recordAttempt(false, true);
+            setTimeout(() => {
+                if (!isSessionActiveRef.current) return;
+                clearTranscript();
+            }, 1000);
+        }
     }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      checkAnswer();
-    }
-  };
+  }, [transcript, currentSentence, isProcessing, isAudioPlaying, isListening, showSolution, alwaysShowTranslation, clearTranscript, onFlip, sentenceCount]);
 
   const playAudio = (text: string) => {
-    if (isPlayingAll) {
-      handleStopPlayingAll();
-    }
-    speakText(text, 'it', user?.speech_rate || 1.0, user?.voice_it);
-  };
-
-  const stopAudio = () => {
-    setIsPlayingAll(false);
-    playingRef.current = false;
-  };
-
-  const startPlayingAll = async () => {
-    const sentences = getAllPossibleSentences();
-    setIsPlayingAll(true);
-    playingRef.current = true;
-
-    for (const s of sentences) {
-      if (!playingRef.current) break;
-      await speakText(s.foreign, 'it', user?.speech_rate || 1.0, user?.voice_it);
-      // Small pause between sentences
-      if (playingRef.current) {
-        await new Promise(r => setTimeout(r, pauseTime));
-      }
-    }
-    
-    setIsPlayingAll(false);
-    playingRef.current = false;
+    if (isPlayingAll) handleStopPlayingAll();
+    setIsAudioPlaying(true);
+    speakText(text, 'it', user?.speech_rate || 1.0, user?.voice_it).then(() => {
+      if (!isSessionActiveRef.current) return;
+      clearTranscript();
+      setTimeout(() => {
+        if (isSessionActiveRef.current) setIsAudioPlaying(false);
+      }, 150);
+    });
   };
 
   const handleStopPlayingAll = () => {
     playingRef.current = false;
-    stopAudio();
+    setIsPlayingAll(false);
   };
 
-  if (loading) return <div className="card-panel">Lade Satz-Logik...</div>;
-  if (!currentSentence) return <div className="card-panel">Keine Sätze verfügbar.</div>;
-
-  const getAllPossibleSentences = () => {
-    const sentences: any[] = [];
-    if (!logicData) return sentences;
-
-    logicData.logic.forEach(logicEntry => {
-      const verbData = logicData.verbs.find(v => v.foreign_infinitive === logicEntry.verb);
-      if (!verbData || !verbData.conjugations[0]) return;
-
-      const conjugation = verbData.conjugations[0][pronounKey];
-      const nativeVerb = logicEntry.native_forms[pronounKey];
-      const pronounIt = pronounsMap[pronounKey].it.split('/')[0];
-      const pronounDe = pronounsMap[pronounKey].de.split('/')[0];
-
-      logicEntry.objects.forEach(obj => {
-        sentences.push({
-          native: `${pronounDe} ${nativeVerb} ${obj.native}.`,
-          foreign: `${pronounIt} ${conjugation} ${obj.foreign}`
-        });
-      });
-    });
-    return sentences;
+  const togglePlayAllOverview = async () => {
+    if (isPlayingAll) {
+      handleStopPlayingAll();
+      return;
+    }
+    if (!logicData || !logicData.logic) return;
+    setIsPlayingAll(true);
+    playingRef.current = true;
+    
+    for (const item of logicData.logic) {
+      if (!playingRef.current) break;
+      const verbData = logicData.verbs.find((v: any) => v.foreign_infinitive === item.verb);
+      if (verbData && verbData.conjugations[0]) {
+        const conjugation = verbData.conjugations[0][pronounKey];
+        const pronounIt = pronounsMap[pronounKey].it.split('/')[0];
+        for (const obj of item.objects) {
+          if (!playingRef.current) break;
+          const sentenceText = `${pronounIt} ${conjugation} ${obj.foreign}`;
+          await speakText(sentenceText, 'it', user?.speech_rate || 1.0, user?.voice_it);
+          if (playingRef.current) {
+            await new Promise(r => setTimeout(r, pauseTime));
+          }
+        }
+      }
+    }
+    setIsPlayingAll(false);
+    playingRef.current = false;
   };
+
+  if (loading) return <div className="loading">Lade Satzbau-Logik...</div>;
+
+  const displaySolution = showSolution || alwaysShowTranslation;
 
   return (
-    <div className="sentence-drill-container card-panel">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <div>
-          <h2 style={{ margin: 0 }}>Sätze üben: {pronounsMap[pronounKey].it}</h2>
-        </div>
-        <div className="header-buttons" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {!showOverview && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginRight: '10px', fontSize: '0.9rem' }}>
-              <input 
-                type="checkbox" 
-                checked={concentratedMode} 
-                onChange={(e) => setConcentratedMode(e.target.checked)} 
-              />
-              <span>Konzentriert (1 Verb)</span>
-            </label>
-          )}
-          <button 
-            onClick={() => {
-              if (showOverview && isPlayingAll) handleStopPlayingAll();
-              setShowOverview(!showOverview);
-            }} 
-            className="btn-cancel icon-text-btn" 
-            title={showOverview ? "Lernen" : "Übersicht"}
-          >
-            {showOverview ? <BookOpen size={20} /> : <List size={20} />}
-            <span className="desktop-text">{showOverview ? 'Lernen' : 'Übersicht'}</span>
-          </button>
-          <button onClick={onCancel} className="btn-cancel icon-text-btn" title="Beenden">
-            <XCircle size={20} />
-            <span className="desktop-text">Beenden</span>
-          </button>
-        </div>
-      </div>
-
+    <div className="sentence-drill-container" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
       {showOverview ? (
-        <div className="overview-container">
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
-            <button 
-              className="btn-secondary" 
-              onClick={isPlayingAll ? handleStopPlayingAll : startPlayingAll}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              {isPlayingAll ? <Square size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
-              {isPlayingAll ? 'Stop' : 'Alle vorlesen'}
-            </button>
+        <div className="overview-container" style={{ flex: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 style={{ margin: 0 }}>Satzübersicht ({pronounsMap[pronounKey].de})</h3>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                className="btn-secondary" 
+                onClick={togglePlayAllOverview}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                {isPlayingAll ? <Square size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+                {isPlayingAll ? 'Stop' : 'Alle vorlesen'}
+              </button>
+              <button className="icon-btn" onClick={() => setShowOverview(false)} title="Schließen">
+                <XCircle size={20} />
+              </button>
+            </div>
           </div>
-          <div className="words-list" style={{ maxHeight: '60vh', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px' }}>
-            <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th style={{ padding: '8px', borderBottom: '1px solid var(--border-color)' }}>Deutsch</th>
-                  <th style={{ padding: '8px', borderBottom: '1px solid var(--border-color)' }}>Italienisch</th>
-                </tr>
-              </thead>
-              <tbody>
-                {getAllPossibleSentences().map((s, idx) => (
-                  <tr key={idx}>
-                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border-color)' }}>{s.native}</td>
-                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>{s.foreign}</span>
-                      <button 
-                        className="btn-secondary" 
-                        onClick={() => playAudio(s.foreign)}
-                        style={{ padding: '4px', minWidth: 'auto' }}
-                      >
-                        <Volume2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          
+          <div className="verbs-list" style={{ maxHeight: '60vh', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px' }}>
+            {logicData && logicData.logic.map((entry: any) => {
+              const verbData = logicData.verbs.find((v: any) => v.foreign_infinitive === entry.verb);
+              const conjugation = verbData?.conjugations[0]?.[pronounKey];
+              const pronounIt = pronounsMap[pronounKey].it.split('/')[0];
+              const pronounDe = pronounsMap[pronounKey].de.split('/')[0];
+              const nativeVerb = entry.native_forms[pronounKey];
+
+              return (
+                <div key={entry.verb} style={{ marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: 'var(--topic-color)' }}>
+                    {entry.verb} ({verbData?.native_infinitive})
+                  </h4>
+                  <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                    <tbody>
+                      {entry.objects.map((obj: any, idx: number) => {
+                        const deSent = `${pronounDe} ${nativeVerb} ${obj.native}.`;
+                        const itSent = `${pronounIt} ${conjugation} ${obj.foreign}`;
+                        return (
+                          <tr key={idx}>
+                            <td style={{ padding: '6px 8px', color: 'var(--text-color)', width: '50%' }}>{deSent}</td>
+                            <td style={{ padding: '6px 8px', fontWeight: 'bold', width: '50%' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>{itSent}</span>
+                                <button 
+                                  className="icon-btn" 
+                                  onClick={() => speakText(itSent, 'it', user?.speech_rate || 1.0, user?.voice_it)}
+                                  style={{ padding: '2px' }}
+                                  title="Vorlesen"
+                                >
+                                  <Volume2 size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : (
         <>
-          <div className="flashcard-container" style={{ marginBottom: '25px', minHeight: '200px' }}>
-            <div 
-              className={`flashcard ${showSolution ? 'flipped' : ''}`}
-              onClick={() => setShowSolution(!showSolution)}
-            >
-              <div className="flashcard-inner">
-                <div className="flashcard-front" style={{ 
-                  backgroundColor: feedback === 'correct' ? 'rgba(46, 204, 113, 0.1)' : 'var(--card-bg)',
-                  border: `1px solid ${feedback === 'correct' ? 'var(--right-color)' : 'var(--border-color)'}`,
-                  boxShadow: feedback === 'correct' ? '0 0 15px rgba(46, 204, 113, 0.3)' : undefined,
-                  transition: 'all 0.3s ease'
-                }}>
-                  <h2 style={{ fontSize: '1.4rem', fontWeight: '500', margin: 0 }}>{currentSentence.native}</h2>
-                </div>
-                <div className="flashcard-back" style={{ 
-                  backgroundColor: feedback === 'correct' ? 'rgba(46, 204, 113, 0.1)' : 'var(--card-bg)', 
-                  display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-                  border: `1px solid ${feedback === 'correct' ? 'var(--right-color)' : 'var(--border-color)'}`,
-                  boxShadow: feedback === 'correct' ? '0 0 15px rgba(46, 204, 113, 0.3)' : undefined,
-                  transition: 'all 0.3s ease'
-                }}>
-                  <h2 style={{ fontSize: '1.4rem', margin: 0, color: feedback === 'correct' ? 'var(--right-color)' : 'var(--text-color)' }}>{currentSentence.foreign}</h2>
-                  <div className="media-controls" style={{ marginTop: '20px' }}>
-                    <button 
-                      className="audio-btn" 
-                      onClick={(e) => { e.stopPropagation(); playAudio(currentSentence.foreign); }} 
-                      title="Vorlesen"
-                    >
-                      <Volume2 size={32} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="input-section" style={{ position: 'relative' }}>
-            {!isListening ? (
-              <input
-                ref={inputRef}
-                type="text"
-                className={`verb-input ${feedback || ''}`}
-                placeholder="Übersetze den Satz..."
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={feedback === 'correct'}
-                style={{
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  padding: '15px',
-                  fontSize: '1.1rem',
-                  borderRadius: '8px',
-                  border: `2px solid ${
-                    feedback === 'correct' ? 'var(--right-color)' : 
-                    feedback === 'incorrect' ? 'var(--wrong-color)' : 
-                    'var(--border-color)'
-                  }`
-                }}
-              />
-            ) : (
-              <div style={{ 
-                width: '100%', 
-                boxSizing: 'border-box', 
-                padding: '20px 15px', 
-                borderRadius: '8px', 
-                backgroundColor: 'rgba(52, 152, 219, 0.05)', 
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: '80px'
-              }}>
-                <div className="listening-global" style={{ color: 'var(--primary-color)' }}>
-                  <Mic size={32} />
-                </div>
-              </div>
-            )}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginTop: 'auto', paddingTop: '20px' }}>
-              <div className="text-muted" style={{ fontSize: '1.2rem', fontWeight: 'bold', textAlign: 'left' }}>
-                {sentenceCount}
+          <div className="drill-panel" style={{ backgroundColor: feedback === 'correct' ? 'rgba(46, 204, 113, 0.15)' : 'var(--card-bg)', transition: 'background-color 0.3s' }}>
+            {/* Header Row inside Card Panel */}
+            <div className="drill-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span className="progress-indicator" style={{ position: 'static', padding: '4px 10px', fontSize: '0.9rem', borderRadius: '12px' }}>
+                  {sentenceCount}/{TOTAL_SENTENCES}
+                </span>
+                <span style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--text-meta)' }}>
+                  Sätze & Pronomen
+                </span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px' }}>
-                <button 
-                  className="icon-btn" 
-                  onClick={goBack} 
-                  disabled={historyIndex <= 0}
-                  style={{ backgroundColor: 'var(--bg-secondary)', width: '48px', height: '48px', opacity: historyIndex <= 0 ? 0.5 : 1 }}
-                  title="Vorheriger Satz"
-                >
-                  <SkipBack size={24} />
-                </button>
-                
-                <button 
-                  className="icon-btn" 
-                  onClick={() => generateSentence()} 
-                  style={{ backgroundColor: 'var(--bg-secondary)', width: '48px', height: '48px' }}
-                  title="Nächster Satz"
-                >
-                  <SkipForward size={24} />
-                </button>
-
-                {concentratedMode && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {setAlwaysShowTranslation && (
                   <button 
-                    className="btn-secondary" 
-                    onClick={() => generateSentence(logicData, true)}
-                    title="Nächstes Verb"
-                    style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '48px' }}
+                    type="button" 
+                    className="icon-btn" 
+                    onClick={() => setAlwaysShowTranslation(!alwaysShowTranslation)} 
+                    style={{ width: '32px', height: '32px' }} 
+                    title={alwaysShowTranslation ? "Übersetzung ausblenden" : "Übersetzung anzeigen"}
                   >
-                    <SkipForward size={20} />
-                    <span style={{ fontSize: '0.9rem' }}>Nächstes Verb</span>
+                    {alwaysShowTranslation ? <EyeOff size={16} color="var(--topic-color)" /> : <Eye size={16} />}
                   </button>
                 )}
+                <label style={{ fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: 'var(--text-meta)', opacity: 0.9 }}>
+                  <input 
+                    type="checkbox" 
+                    checked={concentratedMode} 
+                    onChange={(e) => setConcentratedMode(e.target.checked)} 
+                  />
+                  Fokus-Modus
+                </label>
+                <button className="icon-btn" onClick={() => setShowOverview(true)} title="Übersicht aller Sätze" style={{ width: '32px', height: '32px' }}>
+                  <List size={16} />
+                </button>
+                <button className="icon-btn" onClick={onCancel} title="Beenden" style={{ width: '32px', height: '32px' }}>
+                  <XCircle size={16} />
+                </button>
               </div>
-              <div></div>
             </div>
+            
+            {/* Subjekt (Deutscher Satz) */}
+            <div className="subjekt" style={{ marginTop: '8px', marginBottom: '6px' }}>
+              <h2 style={{ margin: 0, textAlign: 'center', fontSize: '1.45rem', fontWeight: 700, color: 'var(--topic-color)' }}>
+                {currentSentence?.native}
+              </h2>
+            </div>
+            
+            {/* Lösung (Italienischer Satz mit transparentem Vorlese-Button rechts daneben) */}
+            <div className="loesung" style={{ minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px', marginBottom: '16px' }}>
+              {displaySolution && (
+                <div className="solution-content fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                  <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 600, color: 'var(--right-color)' }}>
+                    {currentSentence?.foreign}
+                  </h2>
+                  <button 
+                    type="button"
+                    onClick={() => playAudio(currentSentence?.foreign)} 
+                    title="Vorlesen" 
+                    style={{ background: 'transparent', border: 'none', boxShadow: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.85 }}
+                  >
+                    <Volume2 size={20} color="var(--topic-color)" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+
           </div>
 
-          <div style={{ height: '44px', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {feedback === 'correct' && (
-              <div style={{ textAlign: 'center', color: 'var(--right-color)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircle size={24} /> Richtig!
-              </div>
+          <TransportBar
+            onBack={goBack}
+            backDisabled={historyIndex <= 0}
+            onForward={() => handleNext(false)}
+            onMainAction={toggleListening}
+            mainActionType="mic"
+            mainActionActive={isListening}
+            extraForwardContent={concentratedMode && (
+              <button 
+                className="btn-secondary" 
+                onClick={() => generateSentence(logicData, true)} 
+                title="Nächstes Verb" 
+                style={{ fontSize: '0.7rem', padding: '4px' }}
+              >
+                Neues Verb
+              </button>
             )}
-          </div>
+          />
         </>
       )}
     </div>
