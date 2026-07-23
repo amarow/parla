@@ -124,7 +124,10 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onAut
 
   const handleAnswer = (isCorrect: boolean) => {
     if (currentIndex + 1 >= items.length) {
-      onFinish(isCorrect);
+      const advanced = onAutoAdvance ? onAutoAdvance() : false;
+      if (!advanced) {
+        onFinish(isCorrect);
+      }
     } else {
       setCurrentIndex(prev => prev + 1);
     }
@@ -138,7 +141,10 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onAut
 
   const handleVerbFinish = (isCorrect: boolean) => {
     if (currentIndex + 1 >= items.length) {
-      onFinish(isCorrect);
+      const advanced = onAutoAdvance ? onAutoAdvance() : false;
+      if (!advanced) {
+        onFinish(isCorrect);
+      }
     } else {
       setCurrentIndex(prev => prev + 1);
     }
@@ -154,7 +160,7 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onAut
     speakText(text, langCode, speechRate, user?.voice_it);
   };
 
-  if (isLoading || isFetching) {
+  if (isLoading) {
     return <div className="card-panel">Lade Lerninhalte...</div>;
   }
 
