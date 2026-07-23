@@ -36,7 +36,8 @@ export default function ConjugationDrill({
   onToggleOverview,
   showOverview,
   onCancel,
-  onShowStats
+  onShowStats,
+  categoryName
 }: any) {
   const [feedback, setFeedback] = useState<Record<string, string | null>>({});
   const [showSolution, setShowSolution] = useState(false);
@@ -200,7 +201,7 @@ export default function ConjugationDrill({
               {progress}
             </span>
             <span style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--text-meta)' }}>
-              Konjugationen
+              {categoryName || 'Konjugationen'}
             </span>
           </div>
 

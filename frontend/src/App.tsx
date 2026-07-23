@@ -193,6 +193,7 @@ function App() {
             onFinish={finishCategory}
             onCancel={cancelSession}
             onShowStats={showRewardScreen}
+            categories={sessionConfig.categories}
           />
         )}
         {user && appState === 'reward' && (

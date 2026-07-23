@@ -9,7 +9,7 @@ import { ArrowLeftRight, List, BookOpen, XCircle, Volume2, Play, Square } from '
 import { statsService } from '../utils/statsService';
 import { useSession } from '../contexts/SessionContext';
 
-export default function Drill({ categoryId, direction, onFinish, onCancel, onShowStats }: any) {
+export default function Drill({ categoryId, direction, onFinish, onCancel, onShowStats, categories }: any) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOverview, setShowOverview] = useState(false);
   const [flipCount, setFlipCount] = useState(0);
@@ -17,6 +17,9 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onSho
   const [currentDirection, setCurrentDirection] = useState(direction);
 
   const [isPlayingAll, setIsPlayingAll] = useState(false);
+
+  const activeCategory = categories?.find((c: any) => c.id === categoryId);
+  const categoryName = activeCategory?.name || '';
 
   const { user, speedProfile } = useSession();
   const pauseTime = speedProfile.pauseTime;
@@ -255,6 +258,7 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onSho
             showOverview={showOverview}
             onCancel={onCancel}
             onShowStats={onFinish}
+            categoryName={categoryName}
           />
         ) : itemType === 'verbs' ? (
           <ConjugationDrill
@@ -270,6 +274,7 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onSho
             showOverview={showOverview}
             onCancel={onCancel}
             onShowStats={onFinish}
+            categoryName={categoryName}
           />
         ) : null
       )}

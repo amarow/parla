@@ -19,7 +19,8 @@ export default function VocabDrill({
   onToggleOverview,
   showOverview,
   onCancel,
-  onShowStats
+  onShowStats,
+  categoryName
 }: any) {
   const [showSolution, setShowSolution] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -194,7 +195,7 @@ export default function VocabDrill({
               {progress}
             </span>
             <span style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--text-meta)' }}>
-              Vokabeln
+              {categoryName || 'Vokabeln'}
             </span>
           </div>
 
