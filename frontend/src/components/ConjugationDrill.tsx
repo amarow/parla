@@ -260,7 +260,7 @@ export default function ConjugationDrill({
                   <div style={{ width: '105px', fontWeight: 'bold', fontSize: '0.88rem' }}>{formDef.pronounLabel}</div>
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {isRevealed ? (
-                      <div style={{ fontWeight: 'bold', flex: 1, fontSize: '0.92rem', color: feedback[formDef.id] === 'incorrect' ? 'var(--wrong-color)' : 'var(--text-meta)' }}>
+                      <div style={{ fontWeight: 400, flex: 1, fontSize: '0.92rem', color: feedback[formDef.id] === 'incorrect' ? 'var(--wrong-color)' : 'var(--text-meta)', opacity: feedback[formDef.id] === 'incorrect' ? 1 : 0.85 }}>
                         {displaySolution}
                       </div>
                     ) : (
