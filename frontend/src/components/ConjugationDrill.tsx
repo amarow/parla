@@ -68,10 +68,9 @@ export default function ConjugationDrill({
   useEffect(() => {
     return () => {
       isSessionActiveRef.current = false;
-      stopListening();
       window.speechSynthesis.cancel();
     };
-  }, [stopListening]);
+  }, []);
 
   const resetDrill = () => {
     setFeedback({});

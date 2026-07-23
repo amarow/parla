@@ -50,10 +50,9 @@ export default function VocabDrill({
   useEffect(() => {
     return () => {
       isSessionActiveRef.current = false;
-      stopListening();
       window.speechSynthesis.cancel();
     };
-  }, [stopListening]);
+  }, []);
 
   const frontText = direction === 'nativeToForeign' ? word.native_word : word.foreign_word;
   const backText = direction === 'nativeToForeign' ? word.foreign_word : word.native_word;

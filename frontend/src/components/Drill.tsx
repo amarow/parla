@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import VocabDrill from './VocabDrill';
 import ConjugationDrill from './ConjugationDrill';
 import SentenceDrill from './SentenceDrill';
@@ -32,7 +32,7 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onAut
     setCurrentDirection(prev => prev === 'nativeToForeign' ? 'foreignToNative' : 'nativeToForeign');
   };
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['sessionItems', categoryId],
     queryFn: async () => {
       if (categoryId === 'sentences') {
@@ -47,6 +47,7 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onAut
       const verbs = await dataService.getVerbs(categoryId);
       return { items: verbs || [], type: 'verbs' };
     },
+    placeholderData: keepPreviousData,
     staleTime: 0 
   });
 
