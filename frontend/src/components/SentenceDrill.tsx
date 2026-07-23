@@ -429,9 +429,9 @@ export default function SentenceDrill({
             <div className="loesung" style={{ minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px', marginBottom: '16px' }}>
               {displaySolution && (
                 <div className="solution-content fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                  <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 600, color: 'var(--right-color)' }}>
+                  <span style={{ margin: 0, fontSize: '1.15rem', fontWeight: 400, color: 'var(--text-meta)', opacity: 0.85 }}>
                     {currentSentence?.foreign}
-                  </h2>
+                  </span>
                   <button 
                     type="button"
                     onClick={() => playAudio(currentSentence?.foreign)} 
