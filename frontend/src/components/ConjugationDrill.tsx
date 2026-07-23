@@ -35,7 +35,8 @@ export default function ConjugationDrill({
   onToggleDirection,
   onToggleOverview,
   showOverview,
-  onCancel
+  onCancel,
+  onShowStats
 }: any) {
   const [feedback, setFeedback] = useState<Record<string, string | null>>({});
   const [showSolution, setShowSolution] = useState(false);
@@ -293,6 +294,7 @@ export default function ConjugationDrill({
         onMainAction={toggleListening}
         mainActionType="mic"
         mainActionActive={isListening}
+        onShowStats={onShowStats}
       />
 
       {isListening && activeFieldIndex < formDefinitions.length && user.show_analyse_bar !== false && (

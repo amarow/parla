@@ -459,6 +459,7 @@ export default function SentenceDrill({
             onMainAction={toggleListening}
             mainActionType="mic"
             mainActionActive={isListening}
+            onShowStats={onFinish}
             extraForwardContent={concentratedMode && (
               <button 
                 className="btn-secondary" 

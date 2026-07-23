@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SkipBack, SkipForward, Mic, Play, Square } from 'lucide-react';
+import { SkipBack, SkipForward, Mic, Play, Square, BarChart2 } from 'lucide-react';
 import { levelToStep, stepToLevel, SPEED_PROFILES } from '../utils/speedConfig';
 import { localAuth } from '../api';
 import { useSession } from '../contexts/SessionContext';
@@ -38,6 +38,8 @@ interface TransportBarProps {
   mainActionActive?: boolean; // isListening or isPlaying
   mainActionDisabled?: boolean;
   mainActionTitle?: string; // override title
+
+  onShowStats?: () => void;
 }
 
 export const TransportBar: React.FC<TransportBarProps> = ({
@@ -52,7 +54,8 @@ export const TransportBar: React.FC<TransportBarProps> = ({
   mainActionType = 'mic',
   mainActionActive = false,
   mainActionDisabled = false,
-  mainActionTitle
+  mainActionTitle,
+  onShowStats
 }) => {
   const { user, setUser, speedProfile } = useSession();
   const currentStep = levelToStep(speedProfile.level);
@@ -218,25 +221,56 @@ export const TransportBar: React.FC<TransportBarProps> = ({
       )}
 
       <div 
-        className="elapsed-time-display" 
         style={{ 
           position: 'absolute',
           right: '24px',
           top: '50%',
           transform: 'translateY(-50%)',
           display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'flex-end', 
-          justifyContent: 'center',
-          gap: '2px'
+          alignItems: 'center', 
+          justifyContent: 'flex-end',
+          gap: '12px'
         }}
       >
-        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-meta)', whiteSpace: 'nowrap' }}>
-          Zeit
-        </span>
-        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--topic-color)', fontFamily: 'monospace', letterSpacing: '0.5px' }}>
-          {formatElapsedTime(elapsedSeconds)}
-        </span>
+        {onShowStats && (
+          <button 
+            type="button"
+            className="icon-btn" 
+            onClick={onShowStats} 
+            title="Statistik anzeigen"
+            style={{ 
+              width: '40px', 
+              height: '40px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              cursor: 'pointer',
+              border: '1px solid var(--border-color)',
+              borderRadius: '12px',
+              backgroundColor: 'var(--card-bg)'
+            }}
+          >
+            <BarChart2 size={20} />
+          </button>
+        )}
+
+        <div 
+          className="elapsed-time-display" 
+          style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'flex-end', 
+            justifyContent: 'center',
+            gap: '2px'
+          }}
+        >
+          <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-meta)', whiteSpace: 'nowrap' }}>
+            Zeit
+          </span>
+          <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--topic-color)', fontFamily: 'monospace', letterSpacing: '0.5px' }}>
+            {formatElapsedTime(elapsedSeconds)}
+          </span>
+        </div>
       </div>
     </div>
   );

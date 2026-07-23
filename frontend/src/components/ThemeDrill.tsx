@@ -8,7 +8,7 @@ import { TransportBar } from './TransportBar';
 import { DrillEvaluator } from '../utils/speechMatch';
 import { AnalyseBar } from './AnalyseBar';
 
-export default function ThemeDrill({ islandId, onCancel }: any) {
+export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
   const island = textIslands.find(i => i.id === islandId);
   const sentences = island?.sentences || [];
 
@@ -287,6 +287,7 @@ export default function ThemeDrill({ islandId, onCancel }: any) {
         onMainAction={toggleListening}
         mainActionType="mic"
         mainActionActive={isListening}
+        onShowStats={onFinish}
       />
 
       {isListening && user.show_analyse_bar !== false && (

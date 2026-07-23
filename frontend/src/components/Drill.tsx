@@ -269,6 +269,7 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onAut
             onToggleOverview={() => setShowOverview(!showOverview)}
             showOverview={showOverview}
             onCancel={onCancel}
+            onShowStats={onFinish}
           />
         ) : itemType === 'verbs' ? (
           <ConjugationDrill
@@ -283,6 +284,7 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onAut
             onToggleOverview={() => setShowOverview(!showOverview)}
             showOverview={showOverview}
             onCancel={onCancel}
+            onShowStats={onFinish}
           />
         ) : null
       )}

@@ -18,7 +18,8 @@ export default function VocabDrill({
   onToggleDirection,
   onToggleOverview,
   showOverview,
-  onCancel
+  onCancel,
+  onShowStats
 }: any) {
   const [showSolution, setShowSolution] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -263,6 +264,7 @@ export default function VocabDrill({
         onMainAction={toggleListening}
         mainActionType="mic"
         mainActionActive={isListening}
+        onShowStats={onShowStats}
       />
 
       {isListening && user.show_analyse_bar !== false && (

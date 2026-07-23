@@ -185,6 +185,7 @@ function App() {
           <ThemeDrill
             islandId={sessionConfig.direction}
             onCancel={cancelSession}
+            onFinish={finishSession}
           />
         )}
         {user && appState === 'learning' && sessionConfig.categoryId !== 'text_islands' && (
