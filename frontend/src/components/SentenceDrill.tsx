@@ -100,6 +100,8 @@ export default function SentenceDrill({
        setFeedback(null);
        setShowSolution(false);
        setAttemptCount(0);
+       setIsProcessing(false);
+       setIsAudioPlaying(false);
        lastPlayedRef.current = null;
        return;
     }
@@ -108,6 +110,8 @@ export default function SentenceDrill({
     setShowSolution(false);
     setFeedback(null);
     setAttemptCount(0);
+    setIsProcessing(false);
+    setIsAudioPlaying(false);
     lastPlayedRef.current = null;
     
     let logicEntry;
@@ -159,12 +163,15 @@ export default function SentenceDrill({
 
   const goBack = () => {
     if (historyIndex > 0) {
+      window.speechSynthesis.cancel();
       const prev = history[historyIndex - 1];
       setCurrentSentence(prev);
       setHistoryIndex(historyIndex - 1);
       setShowSolution(false);
       setFeedback(null);
       setAttemptCount(0);
+      setIsProcessing(false);
+      setIsAudioPlaying(false);
       lastPlayedRef.current = null;
     }
   };

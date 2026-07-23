@@ -285,7 +285,6 @@ export default function ConjugationDrill({
 
       <TransportBar
         onBack={() => {
-          isSessionActiveRef.current = false;
           window.speechSynthesis.cancel();
           if (onBack) onBack();
         }}

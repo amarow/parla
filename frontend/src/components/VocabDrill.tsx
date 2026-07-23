@@ -63,6 +63,7 @@ export default function VocabDrill({
   useEffect(() => {
     setShowSolution(false);
     setIsProcessing(false);
+    setIsAudioPlaying(false);
     setSpeechFeedback(null);
     setAttemptCount(0);
     lastPlayedRef.current = null;
@@ -254,7 +255,6 @@ export default function VocabDrill({
 
       <TransportBar
         onBack={() => {
-          isSessionActiveRef.current = false;
           window.speechSynthesis.cancel();
           if (onBack) onBack();
         }}
