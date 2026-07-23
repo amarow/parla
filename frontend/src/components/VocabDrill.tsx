@@ -2,22 +2,19 @@ import { useState, useEffect, useRef } from 'react';
 import { Volume2, Eye, EyeOff, ArrowLeftRight, List, BookOpen, XCircle } from 'lucide-react';
 import { speakText } from '../api';
 import { useRecorder } from '../contexts/Recorder';
+import { useSession } from '../contexts/SessionContext';
 import { TransportBar } from './TransportBar';
-import { normalizeText, checkFuzzyMatch, checkSkipOrWrong } from '../utils/speechMatch';
+import { DrillEvaluator, normalizeText } from '../utils/speechMatch';
 import { statsService } from '../utils/statsService';
-import { getSpeedProfile } from '../utils/speedConfig';
+import { AnalyseBar } from './AnalyseBar';
 
 export default function VocabDrill({ 
-  user, 
-  onUpdateUser,
   word, 
   direction, 
   onAnswer, 
   onBack, 
   onFlip, 
   progress,
-  alwaysShowTranslation = false,
-  setAlwaysShowTranslation,
   onToggleDirection,
   onToggleOverview,
   showOverview,
@@ -29,11 +26,12 @@ export default function VocabDrill({
   const [speechFeedback, setSpeechFeedback] = useState<string | null>(null);
   const [attemptCount, setAttemptCount] = useState(0);
 
-  const { transcript, setLanguage, clearTranscript, reset, getLatestWords, isListening, toggleListening, stopListening, setActiveTargetText } = useRecorder();
+  const { transcript, setLanguage, getLatestWords, isListening, toggleListening, stopListening, language } = useRecorder();
+  const { user, alwaysShowTranslation, setAlwaysShowTranslation, speedProfile } = useSession();
+  
   const lastPlayedRef = useRef<string | null>(null);
   const isSessionActiveRef = useRef(false);
 
-  const speedProfile = getSpeedProfile(user);
   const pauseTime = speedProfile.pauseTime;
   const noInputTimeout = speedProfile.noInputTimeout;
   const speechRate = speedProfile.speechRate;
@@ -67,9 +65,8 @@ export default function VocabDrill({
     setIsProcessing(false);
     setSpeechFeedback(null);
     setAttemptCount(0);
-    if (backText) setActiveTargetText(backText, false);
     lastPlayedRef.current = null;
-  }, [word, backText, setActiveTargetText]);
+  }, [word]);
 
   // Read word aloud only when active (isListening)
   useEffect(() => {
@@ -84,7 +81,6 @@ export default function VocabDrill({
       setIsAudioPlaying(true);
       speakText(textToPlay, frontLangCode, speechRate, frontLangCode === 'it' ? user?.voice_it : user?.voice_de).then(() => {
         if (!isCurrent || !isSessionActiveRef.current) return;
-        clearTranscript();
         setTimeout(() => {
           if (isCurrent && isSessionActiveRef.current) setIsAudioPlaying(false);
         }, 150);
@@ -113,7 +109,6 @@ export default function VocabDrill({
         setShowSolution(true);
         setAttemptCount(1);
         statsService.recordAttempt(false, true);
-        clearTranscript();
         
         setTimeout(() => {
           if (isSessionActiveRef.current) setSpeechFeedback(null);
@@ -130,7 +125,6 @@ export default function VocabDrill({
             if (!isSessionActiveRef.current) return;
             setSpeechFeedback(null);
             setIsProcessing(false);
-            clearTranscript();
             onAnswer(false);
           }, pauseTime);
         });
@@ -138,7 +132,7 @@ export default function VocabDrill({
     }, noInputTimeout);
 
     return () => clearTimeout(noInputTimer);
-  }, [isListening, isAudioPlaying, isProcessing, word, attemptCount, backText, backLang, clearTranscript, onAnswer, user, noInputTimeout, pauseTime, speechRate]);
+  }, [isListening, isAudioPlaying, isProcessing, word, attemptCount, backText, backLang, onAnswer, user, noInputTimeout, pauseTime, speechRate]);
 
   useEffect(() => {
     if (!transcript || isProcessing || isAudioPlaying || !isListening) return;
@@ -147,13 +141,9 @@ export default function VocabDrill({
     const latestSpoken = getLatestWords(targetWords.length + 1);
     if (!latestSpoken) return;
 
-    const target = backText.toLowerCase().trim();
-    const cleanTranscript = normalizeText(latestSpoken, backLang, true);
-    const cleanTarget = normalizeText(target, backLang, true);
+    const isMatch = DrillEvaluator.checkVocabMatch(latestSpoken, backText, backLang);
 
-    const isFuzzy = checkFuzzyMatch(cleanTranscript, cleanTarget);
-
-    if (cleanTranscript && (cleanTranscript === cleanTarget || cleanTranscript.includes(cleanTarget) || cleanTarget.includes(cleanTranscript) || isFuzzy)) {
+    if (isMatch) {
         setSpeechFeedback('correct');
         setIsProcessing(true);
         setShowSolution(true);
@@ -163,24 +153,19 @@ export default function VocabDrill({
             if (!isSessionActiveRef.current) return;
             setSpeechFeedback(null);
             setIsProcessing(false);
-            reset();
             onAnswer(true);
         }, pauseTime);
     } else {
         // wrong answer or skipping
-        if (checkSkipOrWrong(latestSpoken) || checkSkipOrWrong(transcript)) {
+        if (DrillEvaluator.checkSkipCommand(latestSpoken) || DrillEvaluator.checkSkipCommand(transcript)) {
             setSpeechFeedback('incorrect');
             if (!showSolution && onFlip) onFlip();
             setShowSolution(true);
             setAttemptCount(1);
             statsService.recordAttempt(false, true);
-            setTimeout(() => {
-                if (!isSessionActiveRef.current) return;
-                reset();
-            }, 1000);
         }
     }
-  }, [transcript, getLatestWords, backText, backLang, isProcessing, isAudioPlaying, onAnswer, reset, showSolution, alwaysShowTranslation, isListening, onFlip, pauseTime]);
+  }, [transcript, getLatestWords, backText, backLang, isProcessing, isAudioPlaying, onAnswer, showSolution, alwaysShowTranslation, isListening, onFlip, pauseTime]);
 
   const playAudio = (e: any) => {
     e.stopPropagation();
@@ -188,7 +173,6 @@ export default function VocabDrill({
     setIsAudioPlaying(true);
     speakText(backText, langCode, speechRate, langCode === 'it' ? user?.voice_it : user?.voice_de).then(() => {
       if (!isSessionActiveRef.current) return;
-      clearTranscript();
       setTimeout(() => {
         if (isSessionActiveRef.current) setIsAudioPlaying(false);
       }, 150);
@@ -196,6 +180,8 @@ export default function VocabDrill({
   };
 
   const displaySolution = showSolution || alwaysShowTranslation;
+  const expectedWords = backText.trim().split(/\s+/).filter(Boolean);
+  const evaluatedSequence = DrillEvaluator.getEvaluatedSequence(transcript, backText);
 
   return (
     <>
@@ -267,22 +253,27 @@ export default function VocabDrill({
       </div>
 
       <TransportBar
-        user={user}
-        onUpdateUser={onUpdateUser}
         onBack={() => {
           isSessionActiveRef.current = false;
           window.speechSynthesis.cancel();
-          clearTranscript();
           if (onBack) onBack();
         }}
         onForward={() => {
-          clearTranscript();
           onAnswer(false);
         }}
         onMainAction={toggleListening}
         mainActionType="mic"
         mainActionActive={isListening}
       />
+
+      {isListening && (
+        <AnalyseBar
+          language={language}
+          transcript={transcript}
+          expectedWordCount={expectedWords.length}
+          evaluatedSequence={evaluatedSequence}
+        />
+      )}
     </>
   );
 }

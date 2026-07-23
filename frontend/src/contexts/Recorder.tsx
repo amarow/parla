@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { getEvaluatedSequence } from '../utils/speechMatch';
 
 type RecorderContextType = {
   isListening: boolean;
@@ -10,11 +9,6 @@ type RecorderContextType = {
   setLanguage: (lang: string) => void;
   transcript: string;
   getLatestWords: (count: number) => string;
-  clearTranscript: () => void;
-  reset: () => void;
-  setActiveTargetText: (text: string, allowOptionalPronoun?: boolean) => void;
-  evaluatedSequence: string;
-  expectedWordCount: number;
 };
 
 const RecorderContext = createContext<RecorderContextType | undefined>(undefined);
@@ -23,26 +17,10 @@ export const RecorderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isListening, setIsListening] = useState(false);
   const [language, setLanguage] = useState('it-IT');
   const [transcript, setTranscript] = useState('');
-  const [targetText, setTargetText] = useState('');
-  const [allowPronoun, setAllowPronoun] = useState(false);
   
   const recognitionRef = useRef<any>(null);
   const shouldListenRef = useRef(false);
   const bufferRef = useRef('');
-
-  const setActiveTargetText = useCallback((text: string, allowOptPronoun: boolean = false) => {
-    setTargetText(text);
-    setAllowPronoun(allowOptPronoun);
-  }, []);
-
-  // No-op to fulfill "kein reset" on the recording buffer
-  const reset = useCallback(() => {
-    // Kept as no-op to support existing calls without resetting the buffer
-  }, []);
-
-  const clearTranscript = useCallback(() => {
-    // Kept as no-op to support existing calls without resetting the buffer
-  }, []);
 
   const getLatestWords = useCallback((count: number): string => {
     const clean = transcript ? transcript.trim() : bufferRef.current.trim();
@@ -50,10 +28,6 @@ export const RecorderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const words = clean.split(/\s+/).filter(Boolean);
     return words.slice(-Math.max(1, count)).join(' ');
   }, [transcript]);
-
-  const evaluatedSequence = getEvaluatedSequence(transcript, targetText, allowPronoun);
-  const cleanTargetWords = targetText ? targetText.trim().toLowerCase().replace(/[.,!?]/g, '').split(/\s+/).filter(Boolean) : [];
-  const expectedWordCount = cleanTargetWords.length;
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -121,7 +95,7 @@ export const RecorderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, []);
 
-  // 100ms Ticker effect to update visual AnalyseBar state smoothly
+  // 100ms Ticker effect to update visual transcript smoothly
   useEffect(() => {
     if (!isListening) return;
 
@@ -180,12 +154,7 @@ export const RecorderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       language, 
       setLanguage, 
       transcript, 
-      clearTranscript,
-      reset,
-      getLatestWords,
-      setActiveTargetText,
-      evaluatedSequence,
-      expectedWordCount
+      getLatestWords
     }}>
       {children}
     </RecorderContext.Provider>

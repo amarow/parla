@@ -4,7 +4,7 @@ import { useRecorder } from '../contexts/Recorder';
 import { API_BASE } from '../api';
 
 export default function Reward({ onNext, onRepeat, onCancel, stats, flips }: any) {
-  const { transcript, clearTranscript, setLanguage } = useRecorder();
+  const { transcript, setLanguage } = useRecorder();
   const hasPlayedAudio = useRef(false);
 
   const session = stats?.session;
@@ -42,16 +42,13 @@ export default function Reward({ onNext, onRepeat, onCancel, stats, flips }: any
 
     const lower = transcript.toLowerCase();
     if (lower.includes('weiter') || lower.includes('nächste') || lower.includes('runde') || lower.includes('starten') || lower.includes('ok')) {
-      clearTranscript();
       onNext();
     } else if (lower.includes('wiederholen') || lower.includes('nochmal')) {
-      clearTranscript();
       if (onRepeat) onRepeat();
     } else if (lower.includes('zurück') || lower.includes('abbrechen') || lower.includes('ende')) {
-      clearTranscript();
       onCancel();
     }
-  }, [transcript, onNext, onRepeat, onCancel, clearTranscript]);
+  }, [transcript, onNext, onRepeat, onCancel]);
 
   useEffect(() => {
     const duration = 3 * 1000;

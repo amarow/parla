@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useSession } from '../contexts/SessionContext';
 import { localAuth } from '../api';
 import { SpeedLevel, SPEED_PROFILES, getSpeedProfile } from '../utils/speedConfig';
 
-export default function Settings({ user, onUpdateUser, onCancel }) {
+export default function Settings({ onCancel }) {
+  const { user, setUser } = useSession();
   const [nativeLang, setNativeLang] = useState(user.native_language || 'de');
   const [targetLang, setTargetLang] = useState(user.target_language || 'it');
   const [preferredDirection, setPreferredDirection] = useState(user.preferred_direction || 'nativeToForeign');
@@ -35,7 +37,7 @@ export default function Settings({ user, onUpdateUser, onCancel }) {
         voice_de: voiceDe
       });
       // User-Objekt aktualisieren
-      onUpdateUser(updatedUser);
+      setUser(updatedUser);
       setMessage('Einstellungen gespeichert!');
       setTimeout(() => onCancel(), 1500); // Zurück zur Hauptansicht
     } catch (err) {

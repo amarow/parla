@@ -185,3 +185,48 @@ export function checkSkipOrWrong(transcript: string, _thresholdLength?: number, 
                           
   return hasSkipKeyword;
 }
+
+export class DrillEvaluator {
+  /**
+   * Evaluiert, ob ein gesprochenes Wort oder kurzes Vokabular mit der erwarteten Antwort übereinstimmt (Fuzzy & Normalisiert).
+   */
+  static checkVocabMatch(spoken: string, expected: string, langCode: string): boolean {
+    const cleanTranscript = normalizeText(spoken, langCode, true);
+    const cleanTarget = normalizeText(expected, langCode, true);
+    const isFuzzy = checkFuzzyMatch(cleanTranscript, cleanTarget);
+    return !!cleanTranscript && (
+      cleanTranscript === cleanTarget || 
+      cleanTranscript.includes(cleanTarget) || 
+      cleanTarget.includes(cleanTranscript) || 
+      isFuzzy
+    );
+  }
+
+  /**
+   * Evaluiert Sätze auf exakte Wortreihenfolge und Fuzzy-Abgleich.
+   */
+  static checkSentenceMatch(spoken: string, expected: string): boolean {
+    return checkAllWordsPresent(spoken, expected);
+  }
+
+  /**
+   * Evaluiert Konjugationsverben.
+   */
+  static checkConjugationMatch(spoken: string, expectedVerb: string, possiblePronouns: string[] = []): boolean {
+    return checkConjugationMatch(spoken, expectedVerb, possiblePronouns);
+  }
+
+  /**
+   * Prüft auf Abbruch- oder Überspring-Kommandos.
+   */
+  static checkSkipCommand(spoken: string): boolean {
+    return checkSkipOrWrong(spoken);
+  }
+
+  /**
+   * Berechnet die geprüfte Wortsequenz für die Diagnose-Ausgabe.
+   */
+  static getEvaluatedSequence(transcript: string, expectedText?: string | number, allowOptionalPronoun: boolean = false): string {
+    return getEvaluatedSequence(transcript, expectedText, allowOptionalPronoun);
+  }
+}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { SkipBack, SkipForward, Mic, Play, Square } from 'lucide-react';
-import { levelToStep, stepToLevel, SPEED_PROFILES, getSpeedProfile } from '../utils/speedConfig';
+import { levelToStep, stepToLevel, SPEED_PROFILES } from '../utils/speedConfig';
 import { localAuth } from '../api';
+import { useSession } from '../contexts/SessionContext';
 
 function getAppStartTime(): number {
   const stored = sessionStorage.getItem('parladino_app_start_time');
@@ -22,9 +23,6 @@ function formatElapsedTime(seconds: number): string {
 }
 
 interface TransportBarProps {
-  user?: any;
-  onUpdateUser?: (updatedUser: any) => void;
-
   onBack?: () => void;
   backDisabled?: boolean;
   backTitle?: string;
@@ -43,8 +41,6 @@ interface TransportBarProps {
 }
 
 export const TransportBar: React.FC<TransportBarProps> = ({
-  user,
-  onUpdateUser,
   onBack,
   backDisabled = false,
   backTitle = "Zurück",
@@ -58,7 +54,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
   mainActionDisabled = false,
   mainActionTitle
 }) => {
-  const speedProfile = getSpeedProfile(user);
+  const { user, setUser, speedProfile } = useSession();
   const currentStep = levelToStep(speedProfile.level);
 
   const [elapsedSeconds, setElapsedSeconds] = useState(() => {
@@ -77,16 +73,16 @@ export const TransportBar: React.FC<TransportBarProps> = ({
     const step = parseInt(e.target.value, 10);
     const newLevel = stepToLevel(step);
     const profile = SPEED_PROFILES[newLevel];
-    if (user && onUpdateUser) {
+    if (user) {
       try {
         const updated = await localAuth.updateSettings(user.id, {
           global_speed: newLevel,
           pause_time: profile.pauseTime,
           speech_rate: profile.speechRate
         });
-        onUpdateUser(updated);
+        setUser(updated);
       } catch (err) {
-        onUpdateUser({
+        setUser({
           ...user,
           global_speed: newLevel,
           pause_time: profile.pauseTime,
@@ -118,7 +114,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
 
   return (
     <div className="transport-bar" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', width: '100%' }}>
-      {user && onUpdateUser && (
+      {user && (
         <div 
           className="speed-slider-control" 
           style={{ 

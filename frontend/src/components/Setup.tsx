@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { dataService } from '../dataService';
 import { useRecorder } from '../contexts/Recorder';
+import { useSession } from '../contexts/SessionContext';
 
 import textIslands from '../data/textIslands.json';
 
-export default function Setup({ user, onStart }) {
+export default function Setup({ onStart }) {
+  const { user } = useSession();
   const [selectedCategory, setSelectedCategory] = useState<number | string>('');
   const { setLanguage } = useRecorder();
 

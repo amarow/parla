@@ -6,23 +6,20 @@ import SentenceDrill from './SentenceDrill';
 import { dataService } from '../dataService';
 import { speakText } from '../api';
 import { ArrowLeftRight, List, BookOpen, XCircle, Volume2, Play, Square } from 'lucide-react';
-import { useRecorder } from '../contexts/Recorder';
 import { statsService } from '../utils/statsService';
-import { getSpeedProfile } from '../utils/speedConfig';
+import { useSession } from '../contexts/SessionContext';
 
-export default function Drill({ user, onUpdateUser, categoryId, direction, onFinish, onCancel }: any) {
+export default function Drill({ categoryId, direction, onFinish, onCancel }: any) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOverview, setShowOverview] = useState(false);
   const [flipCount, setFlipCount] = useState(0);
-  const [alwaysShowTranslation, setAlwaysShowTranslation] = useState(false);
-  const { clearTranscript } = useRecorder();
   const resetChildRef = useRef<(() => void) | null>(null);
   const [currentDirection, setCurrentDirection] = useState(direction);
 
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   const isPlayingRef = useRef(false);
 
-  const speedProfile = getSpeedProfile(user);
+  const { user, speedProfile } = useSession();
   const pauseTime = speedProfile.pauseTime;
   const speechRate = speedProfile.speechRate;
 
@@ -143,14 +140,10 @@ export default function Drill({ user, onUpdateUser, categoryId, direction, onFin
   if (itemType === 'sentences') {
     return (
       <SentenceDrill
-        user={user}
-        onUpdateUser={onUpdateUser}
         pronounKey="form_1s"
         onFinish={onFinish}
         onCancel={onCancel}
         onFlip={handleFlip}
-        alwaysShowTranslation={alwaysShowTranslation}
-        setAlwaysShowTranslation={setAlwaysShowTranslation}
       />
     );
   }
@@ -238,16 +231,12 @@ export default function Drill({ user, onUpdateUser, categoryId, direction, onFin
         ) : (
         itemType === 'words' ? (
           <VocabDrill
-            user={user}
-            onUpdateUser={onUpdateUser}
             word={items[currentIndex]}
             direction={currentDirection}
             onAnswer={handleAnswer}
             onBack={handleBack}
             onFlip={handleFlip}
             progress={`${currentIndex + 1}/${items.length}`}
-            alwaysShowTranslation={alwaysShowTranslation}
-            setAlwaysShowTranslation={setAlwaysShowTranslation}
             onToggleDirection={toggleDirection}
             onToggleOverview={() => setShowOverview(!showOverview)}
             showOverview={showOverview}
@@ -255,8 +244,6 @@ export default function Drill({ user, onUpdateUser, categoryId, direction, onFin
           />
         ) : itemType === 'verbs' ? (
           <ConjugationDrill
-            user={user}
-            onUpdateUser={onUpdateUser}
             verb={items[currentIndex]}
             direction={currentDirection}
             onFinish={handleVerbFinish}
@@ -264,8 +251,6 @@ export default function Drill({ user, onUpdateUser, categoryId, direction, onFin
             onFlip={handleFlip}
             onReset={(fn) => { resetChildRef.current = fn; }}
             progress={`${currentIndex + 1}/${items.length}`}
-            alwaysShowTranslation={alwaysShowTranslation}
-            setAlwaysShowTranslation={setAlwaysShowTranslation}
             onToggleDirection={toggleDirection}
             onToggleOverview={() => setShowOverview(!showOverview)}
             showOverview={showOverview}

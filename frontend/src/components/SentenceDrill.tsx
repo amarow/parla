@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Volume2, Play, Square, List, XCircle, Eye, EyeOff } from 'lucide-react';
 import { useRecorder } from '../contexts/Recorder';
+import { useSession } from '../contexts/SessionContext';
 import { speakText } from '../api';
 import { dataService } from '../dataService';
 import { TransportBar } from './TransportBar';
-import { checkAllWordsPresent, checkSkipOrWrong } from '../utils/speechMatch';
+import { DrillEvaluator } from '../utils/speechMatch';
 import { statsService } from '../utils/statsService';
-import { getSpeedProfile } from '../utils/speedConfig';
+import { AnalyseBar } from './AnalyseBar';
 
 const pronounsMap: Record<string, any> = {
   form_1s: { it: 'io', de: 'ich' },
@@ -20,14 +21,10 @@ const pronounsMap: Record<string, any> = {
 const TOTAL_SENTENCES = 10;
 
 export default function SentenceDrill({ 
-  user, 
-  onUpdateUser,
   pronounKey, 
   onFinish, 
   onCancel, 
-  onFlip,
-  alwaysShowTranslation = false,
-  setAlwaysShowTranslation
+  onFlip
 }: any) {
   const [logicData, setLogicData] = useState<any>(null);
   const [currentSentence, setCurrentSentence] = useState<any>(null);
@@ -49,12 +46,12 @@ export default function SentenceDrill({
   const lastPlayedRef = useRef<string | null>(null);
   const isSessionActiveRef = useRef(false);
 
-  const speedProfile = getSpeedProfile(user);
+  const { user, alwaysShowTranslation, setAlwaysShowTranslation, speedProfile } = useSession();
+  const { isListening, toggleListening, stopListening, transcript, setLanguage, language, getLatestWords } = useRecorder();
+
   const pauseTime = speedProfile.pauseTime;
   const noInputTimeout = speedProfile.noInputTimeout;
   const speechRate = speedProfile.speechRate;
-  
-  const { isListening, toggleListening, stopListening, transcript, setLanguage, clearTranscript, setActiveTargetText } = useRecorder();
 
   // Sync ref and handle session pause / stop
   useEffect(() => {
@@ -72,48 +69,29 @@ export default function SentenceDrill({
       isSessionActiveRef.current = false;
       stopListening();
       window.speechSynthesis.cancel();
-      playingRef.current = false;
     };
   }, [stopListening]);
 
+  // Load language database once
   useEffect(() => {
-    if (currentSentence?.foreign) {
-      setActiveTargetText(currentSentence.foreign, false);
-    }
-  }, [currentSentence, setActiveTargetText]);
-
-  useEffect(() => {
-    if (!concentratedMode) setLockedVerb(null);
-  }, [concentratedMode]);
-
-  useEffect(() => {
-    setLanguage('it-IT');
-    fetchLogic();
-  }, [setLanguage]);
-
-  const fetchLogic = async () => {
-    try {
-      const data = await dataService.getSentenceLogic();
+    dataService.getSentenceLogic().then(data => {
       setLogicData(data);
       statsService.startSession('sentences', TOTAL_SENTENCES);
-      generateSentence(data);
+      generateSentence(data, false);
       setLoading(false);
-    } catch (e) {
-      console.error("Error fetching sentence logic", e);
-    }
-  };
+    });
+  }, []);
 
-  const handleNext = (isCorrect = false) => {
-    if (sentenceCount >= TOTAL_SENTENCES) {
-      if (onFinish) onFinish(isCorrect);
-    } else {
-      generateSentence();
-    }
-  };
+  // Sync language with target text
+  useEffect(() => {
+    setLanguage(user.target_language === 'it' ? 'it-IT' : 'de-DE');
+  }, [user.target_language, setLanguage]);
 
+  // Generate next random sentence
   const generateSentence = (data = logicData, forceNewVerb = false) => {
     if (!data || !data.logic || data.logic.length === 0) return;
     
+    // Check history
     if (historyIndex < history.length - 1 && data === logicData && !forceNewVerb) {
        const nextIndex = historyIndex + 1;
        setHistoryIndex(nextIndex);
@@ -122,10 +100,15 @@ export default function SentenceDrill({
        setFeedback(null);
        setShowSolution(false);
        setAttemptCount(0);
-       clearTranscript();
        lastPlayedRef.current = null;
        return;
     }
+
+    // Reset states
+    setShowSolution(false);
+    setFeedback(null);
+    setAttemptCount(0);
+    lastPlayedRef.current = null;
     
     let logicEntry;
     if (concentratedMode && lockedVerb && !forceNewVerb) {
@@ -154,39 +137,41 @@ export default function SentenceDrill({
     const newSentence = {
       native: nativeSentence,
       foreign: foreignSentence,
-      verb: logicEntry.verb,
-      object: objectEntry.foreign
+      verb: logicEntry.verb
     };
 
-    const newHistory = [...history.slice(0, historyIndex + 1), newSentence];
+    setCurrentSentence(newSentence);
+    
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newSentence);
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-    setCurrentSentence(newSentence);
     setSentenceCount(prev => prev + 1);
-    setFeedback(null);
-    setShowSolution(false);
-    setAttemptCount(0);
-    clearTranscript();
-    lastPlayedRef.current = null;
+  };
+
+  const handleNext = (isCorrect = false) => {
+    if (sentenceCount >= TOTAL_SENTENCES) {
+      onFinish(isCorrect);
+    } else {
+      generateSentence(logicData, false);
+    }
   };
 
   const goBack = () => {
     if (historyIndex > 0) {
-      const prevIndex = historyIndex - 1;
-      setHistoryIndex(prevIndex);
-      setCurrentSentence(history[prevIndex]);
-      setSentenceCount(prev => prev - 1);
-      setFeedback(null);
+      const prev = history[historyIndex - 1];
+      setCurrentSentence(prev);
+      setHistoryIndex(historyIndex - 1);
       setShowSolution(false);
+      setFeedback(null);
       setAttemptCount(0);
-      clearTranscript();
       lastPlayedRef.current = null;
     }
   };
 
-  // Read sentence prompt aloud when active (isListening)
+  // Play target sentence text aloud
   useEffect(() => {
-    if (!currentSentence || !isListening) return;
+    if (!currentSentence || !isListening || isAudioPlaying) return;
 
     let isCurrent = true;
     const textToPlay = currentSentence.native;
@@ -196,7 +181,6 @@ export default function SentenceDrill({
       setIsAudioPlaying(true);
       speakText(textToPlay, 'de', speechRate, user?.voice_de).then(() => {
         if (!isCurrent || !isSessionActiveRef.current) return;
-        clearTranscript();
         setTimeout(() => {
           if (isCurrent && isSessionActiveRef.current) setIsAudioPlaying(false);
         }, 150);
@@ -206,98 +190,9 @@ export default function SentenceDrill({
     return () => {
       isCurrent = false;
     };
-  }, [currentSentence, isListening, user, speechRate]);
+  }, [currentSentence, isListening, isAudioPlaying, speechRate, user]);
 
-  // Configurable no-input timeout logic
-  useEffect(() => {
-    if (!isListening || isAudioPlaying || isProcessing || !currentSentence) return;
-
-    const noInputTimer = setTimeout(() => {
-      if (!isSessionActiveRef.current) return;
-
-      if (attemptCount === 0) {
-        // Step 1: Timeout without input -> Show solution, mark incorrect
-        setFeedback('incorrect');
-        setShowSolution(true);
-        setAttemptCount(1);
-        statsService.recordAttempt(false, true);
-        clearTranscript();
-        
-        setTimeout(() => {
-          if (isSessionActiveRef.current) setFeedback(null);
-        }, pauseTime);
-      } else {
-        // Step 2: Still no correct answer after another timeout -> Read solution aloud & advance
-        setIsProcessing(true);
-        setFeedback('incorrect');
-        
-        speakText(currentSentence.foreign, 'it', speechRate, user?.voice_it).then(() => {
-          if (!isSessionActiveRef.current) return;
-          setTimeout(() => {
-            if (!isSessionActiveRef.current) return;
-            setFeedback(null);
-            setIsProcessing(false);
-            clearTranscript();
-            handleNext(false);
-          }, pauseTime);
-        });
-      }
-    }, noInputTimeout);
-
-    return () => clearTimeout(noInputTimer);
-  }, [isListening, isAudioPlaying, isProcessing, currentSentence, attemptCount, clearTranscript, user, sentenceCount, noInputTimeout, pauseTime, speechRate]);
-
-  // Speech evaluation
-  useEffect(() => {
-    if (!transcript || isProcessing || isAudioPlaying || !isListening || !currentSentence) return;
-
-    const allWordsPresent = checkAllWordsPresent(transcript, currentSentence.foreign);
-
-    if (allWordsPresent) {
-      setFeedback('correct');
-      setIsProcessing(true);
-      setShowSolution(true);
-      statsService.recordAttempt(true, showSolution || alwaysShowTranslation);
-
-      setTimeout(() => {
-          if (!isSessionActiveRef.current) return;
-          setFeedback(null);
-          setIsProcessing(false);
-          clearTranscript();
-          handleNext(true);
-      }, pauseTime);
-    } else {
-        if (checkSkipOrWrong(transcript)) {
-            setFeedback('incorrect');
-            if (!showSolution && onFlip) onFlip();
-            setShowSolution(true);
-            setAttemptCount(1);
-            statsService.recordAttempt(false, true);
-            setTimeout(() => {
-                if (!isSessionActiveRef.current) return;
-                clearTranscript();
-            }, 1000);
-        }
-    }
-  }, [transcript, currentSentence, isProcessing, isAudioPlaying, isListening, showSolution, alwaysShowTranslation, clearTranscript, onFlip, sentenceCount]);
-
-  const playAudio = (text: string) => {
-    if (isPlayingAll) handleStopPlayingAll();
-    setIsAudioPlaying(true);
-    speakText(text, 'it', speechRate, user?.voice_it).then(() => {
-      if (!isSessionActiveRef.current) return;
-      clearTranscript();
-      setTimeout(() => {
-        if (isSessionActiveRef.current) setIsAudioPlaying(false);
-      }, 150);
-    });
-  };
-
-  const handleStopPlayingAll = () => {
-    playingRef.current = false;
-    setIsPlayingAll(false);
-  };
-
+  // Auto play all sentences logic (Overview tab)
   const togglePlayAllOverview = async () => {
     if (isPlayingAll) {
       handleStopPlayingAll();
@@ -327,14 +222,108 @@ export default function SentenceDrill({
     playingRef.current = false;
   };
 
-  if (loading) return <div className="loading">Lade Satzbau-Logik...</div>;
+  const handleStopPlayingAll = () => {
+    playingRef.current = false;
+    setIsPlayingAll(false);
+    window.speechSynthesis.cancel();
+  };
+
+  // No-input timeout logic (only active when listening)
+  useEffect(() => {
+    if (!isListening || isAudioPlaying || isProcessing || !currentSentence) return;
+
+    const noInputTimer = setTimeout(() => {
+      if (!isSessionActiveRef.current) return;
+
+      if (attemptCount === 0) {
+        // Step 1: Timeout -> Show solution, mark incorrect
+        setFeedback('incorrect');
+        setShowSolution(true);
+        setAttemptCount(1);
+        statsService.recordAttempt(false, true);
+        
+        setTimeout(() => {
+          if (isSessionActiveRef.current) setFeedback(null);
+        }, pauseTime);
+      } else {
+        // Step 2: Second Timeout -> Read solution aloud & advance
+        setIsProcessing(true);
+        setFeedback('incorrect');
+        
+        speakText(currentSentence.foreign, 'it', speechRate, user?.voice_it).then(() => {
+          if (!isSessionActiveRef.current) return;
+          setTimeout(() => {
+            if (!isSessionActiveRef.current) return;
+            setFeedback(null);
+            setIsProcessing(false);
+            handleNext(false);
+          }, pauseTime);
+        });
+      }
+    }, noInputTimeout);
+
+    return () => clearTimeout(noInputTimer);
+  }, [isListening, isAudioPlaying, isProcessing, currentSentence, attemptCount, user, sentenceCount, noInputTimeout, pauseTime, speechRate]);
+
+  // Speech evaluation
+  useEffect(() => {
+    if (!transcript || isProcessing || isAudioPlaying || !isListening || !currentSentence) return;
+
+    const targetWords = currentSentence.foreign.trim().split(/\s+/).filter(Boolean);
+    const latestSpoken = getLatestWords(targetWords.length + 1);
+    if (!latestSpoken) return;
+
+    const isMatch = DrillEvaluator.checkSentenceMatch(latestSpoken, currentSentence.foreign);
+
+    if (isMatch) {
+      setFeedback('correct');
+      setIsProcessing(true);
+      setShowSolution(true);
+      statsService.recordAttempt(true, showSolution || alwaysShowTranslation);
+
+      setTimeout(() => {
+          if (!isSessionActiveRef.current) return;
+          setFeedback(null);
+          setIsProcessing(false);
+          handleNext(true);
+      }, pauseTime);
+    } else {
+        const isSkip = DrillEvaluator.checkSkipCommand(latestSpoken) || DrillEvaluator.checkSkipCommand(transcript);
+        if (isSkip) {
+            setFeedback('incorrect');
+            if (!showSolution && onFlip) onFlip();
+            setShowSolution(true);
+            setAttemptCount(1);
+            statsService.recordAttempt(false, true);
+        }
+    }
+  }, [transcript, getLatestWords, currentSentence, isProcessing, isAudioPlaying, isListening, showSolution, alwaysShowTranslation, onFlip, sentenceCount, pauseTime]);
+
+  const playAudio = (text: string) => {
+    if (isPlayingAll) handleStopPlayingAll();
+    setIsAudioPlaying(true);
+    speakText(text, 'it', speechRate, user?.voice_it).then(() => {
+      if (isSessionActiveRef.current) {
+        setTimeout(() => {
+          if (isSessionActiveRef.current) setIsAudioPlaying(false);
+        }, 150);
+      } else {
+        setIsAudioPlaying(false);
+      }
+    });
+  };
+
+  if (loading) return <div className="card-panel">Lade Sätze...</div>;
 
   const displaySolution = showSolution || alwaysShowTranslation;
+  const targetWords = currentSentence ? currentSentence.foreign.trim().split(/\s+/).filter(Boolean) : [];
+  const latestSpoken = getLatestWords(targetWords.length + 1);
+  const evaluatedSequence = DrillEvaluator.getEvaluatedSequence(latestSpoken || transcript, currentSentence?.foreign);
 
   return (
-    <div className="sentence-drill-container" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+    <div className="sentence-drill-container" style={{ display: 'flex', flexDirection: 'column', flex: 1, width: '100%' }}>
       {showOverview ? (
-        <div className="overview-container" style={{ flex: 1 }}>
+        <div className="overview-container card-panel" style={{ flex: 1 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h3 style={{ margin: 0 }}>Satzübersicht ({pronounsMap[pronounKey].de})</h3>
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -361,36 +350,26 @@ export default function SentenceDrill({
               const nativeVerb = entry.native_forms[pronounKey];
 
               return (
-                <div key={entry.verb} style={{ marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}>
-                  <h4 style={{ margin: '0 0 10px 0', color: 'var(--topic-color)' }}>
-                    {entry.verb} ({verbData?.native_infinitive})
-                  </h4>
-                  <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                    <tbody>
-                      {entry.objects.map((obj: any, idx: number) => {
-                        const deSent = `${pronounDe} ${nativeVerb} ${obj.native}.`;
-                        const itSent = `${pronounIt} ${conjugation} ${obj.foreign}`;
-                        return (
-                          <tr key={idx}>
-                            <td style={{ padding: '6px 8px', color: 'var(--text-color)', width: '50%' }}>{deSent}</td>
-                            <td style={{ padding: '6px 8px', fontWeight: 'bold', width: '50%' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>{itSent}</span>
-                                <button 
-                                  className="icon-btn" 
-                                  onClick={() => speakText(itSent, 'it', user?.speech_rate || 1.0, user?.voice_it)}
-                                  style={{ padding: '2px' }}
-                                  title="Vorlesen"
-                                >
-                                  <Volume2 size={14} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                <div key={entry.verb} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '10px 0', borderBottom: '1px solid var(--border-color)' }}>
+                  {entry.objects.map((obj: any, idx: number) => {
+                    const deSent = `${pronounDe} ${nativeVerb} ${obj.native}.`;
+                    const itSent = `${pronounIt} ${conjugation} ${obj.foreign}`;
+                    return (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-meta)' }}>{deSent}</span>
+                          <span style={{ fontWeight: 'bold' }}>{itSent}</span>
+                        </div>
+                        <button 
+                          onClick={() => playAudio(itSent)} 
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
+                          title="Vorlesen"
+                        >
+                          <Volume2 size={16} color="#3498db" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
@@ -464,13 +443,9 @@ export default function SentenceDrill({
                 </div>
               )}
             </div>
-
-
           </div>
 
           <TransportBar
-            user={user}
-            onUpdateUser={onUpdateUser}
             onBack={goBack}
             backDisabled={historyIndex <= 0}
             onForward={() => handleNext(false)}
@@ -488,6 +463,15 @@ export default function SentenceDrill({
               </button>
             )}
           />
+
+          {isListening && (
+            <AnalyseBar
+              language={language}
+              transcript={transcript}
+              expectedWordCount={targetWords.length}
+              evaluatedSequence={evaluatedSequence}
+            />
+          )}
         </>
       )}
     </div>

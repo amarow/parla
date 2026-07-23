@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Volume2, Eye, EyeOff, ArrowLeftRight, List, BookOpen, XCircle } from 'lucide-react';
 import { useRecorder } from '../contexts/Recorder';
+import { useSession } from '../contexts/SessionContext';
 import { speakText } from '../api';
 import { TransportBar } from './TransportBar';
-import { checkConjugationMatch, checkSkipOrWrong } from '../utils/speechMatch';
+import { DrillEvaluator } from '../utils/speechMatch';
 import { statsService } from '../utils/statsService';
-import { getSpeedProfile } from '../utils/speedConfig';
+import { AnalyseBar } from './AnalyseBar';
 
 interface FormDef {
   id: string;
@@ -25,16 +26,12 @@ const formDefinitions: FormDef[] = [
 ];
 
 export default function ConjugationDrill({ 
-  user, 
-  onUpdateUser,
   verb, 
   onFinish, 
   onBack, 
   onFlip, 
   onReset, 
   progress,
-  alwaysShowTranslation = false,
-  setAlwaysShowTranslation,
   onToggleDirection,
   onToggleOverview,
   showOverview,
@@ -47,11 +44,12 @@ export default function ConjugationDrill({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
-  const { isListening, toggleListening, stopListening, transcript, setLanguage, clearTranscript, setActiveTargetText } = useRecorder();
+  const { isListening, toggleListening, stopListening, transcript, setLanguage, language, getLatestWords } = useRecorder();
+  const { user, alwaysShowTranslation, setAlwaysShowTranslation, speedProfile } = useSession();
+  
   const conjugation = verb.conjugations?.[0];
   const isSessionActiveRef = useRef(false);
 
-  const speedProfile = getSpeedProfile(user);
   const pauseTime = speedProfile.pauseTime;
   const noInputTimeout = speedProfile.noInputTimeout;
   const speechRate = speedProfile.speechRate;
@@ -82,7 +80,6 @@ export default function ConjugationDrill({
     setActiveFieldIndex(0);
     setIsProcessing(false);
     setIsAudioPlaying(false);
-    clearTranscript();
   };
 
   useEffect(() => {
@@ -92,15 +89,6 @@ export default function ConjugationDrill({
   useEffect(() => {
     resetDrill();
   }, [verb]);
-
-  useEffect(() => {
-    clearTranscript();
-    if (conjugation && activeFieldIndex < formDefinitions.length) {
-      const currentForm = formDefinitions[activeFieldIndex];
-      const expectedVerb = conjugation[currentForm.formKey];
-      setActiveTargetText(expectedVerb, true);
-    }
-  }, [activeFieldIndex, conjugation, clearTranscript, setActiveTargetText]);
 
   useEffect(() => {
     if (onReset) onReset(resetDrill);
@@ -119,7 +107,6 @@ export default function ConjugationDrill({
       setFeedback(prev => ({ ...prev, [currentForm.id]: 'incorrect' }));
       setRevealedRows(prev => ({ ...prev, [currentForm.id]: true }));
       statsService.recordAttempt(false, true);
-      clearTranscript();
 
       if (activeFieldIndex < formDefinitions.length - 1) {
         setTimeout(() => {
@@ -133,7 +120,7 @@ export default function ConjugationDrill({
     }, noInputTimeout);
 
     return () => clearTimeout(noInputTimer);
-  }, [isListening, isAudioPlaying, isProcessing, activeFieldIndex, conjugation, feedback, clearTranscript, onFinish, noInputTimeout, pauseTime]);
+  }, [isListening, isAudioPlaying, isProcessing, activeFieldIndex, conjugation, feedback, onFinish, noInputTimeout, pauseTime]);
 
   // Speech evaluation
   useEffect(() => {
@@ -144,13 +131,15 @@ export default function ConjugationDrill({
 
     const expectedVerb = conjugation[currentForm.formKey];
     const possiblePronouns = currentForm.id.startsWith('form_3s') ? ['lui', 'lei'] : [currentForm.expectedPronoun];
-    const hasMatch = checkConjugationMatch(transcript, expectedVerb, possiblePronouns);
+    
+    // Evaluate based on expected target length + 1 (pronoun + verb)
+    const latestSpoken = getLatestWords(3);
+    const hasMatch = DrillEvaluator.checkConjugationMatch(latestSpoken || transcript, expectedVerb, possiblePronouns);
 
     if (hasMatch) {
        setFeedback(prev => ({ ...prev, [currentForm.id]: 'correct' }));
        setRevealedRows(prev => ({ ...prev, [currentForm.id]: true }));
        statsService.recordAttempt(true, revealedRows[currentForm.id] || alwaysShowTranslation);
-       clearTranscript();
        
        if (activeFieldIndex < formDefinitions.length - 1) {
          setTimeout(() => {
@@ -163,12 +152,12 @@ export default function ConjugationDrill({
          }, pauseTime);
        }
     } else {
-        if (checkSkipOrWrong(transcript)) {
+        const isSkip = DrillEvaluator.checkSkipCommand(latestSpoken || transcript);
+        if (isSkip) {
             setFeedback(prev => ({ ...prev, [currentForm.id]: 'incorrect' }));
             setRevealedRows(prev => ({ ...prev, [currentForm.id]: true }));
             if (!showSolution && onFlip) onFlip();
             statsService.recordAttempt(false, true);
-            clearTranscript();
 
             if (activeFieldIndex < formDefinitions.length - 1) {
               setTimeout(() => {
@@ -182,7 +171,7 @@ export default function ConjugationDrill({
             }
         }
     }
-  }, [transcript, activeFieldIndex, conjugation, feedback, clearTranscript, isListening, showSolution, alwaysShowTranslation, isAudioPlaying, isProcessing, onFinish, onFlip, revealedRows, pauseTime]);
+  }, [transcript, getLatestWords, activeFieldIndex, conjugation, feedback, isListening, showSolution, alwaysShowTranslation, isAudioPlaying, isProcessing, onFinish, onFlip, revealedRows, pauseTime]);
 
   const playAudio = (e: any, text: string) => {
     e.preventDefault();
@@ -190,7 +179,6 @@ export default function ConjugationDrill({
     setIsAudioPlaying(true);
     speakText(text, 'it', speechRate, user?.voice_it).then(() => {
       if (!isSessionActiveRef.current) return;
-      clearTranscript();
       setTimeout(() => {
         if (isSessionActiveRef.current) setIsAudioPlaying(false);
       }, 150);
@@ -198,6 +186,14 @@ export default function ConjugationDrill({
   };
 
   if (!conjugation) return <div className="card-panel">Keine Konjugationsdaten für dieses Verb gefunden.</div>;
+
+  const currentForm = formDefinitions[activeFieldIndex];
+  const activeExpectedVerb = activeFieldIndex < formDefinitions.length ? conjugation[currentForm.formKey] : '';
+  const activeExpectedPronoun = activeFieldIndex < formDefinitions.length ? currentForm.expectedPronoun : '';
+  const expectedText = currentForm?.id?.startsWith('form_3s') ? `lui ${activeExpectedVerb}` : `${activeExpectedPronoun} ${activeExpectedVerb}`;
+  
+  const expectedWords = expectedText.trim().split(/\s+/).filter(Boolean);
+  const evaluatedSequence = DrillEvaluator.getEvaluatedSequence(transcript, expectedText, currentForm?.id?.startsWith('form_3s'));
 
   return (
     <div className="verb-drill-container">
@@ -290,28 +286,30 @@ export default function ConjugationDrill({
               );
           })}
         </div>
-
-        {/* Button ganz nach unten unter der Konjugationstabelle */}
-
       </div>
 
       <TransportBar
-        user={user}
-        onUpdateUser={onUpdateUser}
         onBack={() => {
           isSessionActiveRef.current = false;
           window.speechSynthesis.cancel();
-          clearTranscript();
           if (onBack) onBack();
         }}
         onForward={() => {
-          clearTranscript();
           onFinish(true);
         }}
         onMainAction={toggleListening}
         mainActionType="mic"
         mainActionActive={isListening}
       />
+
+      {isListening && activeFieldIndex < formDefinitions.length && (
+        <AnalyseBar
+          language={language}
+          transcript={transcript}
+          expectedWordCount={expectedWords.length}
+          evaluatedSequence={evaluatedSequence}
+        />
+      )}
     </div>
   );
 }

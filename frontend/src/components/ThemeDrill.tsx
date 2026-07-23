@@ -2,22 +2,22 @@ import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, XCircle, Volume2, Eye, EyeOff } from 'lucide-react';
 import { speakText } from '../api';
 import { useRecorder } from '../contexts/Recorder';
+import { useSession } from '../contexts/SessionContext';
 import textIslands from '../data/textIslands.json';
 import { TransportBar } from './TransportBar';
-import { checkAllWordsPresent, checkFuzzyMatch, normalizeText } from '../utils/speechMatch';
-import { getSpeedProfile } from '../utils/speedConfig';
+import { DrillEvaluator } from '../utils/speechMatch';
+import { AnalyseBar } from './AnalyseBar';
 
-export default function ThemeDrill({ user, onUpdateUser, islandId, onCancel }: any) {
+export default function ThemeDrill({ islandId, onCancel }: any) {
   const island = textIslands.find(i => i.id === islandId);
   const sentences = island?.sentences || [];
 
-  const speedProfile = getSpeedProfile(user);
+  const { user, alwaysShowTranslation, setAlwaysShowTranslation, speedProfile } = useSession();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [phase, setPhase] = useState<'idle' | 'speaking' | 'listening'>('idle');
   const [showTranslation, setShowTranslation] = useState(false);
-  const [alwaysShowTranslation, setAlwaysShowTranslation] = useState(false);
   
   const [progress, setProgress] = useState(0); // 0 to 100 for pause timer
   const [feedback, setFeedback] = useState<'correct' | null>(null);
@@ -27,7 +27,7 @@ export default function ThemeDrill({ user, onUpdateUser, islandId, onCancel }: a
   const earlyResolveRef = useRef<(() => void) | null>(null);
   const feedbackRef = useRef<'correct' | null>(null);
 
-  const { isListening, toggleListening, stopListening, transcript, clearTranscript, setLanguage, setActiveTargetText } = useRecorder();
+  const { isListening, toggleListening, stopListening, transcript, setLanguage, language } = useRecorder();
 
   useEffect(() => {
     setLanguage('it-IT');
@@ -39,12 +39,6 @@ export default function ThemeDrill({ user, onUpdateUser, islandId, onCancel }: a
       if (earlyResolveRef.current) earlyResolveRef.current();
     };
   }, [setLanguage, stopListening]);
-
-  useEffect(() => {
-    if (sentences[currentIndex]?.it) {
-      setActiveTargetText(sentences[currentIndex].it, false);
-    }
-  }, [currentIndex, sentences, setActiveTargetText]);
 
   useEffect(() => {
     playingRef.current = isListening;
@@ -65,13 +59,12 @@ export default function ThemeDrill({ user, onUpdateUser, islandId, onCancel }: a
     if (!currentSentence) return;
 
     const target = currentSentence.it;
-    const isMatch = checkAllWordsPresent(transcript, target) || checkFuzzyMatch(transcript, target);
+    const isMatch = DrillEvaluator.checkSentenceMatch(transcript, target);
 
     if (isMatch) {
       setFeedback('correct');
       feedbackRef.current = 'correct';
       setShowTranslation(true);
-      clearTranscript();
       
       // Wait 1.2 seconds to show green feedback, then advance
       setTimeout(() => {
@@ -80,7 +73,7 @@ export default function ThemeDrill({ user, onUpdateUser, islandId, onCancel }: a
         }
       }, 1200);
     }
-  }, [transcript, currentIndex, sentences, clearTranscript, feedback]);
+  }, [transcript, currentIndex, sentences, feedback]);
 
   const playCycle = async (index: number) => {
     currentCycleRef.current += 1;
@@ -91,7 +84,6 @@ export default function ThemeDrill({ user, onUpdateUser, islandId, onCancel }: a
     setShowTranslation(alwaysShowTranslation);
     setFeedback(null);
     feedbackRef.current = null;
-    clearTranscript();
 
     // Loop 2 times per sentence
     for (let repeat = 0; repeat < 2; repeat++) {
@@ -99,12 +91,11 @@ export default function ThemeDrill({ user, onUpdateUser, islandId, onCancel }: a
 
       setFeedback(null);
       feedbackRef.current = null;
-      clearTranscript();
 
       // 1. Speak (App is speaking)
       setPhase('speaking');
       const startSpeak = Date.now();
-      await speakText(sentences[index].it, 'it', user?.speech_rate || 0.85, user?.voice_it);
+      await speakText(sentences[index].it, 'it', speedProfile.speechRate, user?.voice_it);
       
       if (!playingRef.current || currentCycleRef.current !== myCycleId) break;
 
@@ -167,7 +158,6 @@ export default function ThemeDrill({ user, onUpdateUser, islandId, onCancel }: a
     setProgress(0);
     setFeedback(null);
     feedbackRef.current = null;
-    clearTranscript();
     setShowTranslation(alwaysShowTranslation);
     setCurrentIndex((prev) => (prev + 1) % sentences.length);
   };
@@ -179,19 +169,20 @@ export default function ThemeDrill({ user, onUpdateUser, islandId, onCancel }: a
     setProgress(0);
     setFeedback(null);
     feedbackRef.current = null;
-    clearTranscript();
     setShowTranslation(alwaysShowTranslation);
     setCurrentIndex((prev) => (prev - 1 + sentences.length) % sentences.length);
   };
 
   const playAudio = (text: string) => {
-    speakText(text, 'it', user?.speech_rate || 1.0, user?.voice_it);
+    speakText(text, 'it', speedProfile.speechRate, user?.voice_it);
   };
 
   if (!island) return <div className="card-panel">Textinsel nicht gefunden.</div>;
 
   const currentSentence = sentences[currentIndex];
   const displaySolution = showTranslation || alwaysShowTranslation;
+  const expectedWords = currentSentence ? currentSentence.it.trim().split(/\s+/).filter(Boolean) : [];
+  const evaluatedSequence = DrillEvaluator.getEvaluatedSequence(transcript, currentSentence?.it);
 
   return (
     <div className="island-player-container">
@@ -288,19 +279,24 @@ export default function ThemeDrill({ user, onUpdateUser, islandId, onCancel }: a
             </div>
           )}
         </div>
-
-
       </div>
 
       <TransportBar
-        user={user}
-        onUpdateUser={onUpdateUser}
         onBack={skipBack}
         onForward={skipForward}
         onMainAction={toggleListening}
         mainActionType="mic"
         mainActionActive={isListening}
       />
+
+      {isListening && (
+        <AnalyseBar
+          language={language}
+          transcript={transcript}
+          expectedWordCount={expectedWords.length}
+          evaluatedSequence={evaluatedSequence}
+        />
+      )}
     </div>
   );
 }
