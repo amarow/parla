@@ -9,7 +9,7 @@ import { ArrowLeftRight, List, BookOpen, XCircle, Volume2, Play, Square } from '
 import { statsService } from '../utils/statsService';
 import { useSession } from '../contexts/SessionContext';
 
-export default function Drill({ categoryId, direction, onFinish, onCancel, onAutoAdvance }: any) {
+export default function Drill({ categoryId, direction, onFinish, onCancel, onShowStats }: any) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOverview, setShowOverview] = useState(false);
   const [flipCount, setFlipCount] = useState(0);
@@ -65,24 +65,32 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onAut
     setCurrentIndex(0);
   }, [categoryId]);
 
-  // Autoplay loop effect
+  const isPlayingRef = useRef(false);
+
   useEffect(() => {
-    if (!isPlayingAll || items.length === 0 || !showOverview) return;
+    return () => {
+      isPlayingRef.current = false;
+      window.speechSynthesis.cancel();
+    };
+  }, []);
 
-    let isCurrent = true;
+  const togglePlayAll = async () => {
+    if (isPlayingRef.current) {
+      isPlayingRef.current = false;
+      setIsPlayingAll(false);
+      window.speechSynthesis.cancel();
+      return;
+    }
 
-    const playCurrentItem = async () => {
-      if (currentIndex >= items.length) {
-        // Reached end of current category -> Auto advance
-        const advanced = onAutoAdvance ? onAutoAdvance() : false;
-        if (!advanced) {
-          setIsPlayingAll(false);
-        }
-        return;
-      }
+    isPlayingRef.current = true;
+    setIsPlayingAll(true);
 
-      const item = items[currentIndex];
-      if (!item) return;
+    for (let i = currentIndex; i < items.length; i++) {
+      if (!isPlayingRef.current) break;
+      setCurrentIndex(i);
+
+      const item = items[i];
+      if (!item) continue;
 
       const langCode = 'it';
       if (itemType === 'words') {
@@ -97,38 +105,18 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onAut
         }
       }
 
-      if (isCurrent && isPlayingAll) {
+      if (isPlayingRef.current) {
         await new Promise(r => setTimeout(r, pauseTime));
-        if (isCurrent && isPlayingAll) {
-          setCurrentIndex(prev => prev + 1);
-        }
       }
-    };
-
-    playCurrentItem();
-
-    return () => {
-      isCurrent = false;
-      window.speechSynthesis.cancel();
-    };
-  }, [isPlayingAll, currentIndex, categoryId, items, itemType, pauseTime, speechRate, user, showOverview, onAutoAdvance]);
-
-  const togglePlayAll = () => {
-    if (isPlayingAll) {
-      setIsPlayingAll(false);
-      window.speechSynthesis.cancel();
-    } else {
-      setCurrentIndex(0);
-      setIsPlayingAll(true);
     }
+
+    setIsPlayingAll(false);
+    isPlayingRef.current = false;
   };
 
   const handleAnswer = (isCorrect: boolean) => {
     if (currentIndex + 1 >= items.length) {
-      const advanced = onAutoAdvance ? onAutoAdvance() : false;
-      if (!advanced) {
-        onFinish(isCorrect);
-      }
+      onFinish(isCorrect);
     } else {
       setCurrentIndex(prev => prev + 1);
     }
@@ -142,10 +130,7 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onAut
 
   const handleVerbFinish = (isCorrect: boolean) => {
     if (currentIndex + 1 >= items.length) {
-      const advanced = onAutoAdvance ? onAutoAdvance() : false;
-      if (!advanced) {
-        onFinish(isCorrect);
-      }
+      onFinish(isCorrect);
     } else {
       setCurrentIndex(prev => prev + 1);
     }

@@ -65,12 +65,29 @@ function App() {
     setAppState('learning');
   };
 
-  const finishSession = () => {
+  const showRewardScreen = () => {
     stopListening();
     window.speechSynthesis.cancel();
     const statsResult = statsService.endSession();
     setSessionStats(statsResult);
     setAppState('reward');
+  };
+
+  const finishCategory = (isCorrect: boolean) => {
+    if (sessionConfig && sessionConfig.categories) {
+      const currentIndex = sessionConfig.categories.findIndex((c: any) => c.id === sessionConfig.categoryId);
+      if (currentIndex !== -1 && currentIndex + 1 < sessionConfig.categories.length) {
+        const nextCategory = sessionConfig.categories[currentIndex + 1];
+        if (nextCategory.id !== 'text_islands') {
+          setSessionConfig(prev => {
+            if (!prev) return null;
+            return { ...prev, categoryId: nextCategory.id };
+          });
+          return;
+        }
+      }
+    }
+    showRewardScreen();
   };
 
   const startNextSession = () => {
@@ -88,7 +105,6 @@ function App() {
         startSession('text_islands', nextIsland.id);
         return;
       }
-      // Keine weitere Textinsel -> zurück zur Übersicht
       cancelSession();
       return;
     }
@@ -105,25 +121,7 @@ function App() {
       }
     }
 
-    // Fallback: Zurück zur Setup-Übersicht
     cancelSession();
-  };
-
-  const handleAutoAdvance = () => {
-    if (sessionConfig && sessionConfig.categories) {
-      const currentIndex = sessionConfig.categories.findIndex((c: any) => c.id === sessionConfig.categoryId);
-      if (currentIndex !== -1 && currentIndex + 1 < sessionConfig.categories.length) {
-        const nextCategory = sessionConfig.categories[currentIndex + 1];
-        if (nextCategory.id !== 'text_islands') {
-          setSessionConfig(prev => {
-            if (!prev) return null;
-            return { ...prev, categoryId: nextCategory.id };
-          });
-          return true;
-        }
-      }
-    }
-    return false;
   };
 
   const restartSession = () => {
@@ -185,24 +183,24 @@ function App() {
           <ThemeDrill
             islandId={sessionConfig.direction}
             onCancel={cancelSession}
-            onFinish={finishSession}
+            onFinish={showRewardScreen}
           />
         )}
         {user && appState === 'learning' && sessionConfig.categoryId !== 'text_islands' && (
           <Drill 
             categoryId={sessionConfig.categoryId} 
             direction={sessionConfig.direction} 
-            onFinish={finishSession}
+            onFinish={finishCategory}
             onCancel={cancelSession}
-            onAutoAdvance={handleAutoAdvance}
+            onShowStats={showRewardScreen}
           />
         )}
         {user && appState === 'reward' && (
-          <Reward 
-            onCancel={cancelSession} 
-            onNext={startNextSession} 
-            onRepeat={restartSession} 
-            stats={sessionStats} 
+          <Reward
+            stats={sessionStats}
+            onNext={startNextSession}
+            onRestart={restartSession}
+            onCancel={cancelSession}
           />
         )}
       </main>
