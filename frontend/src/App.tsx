@@ -109,6 +109,23 @@ function App() {
     cancelSession();
   };
 
+  const handleAutoAdvance = () => {
+    if (sessionConfig && sessionConfig.categories) {
+      const currentIndex = sessionConfig.categories.findIndex((c: any) => c.id === sessionConfig.categoryId);
+      if (currentIndex !== -1 && currentIndex + 1 < sessionConfig.categories.length) {
+        const nextCategory = sessionConfig.categories[currentIndex + 1];
+        if (nextCategory.id !== 'text_islands') {
+          setSessionConfig(prev => {
+            if (!prev) return null;
+            return { ...prev, categoryId: nextCategory.id };
+          });
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
   const restartSession = () => {
     if (sessionConfig) {
       startSession(sessionConfig.categoryId, sessionConfig.direction, sessionConfig.categories);
@@ -176,6 +193,7 @@ function App() {
             direction={sessionConfig.direction} 
             onFinish={finishSession}
             onCancel={cancelSession}
+            onAutoAdvance={handleAutoAdvance}
           />
         )}
         {user && appState === 'reward' && (

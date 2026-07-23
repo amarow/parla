@@ -9,7 +9,7 @@ import { ArrowLeftRight, List, BookOpen, XCircle, Volume2, Play, Square } from '
 import { statsService } from '../utils/statsService';
 import { useSession } from '../contexts/SessionContext';
 
-export default function Drill({ categoryId, direction, onFinish, onCancel }: any) {
+export default function Drill({ categoryId, direction, onFinish, onCancel, onAutoAdvance }: any) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOverview, setShowOverview] = useState(false);
   const [flipCount, setFlipCount] = useState(0);
@@ -17,7 +17,6 @@ export default function Drill({ categoryId, direction, onFinish, onCancel }: any
   const [currentDirection, setCurrentDirection] = useState(direction);
 
   const [isPlayingAll, setIsPlayingAll] = useState(false);
-  const isPlayingRef = useRef(false);
 
   const { user, speedProfile } = useSession();
   const pauseTime = speedProfile.pauseTime;
@@ -25,7 +24,7 @@ export default function Drill({ categoryId, direction, onFinish, onCancel }: any
 
   useEffect(() => {
     return () => {
-      isPlayingRef.current = false;
+      window.speechSynthesis.cancel();
     };
   }, []);
 
@@ -60,45 +59,67 @@ export default function Drill({ categoryId, direction, onFinish, onCancel }: any
     }
   }, [categoryId, items]);
 
-  const togglePlayAll = async () => {
-    if (isPlayingRef.current) {
-      isPlayingRef.current = false;
-      setIsPlayingAll(false);
-      return;
-    }
+  // Reset currentIndex when category changes
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [categoryId]);
 
-    isPlayingRef.current = true;
-    setIsPlayingAll(true);
+  // Autoplay loop effect
+  useEffect(() => {
+    if (!isPlayingAll || items.length === 0 || !showOverview) return;
 
-    for (const item of items) {
-      if (!isPlayingRef.current) break;
-      
-      const langCode = 'it';
-      const playPart = async (text: string) => {
-        if (!isPlayingRef.current || !text) return;
-        await speakText(text, langCode, speechRate, user?.voice_it);
-        if (isPlayingRef.current) {
-          await new Promise(r => setTimeout(r, pauseTime));
+    let isCurrent = true;
+
+    const playCurrentItem = async () => {
+      if (currentIndex >= items.length) {
+        // Reached end of current category -> Auto advance
+        const advanced = onAutoAdvance ? onAutoAdvance() : false;
+        if (!advanced) {
+          setIsPlayingAll(false);
         }
-      };
+        return;
+      }
 
+      const item = items[currentIndex];
+      if (!item) return;
+
+      const langCode = 'it';
       if (itemType === 'words') {
-        const wordItem = item as any;
-        await playPart(wordItem.foreign_word);
+        await speakText(item.foreign_word, langCode, speechRate, user?.voice_it);
       } else if (itemType === 'verbs') {
-        const verbItem = item as any;
-        const conj = verbItem.conjugations?.[0];
+        const conj = item.conjugations?.[0];
         if (conj) {
-          const text = `${verbItem.foreign_infinitive}, io ${conj.form_1s}, tu ${conj.form_2s}, lui lei ${conj.form_3s}, noi ${conj.form_1p}, voi ${conj.form_2p}, loro ${conj.form_3p}`;
-          await playPart(text);
+          const text = `${item.foreign_infinitive}, io ${conj.form_1s}, tu ${conj.form_2s}, lui lei ${conj.form_3s}, noi ${conj.form_1p}, voi ${conj.form_2p}, loro ${conj.form_3p}`;
+          await speakText(text, langCode, speechRate, user?.voice_it);
         } else {
-          await playPart(verbItem.foreign_infinitive);
+          await speakText(item.foreign_infinitive, langCode, speechRate, user?.voice_it);
         }
       }
+
+      if (isCurrent && isPlayingAll) {
+        await new Promise(r => setTimeout(r, pauseTime));
+        if (isCurrent && isPlayingAll) {
+          setCurrentIndex(prev => prev + 1);
+        }
+      }
+    };
+
+    playCurrentItem();
+
+    return () => {
+      isCurrent = false;
+      window.speechSynthesis.cancel();
+    };
+  }, [isPlayingAll, currentIndex, categoryId, items, itemType, pauseTime, speechRate, user, showOverview, onAutoAdvance]);
+
+  const togglePlayAll = () => {
+    if (isPlayingAll) {
+      setIsPlayingAll(false);
+      window.speechSynthesis.cancel();
+    } else {
+      setCurrentIndex(0);
+      setIsPlayingAll(true);
     }
-    
-    setIsPlayingAll(false);
-    isPlayingRef.current = false;
   };
 
   const handleAnswer = (isCorrect: boolean) => {
