@@ -289,7 +289,7 @@ export default function ThemeDrill({ islandId, onCancel }: any) {
         mainActionActive={isListening}
       />
 
-      {isListening && (
+      {isListening && user.show_analyse_bar !== false && (
         <AnalyseBar
           language={language}
           transcript={transcript}

@@ -297,7 +297,7 @@ export default function ConjugationDrill({
         mainActionActive={isListening}
       />
 
-      {isListening && activeFieldIndex < formDefinitions.length && (
+      {isListening && activeFieldIndex < formDefinitions.length && user.show_analyse_bar !== false && (
         <AnalyseBar
           language={language}
           transcript={transcript}

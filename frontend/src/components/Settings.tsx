@@ -11,6 +11,7 @@ export default function Settings({ onCancel }) {
   const [globalSpeed, setGlobalSpeed] = useState<SpeedLevel>(user.global_speed || getSpeedProfile(user).level);
   const [voiceIt, setVoiceIt] = useState(user.voice_it || '');
   const [voiceDe, setVoiceDe] = useState(user.voice_de || '');
+  const [showAnalyseBar, setShowAnalyseBar] = useState(user.show_analyse_bar !== false);
   const [message, setMessage] = useState('');
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
 
@@ -34,7 +35,8 @@ export default function Settings({ onCancel }) {
         pause_time: profile.pauseTime,
         speech_rate: profile.speechRate,
         voice_it: voiceIt,
-        voice_de: voiceDe
+        voice_de: voiceDe,
+        show_analyse_bar: showAnalyseBar
       });
       // User-Objekt aktualisieren
       setUser(updatedUser);
@@ -141,6 +143,17 @@ export default function Settings({ onCancel }) {
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: '15px 0' }}>
+          <input 
+            type="checkbox" 
+            id="showAnalyseBar"
+            checked={showAnalyseBar} 
+            onChange={(e) => setShowAnalyseBar(e.target.checked)} 
+            style={{ width: 'auto', margin: 0 }}
+          />
+          <label htmlFor="showAnalyseBar" style={{ margin: 0, cursor: 'pointer', fontWeight: 600 }}>Analyse-Leiste während der Übungen anzeigen</label>
         </div>
 
         {message && <div className="success-message" style={{ textAlign: 'center', color: 'var(--right-color)', fontWeight: 'bold', margin: '10px 0' }}>{message}</div>}

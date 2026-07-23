@@ -266,7 +266,7 @@ export default function VocabDrill({
         mainActionActive={isListening}
       />
 
-      {isListening && (
+      {isListening && user.show_analyse_bar !== false && (
         <AnalyseBar
           language={language}
           transcript={transcript}

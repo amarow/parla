@@ -20,6 +20,7 @@ export const localAuth = {
       speech_rate: 0.85,
       voice_it: '',
       voice_de: '',
+      show_analyse_bar: true,
       ...userData, 
       id: Date.now() 
     };

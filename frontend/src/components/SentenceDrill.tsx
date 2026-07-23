@@ -464,7 +464,7 @@ export default function SentenceDrill({
             )}
           />
 
-          {isListening && (
+          {isListening && user.show_analyse_bar !== false && (
             <AnalyseBar
               language={language}
               transcript={transcript}
