@@ -6,8 +6,10 @@ import Setup from './components/Setup';
 import Drill from './components/Drill';
 import Reward from './components/Reward';
 import ThemeDrill from './components/ThemeDrill';
-import { useVoice } from './contexts/VoiceContext';
+import { useRecorder } from './contexts/Recorder';
 import { statsService } from './utils/statsService';
+import { getEvaluatedSequence } from './utils/speechMatch';
+import textIslands from './data/textIslands.json';
 import './App.css';
 import pkg from '../package.json';
 
@@ -17,7 +19,7 @@ function App() {
   const [sessionConfig, setSessionConfig] = useState(null);
   const [sessionStats, setSessionStats] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const { isListening, toggleListening, transcript } = useVoice();
+  const { isListening, toggleListening, stopListening, clearTranscript, transcript, evaluatedSequence, language, expectedWordCount } = useRecorder();
 
   useEffect(() => {
     // If the user has a gemini key, we might initialize something here
@@ -40,11 +42,17 @@ function App() {
   };
 
   const handleLogout = () => {
+    stopListening();
+    clearTranscript();
+    window.speechSynthesis.cancel();
     setUser(null);
     setAppState('login');
   };
 
   const startSession = (categoryId, direction, categories = null) => {
+    stopListening();
+    clearTranscript();
+    window.speechSynthesis.cancel();
     const categoryList = [
       { id: 'all_words', name: 'Vokabeln', icon: BookOpen, type: 'words' },
       { id: 'verbs', name: 'Konjugationen', icon: RotateCcw, type: 'verbs' },
@@ -60,21 +68,47 @@ function App() {
   };
 
   const finishSession = () => {
+    stopListening();
+    clearTranscript();
+    window.speechSynthesis.cancel();
     const statsResult = statsService.endSession();
     setSessionStats(statsResult);
     setAppState('reward');
   };
 
   const startNextSession = () => {
-    if (sessionConfig && sessionConfig.categories && sessionConfig.categories.length > 0) {
-      const currentIndex = sessionConfig.categories.findIndex(c => c.id === sessionConfig.categoryId);
-      if (currentIndex !== -1 && currentIndex + 1 < sessionConfig.categories.length) {
-        const nextCategoryId = sessionConfig.categories[currentIndex + 1].id;
-        startSession(nextCategoryId, sessionConfig.direction, sessionConfig.categories);
+    if (!sessionConfig) {
+      cancelSession();
+      return;
+    }
+
+    // 1. Wenn aktuell in einer Textinsel (Thema)
+    if (sessionConfig.categoryId === 'text_islands') {
+      const currentIslandId = sessionConfig.direction;
+      const currentIndex = textIslands.findIndex((i: any) => i.id === currentIslandId);
+      if (currentIndex !== -1 && currentIndex + 1 < textIslands.length) {
+        const nextIsland = textIslands[currentIndex + 1];
+        startSession('text_islands', nextIsland.id);
         return;
       }
+      // Keine weitere Textinsel -> zurück zur Übersicht
+      cancelSession();
+      return;
     }
-    // Fallback falls es keine nächste gibt
+
+    // 2. Normaler Vokabel- / Konjugations-Modus
+    if (sessionConfig.categories && Array.isArray(sessionConfig.categories) && sessionConfig.categories.length > 0) {
+      const currentIndex = sessionConfig.categories.findIndex((c: any) => c.id === sessionConfig.categoryId);
+      if (currentIndex !== -1 && currentIndex + 1 < sessionConfig.categories.length) {
+        const nextCategory = sessionConfig.categories[currentIndex + 1];
+        if (nextCategory.id !== 'text_islands') {
+          startSession(nextCategory.id, sessionConfig.direction, sessionConfig.categories);
+          return;
+        }
+      }
+    }
+
+    // Fallback: Zurück zur Setup-Übersicht
     cancelSession();
   };
 
@@ -87,6 +121,9 @@ function App() {
   };
 
   const cancelSession = () => {
+    stopListening();
+    clearTranscript();
+    window.speechSynthesis.cancel();
     setAppState('setup');
     setSessionConfig(null);
   };
@@ -134,6 +171,7 @@ function App() {
         {user && appState === 'learning' && sessionConfig.categoryId === 'text_islands' && (
           <ThemeDrill
             user={user}
+            onUpdateUser={setUser}
             islandId={sessionConfig.direction}
             onCancel={cancelSession}
           />
@@ -141,6 +179,7 @@ function App() {
         {user && appState === 'learning' && sessionConfig.categoryId !== 'text_islands' && (
           <Drill 
             user={user}
+            onUpdateUser={setUser}
             categoryId={sessionConfig.categoryId} 
             direction={sessionConfig.direction} 
             onFinish={finishSession}
@@ -157,23 +196,82 @@ function App() {
         )}
       </main>
       
-      {transcript && (
-        <div style={{
+      {appState === 'learning' && (
+        <div className="analyse-bar" style={{
           position: 'fixed',
-          bottom: 0,
-          left: 0,
-          width: '100%',
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          color: 'var(--right-color)',
-          padding: '8px 16px',
-          textAlign: 'center',
+          bottom: '12px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 'calc(100% - 32px)',
+          maxWidth: '680px',
+          backgroundColor: 'var(--card-bg)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '16px',
+          padding: '10px 18px',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
           zIndex: 9999,
-          fontSize: '1.2rem',
-          fontWeight: 'bold',
-          pointerEvents: 'none',
-          boxShadow: '0 -2px 10px rgba(0,0,0,0.2)'
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '6px',
+          transition: 'all 0.3s ease'
         }}>
-          {transcript}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', fontSize: '0.82rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-meta)', fontWeight: 600 }}>
+              <span style={{ fontWeight: 700, color: 'var(--topic-color)' }}>AnalyseBar</span>
+              <span style={{ opacity: 0.4 }}>|</span>
+              <span>
+                {language?.startsWith('it') ? '🇮🇹 Italienisch (it-IT)' : '🇩🇪 Deutsch (de-DE)'}
+              </span>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-meta)' }}>
+              <span>Erwartet: <strong style={{ color: 'var(--topic-color)' }}>{expectedWordCount > 0 ? `${expectedWordCount} ${expectedWordCount === 1 ? 'Wort' : 'Wörter'}` : '—'}</strong></span>
+            </div>
+          </div>
+
+          <div style={{ 
+            width: '100%', 
+            fontSize: '0.88rem', 
+            color: 'var(--text-meta)', 
+            padding: '4px 0',
+            textAlign: 'left',
+            lineHeight: '1.4'
+          }}>
+            <span style={{ fontWeight: 600, marginRight: '6px' }}>Erkannt:</span>
+            <span style={{ color: 'var(--text-main)', fontWeight: 600, fontStyle: transcript ? 'normal' : 'italic', wordBreak: 'break-word' }}>
+              {transcript ? `"${transcript}"` : '(Warte auf Sprache...)'}
+            </span>
+          </div>
+
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'flex-start', 
+            gap: '8px', 
+            width: '100%', 
+            paddingTop: '6px',
+            borderTop: '1px solid var(--border-color)',
+            fontSize: '0.85rem',
+            flexWrap: 'wrap'
+          }}>
+            <span style={{ fontWeight: 600, color: 'var(--text-meta)' }}>Geprüft (von hinten):</span>
+            <span style={{ 
+              color: evaluatedSequence ? 'var(--right-color)' : 'var(--text-meta)', 
+              backgroundColor: evaluatedSequence ? 'rgba(46, 204, 113, 0.15)' : 'rgba(0, 0, 0, 0.04)', 
+              border: `1px solid ${evaluatedSequence ? 'var(--right-color)' : 'var(--border-color)'}`,
+              padding: '3px 10px', 
+              borderRadius: '8px',
+              fontFamily: 'monospace',
+              fontSize: '0.95rem',
+              fontWeight: 'bold',
+              wordBreak: 'break-word',
+              maxWidth: '100%'
+            }}>
+              {evaluatedSequence ? `"${evaluatedSequence}"` : '(keine Sequenz)'}
+            </span>
+          </div>
         </div>
       )}
     </div>

@@ -1,7 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { SkipBack, SkipForward, Mic, Play, Square } from 'lucide-react';
+import { levelToStep, stepToLevel, SPEED_PROFILES, getSpeedProfile } from '../utils/speedConfig';
+import { localAuth } from '../api';
+
+function getAppStartTime(): number {
+  const stored = sessionStorage.getItem('parladino_app_start_time');
+  if (stored) return parseInt(stored, 10);
+  const now = Date.now();
+  sessionStorage.setItem('parladino_app_start_time', now.toString());
+  return now;
+}
+
+function formatElapsedTime(seconds: number): string {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  if (hrs > 0) {
+    return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
 
 interface TransportBarProps {
+  user?: any;
+  onUpdateUser?: (updatedUser: any) => void;
+
   onBack?: () => void;
   backDisabled?: boolean;
   backTitle?: string;
@@ -20,6 +43,8 @@ interface TransportBarProps {
 }
 
 export const TransportBar: React.FC<TransportBarProps> = ({
+  user,
+  onUpdateUser,
   onBack,
   backDisabled = false,
   backTitle = "Zurück",
@@ -33,6 +58,44 @@ export const TransportBar: React.FC<TransportBarProps> = ({
   mainActionDisabled = false,
   mainActionTitle
 }) => {
+  const speedProfile = getSpeedProfile(user);
+  const currentStep = levelToStep(speedProfile.level);
+
+  const [elapsedSeconds, setElapsedSeconds] = useState(() => {
+    return Math.max(0, Math.floor((Date.now() - getAppStartTime()) / 1000));
+  });
+
+  useEffect(() => {
+    const startTime = getAppStartTime();
+    const interval = setInterval(() => {
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startTime) / 1000)));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleSliderChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const step = parseInt(e.target.value, 10);
+    const newLevel = stepToLevel(step);
+    const profile = SPEED_PROFILES[newLevel];
+    if (user && onUpdateUser) {
+      try {
+        const updated = await localAuth.updateSettings(user.id, {
+          global_speed: newLevel,
+          pause_time: profile.pauseTime,
+          speech_rate: profile.speechRate
+        });
+        onUpdateUser(updated);
+      } catch (err) {
+        onUpdateUser({
+          ...user,
+          global_speed: newLevel,
+          pause_time: profile.pauseTime,
+          speech_rate: profile.speechRate
+        });
+      }
+    }
+  };
+
   const renderMainIcon = () => {
     if (mainActionType === 'mic') {
       return mainActionActive ? <Mic size={28} /> : <Play size={28} style={{ marginLeft: '3px' }} />;
@@ -54,7 +117,38 @@ export const TransportBar: React.FC<TransportBarProps> = ({
   const mainBtnClass = `main-action-btn ${mainActionActive ? 'listening-global' : ''}`;
 
   return (
-    <div className="transport-bar">
+    <div className="transport-bar" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', width: '100%' }}>
+      {user && onUpdateUser && (
+        <div 
+          className="speed-slider-control" 
+          style={{ 
+            position: 'absolute',
+            left: '24px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'flex-start', 
+            justifyContent: 'center',
+            gap: '2px'
+          }}
+        >
+          <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-meta)', whiteSpace: 'nowrap' }}>
+            {speedProfile.label}
+          </span>
+          <input 
+            type="range" 
+            min="1" 
+            max="5" 
+            step="1" 
+            value={currentStep} 
+            onChange={handleSliderChange}
+            style={{ width: '90px', cursor: 'pointer', accentColor: 'var(--topic-color)' }}
+            title={`Geschwindigkeit: ${speedProfile.label}`}
+          />
+        </div>
+      )}
+
       <button 
         className="icon-btn" 
         onClick={onBack} 
@@ -126,6 +220,28 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           <SkipForward size={24} />
         </button>
       )}
+
+      <div 
+        className="elapsed-time-display" 
+        style={{ 
+          position: 'absolute',
+          right: '24px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'flex-end', 
+          justifyContent: 'center',
+          gap: '2px'
+        }}
+      >
+        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-meta)', whiteSpace: 'nowrap' }}>
+          Zeit
+        </span>
+        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--topic-color)', fontFamily: 'monospace', letterSpacing: '0.5px' }}>
+          {formatElapsedTime(elapsedSeconds)}
+        </span>
+      </div>
     </div>
   );
 };

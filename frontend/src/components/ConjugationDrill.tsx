@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Volume2, Eye, EyeOff, ArrowLeftRight, List, BookOpen, XCircle } from 'lucide-react';
-import { useVoice } from '../contexts/VoiceContext';
+import { useRecorder } from '../contexts/Recorder';
 import { speakText } from '../api';
 import { TransportBar } from './TransportBar';
 import { checkConjugationMatch, checkSkipOrWrong } from '../utils/speechMatch';
 import { statsService } from '../utils/statsService';
+import { getSpeedProfile } from '../utils/speedConfig';
 
 interface FormDef {
   id: string;
@@ -25,6 +26,7 @@ const formDefinitions: FormDef[] = [
 
 export default function ConjugationDrill({ 
   user, 
+  onUpdateUser,
   verb, 
   onFinish, 
   onBack, 
@@ -45,9 +47,14 @@ export default function ConjugationDrill({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
-  const { isListening, toggleListening, transcript, setLanguage, clearTranscript } = useVoice();
+  const { isListening, toggleListening, stopListening, transcript, setLanguage, clearTranscript, setActiveTargetText } = useRecorder();
   const conjugation = verb.conjugations?.[0];
   const isSessionActiveRef = useRef(false);
+
+  const speedProfile = getSpeedProfile(user);
+  const pauseTime = speedProfile.pauseTime;
+  const noInputTimeout = speedProfile.noInputTimeout;
+  const speechRate = speedProfile.speechRate;
 
   // Sync ref and handle session pause / stop
   useEffect(() => {
@@ -63,9 +70,10 @@ export default function ConjugationDrill({
   useEffect(() => {
     return () => {
       isSessionActiveRef.current = false;
+      stopListening();
       window.speechSynthesis.cancel();
     };
-  }, []);
+  }, [stopListening]);
 
   const resetDrill = () => {
     setFeedback({});
@@ -86,10 +94,19 @@ export default function ConjugationDrill({
   }, [verb]);
 
   useEffect(() => {
+    clearTranscript();
+    if (conjugation && activeFieldIndex < formDefinitions.length) {
+      const currentForm = formDefinitions[activeFieldIndex];
+      const expectedVerb = conjugation[currentForm.formKey];
+      setActiveTargetText(expectedVerb, true);
+    }
+  }, [activeFieldIndex, conjugation, clearTranscript, setActiveTargetText]);
+
+  useEffect(() => {
     if (onReset) onReset(resetDrill);
   }, [onReset]);
 
-  // 3-second no-input timeout logic per active row
+  // Configurable no-input timeout logic per active row
   useEffect(() => {
     if (!isListening || isAudioPlaying || isProcessing || !conjugation || activeFieldIndex >= formDefinitions.length) return;
 
@@ -105,16 +122,18 @@ export default function ConjugationDrill({
       clearTranscript();
 
       if (activeFieldIndex < formDefinitions.length - 1) {
-        setActiveFieldIndex(activeFieldIndex + 1);
+        setTimeout(() => {
+          if (isSessionActiveRef.current) setActiveFieldIndex(prev => prev + 1);
+        }, pauseTime);
       } else {
         setTimeout(() => {
           if (isSessionActiveRef.current) onFinish(false);
-        }, 1500);
+        }, pauseTime);
       }
-    }, 3000);
+    }, noInputTimeout);
 
     return () => clearTimeout(noInputTimer);
-  }, [isListening, isAudioPlaying, isProcessing, activeFieldIndex, conjugation, feedback, clearTranscript, onFinish]);
+  }, [isListening, isAudioPlaying, isProcessing, activeFieldIndex, conjugation, feedback, clearTranscript, onFinish, noInputTimeout, pauseTime]);
 
   // Speech evaluation
   useEffect(() => {
@@ -124,7 +143,8 @@ export default function ConjugationDrill({
     if (feedback[currentForm.id] === 'correct') return;
 
     const expectedVerb = conjugation[currentForm.formKey];
-    const hasMatch = checkConjugationMatch(transcript, expectedVerb, [currentForm.expectedPronoun]);
+    const possiblePronouns = currentForm.id.startsWith('form_3s') ? ['lui', 'lei'] : [currentForm.expectedPronoun];
+    const hasMatch = checkConjugationMatch(transcript, expectedVerb, possiblePronouns);
 
     if (hasMatch) {
        setFeedback(prev => ({ ...prev, [currentForm.id]: 'correct' }));
@@ -133,15 +153,17 @@ export default function ConjugationDrill({
        clearTranscript();
        
        if (activeFieldIndex < formDefinitions.length - 1) {
-         setActiveFieldIndex(activeFieldIndex + 1);
+         setTimeout(() => {
+           if (isSessionActiveRef.current) setActiveFieldIndex(prev => prev + 1);
+         }, pauseTime);
        } else {
          setIsProcessing(true);
          setTimeout(() => {
            if (isSessionActiveRef.current) onFinish(true);
-         }, 1500);
+         }, pauseTime);
        }
     } else {
-        if (checkSkipOrWrong(transcript, 5, false)) {
+        if (checkSkipOrWrong(transcript)) {
             setFeedback(prev => ({ ...prev, [currentForm.id]: 'incorrect' }));
             setRevealedRows(prev => ({ ...prev, [currentForm.id]: true }));
             if (!showSolution && onFlip) onFlip();
@@ -149,22 +171,24 @@ export default function ConjugationDrill({
             clearTranscript();
 
             if (activeFieldIndex < formDefinitions.length - 1) {
-              setActiveFieldIndex(activeFieldIndex + 1);
+              setTimeout(() => {
+                if (isSessionActiveRef.current) setActiveFieldIndex(prev => prev + 1);
+              }, pauseTime);
             } else {
               setIsProcessing(true);
               setTimeout(() => {
                 if (isSessionActiveRef.current) onFinish(false);
-              }, 1500);
+              }, pauseTime);
             }
         }
     }
-  }, [transcript, activeFieldIndex, conjugation, feedback, clearTranscript, isListening, showSolution, alwaysShowTranslation, isAudioPlaying, isProcessing, onFinish, onFlip, revealedRows]);
+  }, [transcript, activeFieldIndex, conjugation, feedback, clearTranscript, isListening, showSolution, alwaysShowTranslation, isAudioPlaying, isProcessing, onFinish, onFlip, revealedRows, pauseTime]);
 
   const playAudio = (e: any, text: string) => {
     e.preventDefault();
     e.stopPropagation();
     setIsAudioPlaying(true);
-    speakText(text, 'it', user?.speech_rate || 1.0, user?.voice_it).then(() => {
+    speakText(text, 'it', speechRate, user?.voice_it).then(() => {
       if (!isSessionActiveRef.current) return;
       clearTranscript();
       setTimeout(() => {
@@ -272,6 +296,8 @@ export default function ConjugationDrill({
       </div>
 
       <TransportBar
+        user={user}
+        onUpdateUser={onUpdateUser}
         onBack={() => {
           isSessionActiveRef.current = false;
           window.speechSynthesis.cancel();

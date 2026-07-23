@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { dataService } from '../dataService';
-import { useVoice } from '../contexts/VoiceContext';
+import { useRecorder } from '../contexts/Recorder';
 
 import textIslands from '../data/textIslands.json';
 
 export default function Setup({ user, onStart }) {
   const [selectedCategory, setSelectedCategory] = useState<number | string>('');
-  const { setLanguage } = useVoice();
+  const { setLanguage } = useRecorder();
 
   // Stelle sicher, dass die Spracherkennung hier auf Deutsch (oder die Muttersprache) läuft, 
   // da die Kategorienamen auf Deutsch sind.

@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { Volume2, Eye, EyeOff, ArrowLeftRight, List, BookOpen, XCircle } from 'lucide-react';
 import { speakText } from '../api';
-import { useVoice } from '../contexts/VoiceContext';
+import { useRecorder } from '../contexts/Recorder';
 import { TransportBar } from './TransportBar';
 import { normalizeText, checkFuzzyMatch, checkSkipOrWrong } from '../utils/speechMatch';
 import { statsService } from '../utils/statsService';
+import { getSpeedProfile } from '../utils/speedConfig';
 
 export default function VocabDrill({ 
   user, 
+  onUpdateUser,
   word, 
   direction, 
   onAnswer, 
@@ -27,9 +29,14 @@ export default function VocabDrill({
   const [speechFeedback, setSpeechFeedback] = useState<string | null>(null);
   const [attemptCount, setAttemptCount] = useState(0);
 
-  const { transcript, setLanguage, clearTranscript, isListening, toggleListening } = useVoice();
+  const { transcript, setLanguage, clearTranscript, reset, getLatestWords, isListening, toggleListening, stopListening, setActiveTargetText } = useRecorder();
   const lastPlayedRef = useRef<string | null>(null);
   const isSessionActiveRef = useRef(false);
+
+  const speedProfile = getSpeedProfile(user);
+  const pauseTime = speedProfile.pauseTime;
+  const noInputTimeout = speedProfile.noInputTimeout;
+  const speechRate = speedProfile.speechRate;
 
   // Sync ref and handle session pause / stop
   useEffect(() => {
@@ -45,9 +52,14 @@ export default function VocabDrill({
   useEffect(() => {
     return () => {
       isSessionActiveRef.current = false;
+      stopListening();
       window.speechSynthesis.cancel();
     };
-  }, []);
+  }, [stopListening]);
+
+  const frontText = direction === 'nativeToForeign' ? word.native_word : word.foreign_word;
+  const backText = direction === 'nativeToForeign' ? word.foreign_word : word.native_word;
+  const backLang = direction === 'nativeToForeign' ? 'it-IT' : 'de-DE';
 
   // Reset states when the word changes
   useEffect(() => {
@@ -55,9 +67,9 @@ export default function VocabDrill({
     setIsProcessing(false);
     setSpeechFeedback(null);
     setAttemptCount(0);
-    clearTranscript();
+    if (backText) setActiveTargetText(backText, false);
     lastPlayedRef.current = null;
-  }, [word, clearTranscript]);
+  }, [word, backText, setActiveTargetText]);
 
   // Read word aloud only when active (isListening)
   useEffect(() => {
@@ -70,7 +82,7 @@ export default function VocabDrill({
     if (textToPlay && lastPlayedRef.current !== textToPlay) {
       lastPlayedRef.current = textToPlay;
       setIsAudioPlaying(true);
-      speakText(textToPlay, frontLangCode, user?.speech_rate || 1.0, frontLangCode === 'it' ? user?.voice_it : user?.voice_de).then(() => {
+      speakText(textToPlay, frontLangCode, speechRate, frontLangCode === 'it' ? user?.voice_it : user?.voice_de).then(() => {
         if (!isCurrent || !isSessionActiveRef.current) return;
         clearTranscript();
         setTimeout(() => {
@@ -82,17 +94,13 @@ export default function VocabDrill({
     return () => {
       isCurrent = false;
     };
-  }, [word, isListening, direction]);
-
-  const frontText = direction === 'nativeToForeign' ? word.native_word : word.foreign_word;
-  const backText = direction === 'nativeToForeign' ? word.foreign_word : word.native_word;
-  const backLang = direction === 'nativeToForeign' ? 'it-IT' : 'de-DE';
+  }, [word, isListening, direction, speechRate, user]);
 
   useEffect(() => {
     setLanguage(backLang);
   }, [backLang, setLanguage]);
 
-  // 3-second no-input timeout logic (only runs when active)
+  // Configurable no-input timeout logic (only runs when active)
   useEffect(() => {
     if (!isListening || isAudioPlaying || isProcessing || !word) return;
 
@@ -100,7 +108,7 @@ export default function VocabDrill({
       if (!isSessionActiveRef.current) return;
 
       if (attemptCount === 0) {
-        // Step 1: 3s without input -> Show solution, mark incorrect
+        // Step 1: Timeout without input -> Show solution, mark incorrect
         setSpeechFeedback('incorrect');
         setShowSolution(true);
         setAttemptCount(1);
@@ -109,14 +117,14 @@ export default function VocabDrill({
         
         setTimeout(() => {
           if (isSessionActiveRef.current) setSpeechFeedback(null);
-        }, 1000);
+        }, pauseTime);
       } else {
-        // Step 2: Still no correct answer after another 3s -> Read solution aloud & advance
+        // Step 2: Still no correct answer after another timeout -> Read solution aloud & advance
         setIsProcessing(true);
         setSpeechFeedback('incorrect');
         const langCode = backLang.split('-')[0];
         
-        speakText(backText, langCode, user?.speech_rate || 1.0, langCode === 'it' ? user?.voice_it : user?.voice_de).then(() => {
+        speakText(backText, langCode, speechRate, langCode === 'it' ? user?.voice_it : user?.voice_de).then(() => {
           if (!isSessionActiveRef.current) return;
           setTimeout(() => {
             if (!isSessionActiveRef.current) return;
@@ -124,19 +132,23 @@ export default function VocabDrill({
             setIsProcessing(false);
             clearTranscript();
             onAnswer(false);
-          }, 1500);
+          }, pauseTime);
         });
       }
-    }, 3000);
+    }, noInputTimeout);
 
     return () => clearTimeout(noInputTimer);
-  }, [isListening, isAudioPlaying, isProcessing, word, attemptCount, backText, backLang, clearTranscript, onAnswer, user]);
+  }, [isListening, isAudioPlaying, isProcessing, word, attemptCount, backText, backLang, clearTranscript, onAnswer, user, noInputTimeout, pauseTime, speechRate]);
 
   useEffect(() => {
     if (!transcript || isProcessing || isAudioPlaying || !isListening) return;
 
+    const targetWords = backText.trim().split(/\s+/).filter(Boolean);
+    const latestSpoken = getLatestWords(targetWords.length + 1);
+    if (!latestSpoken) return;
+
     const target = backText.toLowerCase().trim();
-    const cleanTranscript = normalizeText(transcript, backLang, true);
+    const cleanTranscript = normalizeText(latestSpoken, backLang, true);
     const cleanTarget = normalizeText(target, backLang, true);
 
     const isFuzzy = checkFuzzyMatch(cleanTranscript, cleanTarget);
@@ -151,12 +163,12 @@ export default function VocabDrill({
             if (!isSessionActiveRef.current) return;
             setSpeechFeedback(null);
             setIsProcessing(false);
-            clearTranscript();
+            reset();
             onAnswer(true);
-        }, 1500);
+        }, pauseTime);
     } else {
         // wrong answer or skipping
-        if (checkSkipOrWrong(transcript, 3, true)) {
+        if (checkSkipOrWrong(latestSpoken) || checkSkipOrWrong(transcript)) {
             setSpeechFeedback('incorrect');
             if (!showSolution && onFlip) onFlip();
             setShowSolution(true);
@@ -164,17 +176,17 @@ export default function VocabDrill({
             statsService.recordAttempt(false, true);
             setTimeout(() => {
                 if (!isSessionActiveRef.current) return;
-                clearTranscript();
+                reset();
             }, 1000);
         }
     }
-  }, [transcript, backText, backLang, isProcessing, isAudioPlaying, onAnswer, clearTranscript, showSolution, alwaysShowTranslation, isListening, onFlip]);
+  }, [transcript, getLatestWords, backText, backLang, isProcessing, isAudioPlaying, onAnswer, reset, showSolution, alwaysShowTranslation, isListening, onFlip, pauseTime]);
 
   const playAudio = (e: any) => {
     e.stopPropagation();
     const langCode = backLang.split('-')[0];
     setIsAudioPlaying(true);
-    speakText(backText, langCode, user?.speech_rate || 1.0, langCode === 'it' ? user?.voice_it : user?.voice_de).then(() => {
+    speakText(backText, langCode, speechRate, langCode === 'it' ? user?.voice_it : user?.voice_de).then(() => {
       if (!isSessionActiveRef.current) return;
       clearTranscript();
       setTimeout(() => {
@@ -255,6 +267,8 @@ export default function VocabDrill({
       </div>
 
       <TransportBar
+        user={user}
+        onUpdateUser={onUpdateUser}
         onBack={() => {
           isSessionActiveRef.current = false;
           window.speechSynthesis.cancel();

@@ -1,28 +1,59 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { getEvaluatedSequence } from '../utils/speechMatch';
 
-type VoiceContextType = {
+type RecorderContextType = {
   isListening: boolean;
-  isProcessing: boolean; // Not really used for browser API but kept for compatibility
   toggleListening: () => void;
   startListening: () => void;
   stopListening: () => void;
   language: string;
   setLanguage: (lang: string) => void;
   transcript: string;
+  getLatestWords: (count: number) => string;
   clearTranscript: () => void;
+  reset: () => void;
+  setActiveTargetText: (text: string, allowOptionalPronoun?: boolean) => void;
+  evaluatedSequence: string;
+  expectedWordCount: number;
 };
 
-const VoiceContext = createContext<VoiceContextType | undefined>(undefined);
+const RecorderContext = createContext<RecorderContextType | undefined>(undefined);
 
-export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const RecorderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isListening, setIsListening] = useState(false);
   const [language, setLanguage] = useState('it-IT');
   const [transcript, setTranscript] = useState('');
+  const [targetText, setTargetText] = useState('');
+  const [allowPronoun, setAllowPronoun] = useState(false);
   
   const recognitionRef = useRef<any>(null);
   const shouldListenRef = useRef(false);
-  const rawTranscriptRef = useRef('');
-  const ignoredPrefixRef = useRef('');
+  const bufferRef = useRef('');
+
+  const setActiveTargetText = useCallback((text: string, allowOptPronoun: boolean = false) => {
+    setTargetText(text);
+    setAllowPronoun(allowOptPronoun);
+  }, []);
+
+  // No-op to fulfill "kein reset" on the recording buffer
+  const reset = useCallback(() => {
+    // Kept as no-op to support existing calls without resetting the buffer
+  }, []);
+
+  const clearTranscript = useCallback(() => {
+    // Kept as no-op to support existing calls without resetting the buffer
+  }, []);
+
+  const getLatestWords = useCallback((count: number): string => {
+    const clean = transcript ? transcript.trim() : bufferRef.current.trim();
+    if (!clean) return '';
+    const words = clean.split(/\s+/).filter(Boolean);
+    return words.slice(-Math.max(1, count)).join(' ');
+  }, [transcript]);
+
+  const evaluatedSequence = getEvaluatedSequence(transcript, targetText, allowPronoun);
+  const cleanTargetWords = targetText ? targetText.trim().toLowerCase().replace(/[.,!?]/g, '').split(/\s+/).filter(Boolean) : [];
+  const expectedWordCount = cleanTargetWords.length;
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -43,30 +74,23 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     recognition.onresult = (event: any) => {
       let combinedTranscript = "";
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
+      for (let i = 0; i < event.results.length; ++i) {
         combinedTranscript += event.results[i][0].transcript;
       }
       
-      rawTranscriptRef.current = combinedTranscript;
+      const text = combinedTranscript.trim().toLowerCase();
+      const words = text.split(/\s+/).filter(Boolean);
       
-      if (ttsPlayingRef.current) {
-        ignoredPrefixRef.current = combinedTranscript;
-        return;
-      }
-      
-      let displayTranscript = combinedTranscript;
-      if (ignoredPrefixRef.current && displayTranscript.startsWith(ignoredPrefixRef.current)) {
-        displayTranscript = displayTranscript.slice(ignoredPrefixRef.current.length);
-      }
-      
-      const text = displayTranscript.trim().toLowerCase();
-      // Always set transcript so it can become empty if needed
-      setTranscript(text);
+      // Strict 50-word buffer cap: discard oldest words from the front
+      const cappedWords = words.slice(-50);
+      const trimmedText = cappedWords.join(' ');
+      bufferRef.current = trimmedText;
+      setTranscript(trimmedText);
     };
 
     recognition.onerror = (event: any) => {
       console.warn("Speech Recognition Error:", event.error);
-      if (event.error === 'no-speech') return; // Ignore and let it continue
+      if (event.error === 'no-speech') return;
       if (['not-allowed', 'service-not-allowed'].includes(event.error)) {
         shouldListenRef.current = false;
         setIsListening(false);
@@ -75,12 +99,10 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     recognition.onend = () => {
       console.log("🎤 Browser-Erkennung beendet");
-      // Auto-restart if it should still be listening
       if (shouldListenRef.current) {
         try {
           recognition.start();
         } catch (e) {
-          // Restart loop
           setTimeout(() => {
             if (shouldListenRef.current) recognition.start();
           }, 300);
@@ -99,40 +121,32 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
-  // Sync language changes to the recognition instance
+  // 100ms Ticker effect to update visual AnalyseBar state smoothly
+  useEffect(() => {
+    if (!isListening) return;
+
+    const ticker = setInterval(() => {
+      setTranscript(bufferRef.current);
+    }, 100);
+
+    return () => clearInterval(ticker);
+  }, [isListening]);
+
+  // Sync language changes
   useEffect(() => {
     if (recognitionRef.current) {
-      const wasListening = isListening;
-      if (wasListening) {
-        // Stop briefly to change language
-        try { recognitionRef.current.stop(); } catch(e) {}
-      }
+      console.log(`🌐 Erkennungssprache geändert auf: ${language}`);
       recognitionRef.current.lang = language;
+      if (shouldListenRef.current) {
+        try { recognitionRef.current.stop(); } catch (e) {}
+        setTimeout(() => {
+          if (shouldListenRef.current) {
+            try { recognitionRef.current.start(); } catch (e) {}
+          }
+        }, 150);
+      }
     }
   }, [language]);
-
-  // Handle TTS pause/resume
-  const ttsPlayingRef = useRef(false);
-  useEffect(() => {
-    const handleTtsStart = () => {
-      ttsPlayingRef.current = true;
-    };
-    const handleTtsEnd = () => {
-      setTimeout(() => {
-        ttsPlayingRef.current = false;
-        if (rawTranscriptRef.current) {
-          ignoredPrefixRef.current = rawTranscriptRef.current;
-          setTranscript('');
-        }
-      }, 500);
-    };
-    window.addEventListener('tts-start', handleTtsStart);
-    window.addEventListener('tts-end', handleTtsEnd);
-    return () => {
-      window.removeEventListener('tts-start', handleTtsStart);
-      window.removeEventListener('tts-end', handleTtsEnd);
-    };
-  }, []);
 
   const startListening = useCallback(() => {
     shouldListenRef.current = true;
@@ -157,30 +171,29 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [isListening, startListening, stopListening]);
 
-  const clearTranscript = useCallback(() => {
-    ignoredPrefixRef.current = rawTranscriptRef.current;
-    setTranscript('');
-  }, []);
-
   return (
-    <VoiceContext.Provider value={{ 
+    <RecorderContext.Provider value={{ 
       isListening, 
-      isProcessing: false,
       toggleListening,
       startListening,
       stopListening,
       language, 
       setLanguage, 
       transcript, 
-      clearTranscript
+      clearTranscript,
+      reset,
+      getLatestWords,
+      setActiveTargetText,
+      evaluatedSequence,
+      expectedWordCount
     }}>
       {children}
-    </VoiceContext.Provider>
+    </RecorderContext.Provider>
   );
 };
 
-export const useVoice = () => {
-  const context = useContext(VoiceContext);
-  if (context === undefined) throw new Error('useVoice must be used within a VoiceProvider');
+export const useRecorder = () => {
+  const context = useContext(RecorderContext);
+  if (context === undefined) throw new Error('useRecorder must be used within a RecorderProvider');
   return context;
 };

@@ -1,14 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, XCircle, Volume2, Eye, EyeOff } from 'lucide-react';
 import { speakText } from '../api';
-import { useVoice } from '../contexts/VoiceContext';
+import { useRecorder } from '../contexts/Recorder';
 import textIslands from '../data/textIslands.json';
 import { TransportBar } from './TransportBar';
 import { checkAllWordsPresent, checkFuzzyMatch, normalizeText } from '../utils/speechMatch';
+import { getSpeedProfile } from '../utils/speedConfig';
 
-export default function ThemeDrill({ user, islandId, onCancel }: any) {
+export default function ThemeDrill({ user, onUpdateUser, islandId, onCancel }: any) {
   const island = textIslands.find(i => i.id === islandId);
   const sentences = island?.sentences || [];
+
+  const speedProfile = getSpeedProfile(user);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -24,17 +27,24 @@ export default function ThemeDrill({ user, islandId, onCancel }: any) {
   const earlyResolveRef = useRef<(() => void) | null>(null);
   const feedbackRef = useRef<'correct' | null>(null);
 
-  const { isListening, toggleListening, transcript, clearTranscript, setLanguage } = useVoice();
+  const { isListening, toggleListening, stopListening, transcript, clearTranscript, setLanguage, setActiveTargetText } = useRecorder();
 
   useEffect(() => {
     setLanguage('it-IT');
     return () => {
       playingRef.current = false;
+      stopListening();
       window.speechSynthesis.cancel();
       if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
       if (earlyResolveRef.current) earlyResolveRef.current();
     };
-  }, [setLanguage]);
+  }, [setLanguage, stopListening]);
+
+  useEffect(() => {
+    if (sentences[currentIndex]?.it) {
+      setActiveTargetText(sentences[currentIndex].it, false);
+    }
+  }, [currentIndex, sentences, setActiveTargetText]);
 
   useEffect(() => {
     playingRef.current = isListening;
@@ -49,23 +59,15 @@ export default function ThemeDrill({ user, islandId, onCancel }: any) {
   }, [isListening]);
 
   useEffect(() => {
-    if (!transcript || phase !== 'listening' || feedback === 'correct') return;
+    if (!transcript || feedback === 'correct') return;
 
     const currentSentence = sentences[currentIndex];
     if (!currentSentence) return;
 
     const target = currentSentence.it;
-    const cleanTranscript = normalizeText(transcript, 'it');
-    const cleanTarget = normalizeText(target, 'it');
+    const isMatch = checkAllWordsPresent(transcript, target) || checkFuzzyMatch(transcript, target);
 
-    const spokenWords = cleanTranscript.split(/\s+/).filter(Boolean);
-    const targetWords = cleanTarget.split(/\s+/).filter(Boolean);
-
-    const wordCountDiff = Math.abs(spokenWords.length - targetWords.length);
-    const hasValidWordCount = wordCountDiff <= 1;
-    const allWordsPresent = targetWords.length > 0 && targetWords.every(word => spokenWords.includes(word));
-
-    if (hasValidWordCount && allWordsPresent) {
+    if (isMatch) {
       setFeedback('correct');
       feedbackRef.current = 'correct';
       setShowTranslation(true);
@@ -78,7 +80,7 @@ export default function ThemeDrill({ user, islandId, onCancel }: any) {
         }
       }, 1200);
     }
-  }, [transcript, phase, currentIndex, sentences, clearTranscript, feedback]);
+  }, [transcript, currentIndex, sentences, clearTranscript, feedback]);
 
   const playCycle = async (index: number) => {
     currentCycleRef.current += 1;
@@ -244,13 +246,13 @@ export default function ThemeDrill({ user, islandId, onCancel }: any) {
           </div>
         </div>
 
-        {/* Lösung (Deutscher Satz) */}
-        <div className="loesung" style={{ minHeight: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px', marginBottom: '16px' }}>
+        {/* Lösung / Übersetzung (Deutscher Satz in dünnem, dezentem Grau) */}
+        <div className="loesung" style={{ minHeight: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px', marginBottom: '16px' }}>
           {displaySolution && (
             <div className="solution-content fade-in" style={{ textAlign: 'center' }}>
-              <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 600, color: 'var(--right-color)' }}>
+              <span style={{ margin: 0, fontSize: '1.05rem', fontWeight: 400, color: 'var(--text-meta)', opacity: 0.85 }}>
                 {currentSentence?.de}
-              </h2>
+              </span>
             </div>
           )}
         </div>
@@ -291,6 +293,8 @@ export default function ThemeDrill({ user, islandId, onCancel }: any) {
       </div>
 
       <TransportBar
+        user={user}
+        onUpdateUser={onUpdateUser}
         onBack={skipBack}
         onForward={skipForward}
         onMainAction={toggleListening}

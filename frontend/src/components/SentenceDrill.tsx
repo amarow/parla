@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Volume2, Play, Square, List, XCircle, Eye, EyeOff } from 'lucide-react';
-import { useVoice } from '../contexts/VoiceContext';
+import { useRecorder } from '../contexts/Recorder';
 import { speakText } from '../api';
 import { dataService } from '../dataService';
 import { TransportBar } from './TransportBar';
 import { checkAllWordsPresent, checkSkipOrWrong } from '../utils/speechMatch';
 import { statsService } from '../utils/statsService';
+import { getSpeedProfile } from '../utils/speedConfig';
 
 const pronounsMap: Record<string, any> = {
   form_1s: { it: 'io', de: 'ich' },
@@ -20,6 +21,7 @@ const TOTAL_SENTENCES = 10;
 
 export default function SentenceDrill({ 
   user, 
+  onUpdateUser,
   pronounKey, 
   onFinish, 
   onCancel, 
@@ -46,9 +48,13 @@ export default function SentenceDrill({
   const playingRef = useRef(false);
   const lastPlayedRef = useRef<string | null>(null);
   const isSessionActiveRef = useRef(false);
-  const pauseTime = user?.pause_time || 800;
+
+  const speedProfile = getSpeedProfile(user);
+  const pauseTime = speedProfile.pauseTime;
+  const noInputTimeout = speedProfile.noInputTimeout;
+  const speechRate = speedProfile.speechRate;
   
-  const { isListening, toggleListening, transcript, setLanguage, clearTranscript } = useVoice();
+  const { isListening, toggleListening, stopListening, transcript, setLanguage, clearTranscript, setActiveTargetText } = useRecorder();
 
   // Sync ref and handle session pause / stop
   useEffect(() => {
@@ -64,10 +70,17 @@ export default function SentenceDrill({
   useEffect(() => {
     return () => {
       isSessionActiveRef.current = false;
+      stopListening();
       window.speechSynthesis.cancel();
       playingRef.current = false;
     };
-  }, []);
+  }, [stopListening]);
+
+  useEffect(() => {
+    if (currentSentence?.foreign) {
+      setActiveTargetText(currentSentence.foreign, false);
+    }
+  }, [currentSentence, setActiveTargetText]);
 
   useEffect(() => {
     if (!concentratedMode) setLockedVerb(null);
@@ -181,7 +194,7 @@ export default function SentenceDrill({
     if (textToPlay && lastPlayedRef.current !== textToPlay) {
       lastPlayedRef.current = textToPlay;
       setIsAudioPlaying(true);
-      speakText(textToPlay, 'de', user?.speech_rate || 1.0, user?.voice_de).then(() => {
+      speakText(textToPlay, 'de', speechRate, user?.voice_de).then(() => {
         if (!isCurrent || !isSessionActiveRef.current) return;
         clearTranscript();
         setTimeout(() => {
@@ -193,9 +206,9 @@ export default function SentenceDrill({
     return () => {
       isCurrent = false;
     };
-  }, [currentSentence, isListening, user]);
+  }, [currentSentence, isListening, user, speechRate]);
 
-  // 3-second no-input timeout logic
+  // Configurable no-input timeout logic
   useEffect(() => {
     if (!isListening || isAudioPlaying || isProcessing || !currentSentence) return;
 
@@ -203,7 +216,7 @@ export default function SentenceDrill({
       if (!isSessionActiveRef.current) return;
 
       if (attemptCount === 0) {
-        // Step 1: 3s without input -> Show solution, mark incorrect
+        // Step 1: Timeout without input -> Show solution, mark incorrect
         setFeedback('incorrect');
         setShowSolution(true);
         setAttemptCount(1);
@@ -212,13 +225,13 @@ export default function SentenceDrill({
         
         setTimeout(() => {
           if (isSessionActiveRef.current) setFeedback(null);
-        }, 1000);
+        }, pauseTime);
       } else {
-        // Step 2: Still no correct answer after another 3s -> Read solution aloud & advance
+        // Step 2: Still no correct answer after another timeout -> Read solution aloud & advance
         setIsProcessing(true);
         setFeedback('incorrect');
         
-        speakText(currentSentence.foreign, 'it', user?.speech_rate || 1.0, user?.voice_it).then(() => {
+        speakText(currentSentence.foreign, 'it', speechRate, user?.voice_it).then(() => {
           if (!isSessionActiveRef.current) return;
           setTimeout(() => {
             if (!isSessionActiveRef.current) return;
@@ -226,13 +239,13 @@ export default function SentenceDrill({
             setIsProcessing(false);
             clearTranscript();
             handleNext(false);
-          }, 1500);
+          }, pauseTime);
         });
       }
-    }, 3000);
+    }, noInputTimeout);
 
     return () => clearTimeout(noInputTimer);
-  }, [isListening, isAudioPlaying, isProcessing, currentSentence, attemptCount, clearTranscript, user, sentenceCount]);
+  }, [isListening, isAudioPlaying, isProcessing, currentSentence, attemptCount, clearTranscript, user, sentenceCount, noInputTimeout, pauseTime, speechRate]);
 
   // Speech evaluation
   useEffect(() => {
@@ -252,9 +265,9 @@ export default function SentenceDrill({
           setIsProcessing(false);
           clearTranscript();
           handleNext(true);
-      }, 1500);
+      }, pauseTime);
     } else {
-        if (checkSkipOrWrong(transcript, 5, false)) {
+        if (checkSkipOrWrong(transcript)) {
             setFeedback('incorrect');
             if (!showSolution && onFlip) onFlip();
             setShowSolution(true);
@@ -271,7 +284,7 @@ export default function SentenceDrill({
   const playAudio = (text: string) => {
     if (isPlayingAll) handleStopPlayingAll();
     setIsAudioPlaying(true);
-    speakText(text, 'it', user?.speech_rate || 1.0, user?.voice_it).then(() => {
+    speakText(text, 'it', speechRate, user?.voice_it).then(() => {
       if (!isSessionActiveRef.current) return;
       clearTranscript();
       setTimeout(() => {
@@ -303,7 +316,7 @@ export default function SentenceDrill({
         for (const obj of item.objects) {
           if (!playingRef.current) break;
           const sentenceText = `${pronounIt} ${conjugation} ${obj.foreign}`;
-          await speakText(sentenceText, 'it', user?.speech_rate || 1.0, user?.voice_it);
+          await speakText(sentenceText, 'it', speechRate, user?.voice_it);
           if (playingRef.current) {
             await new Promise(r => setTimeout(r, pauseTime));
           }
@@ -456,6 +469,8 @@ export default function SentenceDrill({
           </div>
 
           <TransportBar
+            user={user}
+            onUpdateUser={onUpdateUser}
             onBack={goBack}
             backDisabled={historyIndex <= 0}
             onForward={() => handleNext(false)}

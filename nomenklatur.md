@@ -13,3 +13,4 @@
   - darunter Subjekt mit der Frage oder der Aufvorderung 
   - darunter Lösung, wird meistens hinter einem Button (auflösen)
 - TransportBar, mit den buttons Start(Micro), zurück, vorwärts, 
+- AnalyseBar ganz unten zeigt interna zu fehlersuche zweckenIm Thema Drill geht es nicht darum zu übersetzen. 

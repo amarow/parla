@@ -6,22 +6,25 @@ import SentenceDrill from './SentenceDrill';
 import { dataService } from '../dataService';
 import { speakText } from '../api';
 import { ArrowLeftRight, List, BookOpen, XCircle, Volume2, Play, Square } from 'lucide-react';
-import { useVoice } from '../contexts/VoiceContext';
+import { useRecorder } from '../contexts/Recorder';
 import { statsService } from '../utils/statsService';
+import { getSpeedProfile } from '../utils/speedConfig';
 
-export default function Drill({ user, categoryId, direction, onFinish, onCancel }) {
+export default function Drill({ user, onUpdateUser, categoryId, direction, onFinish, onCancel }: any) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOverview, setShowOverview] = useState(false);
   const [flipCount, setFlipCount] = useState(0);
   const [alwaysShowTranslation, setAlwaysShowTranslation] = useState(false);
-  const { clearTranscript } = useVoice();
+  const { clearTranscript } = useRecorder();
   const resetChildRef = useRef<(() => void) | null>(null);
   const [currentDirection, setCurrentDirection] = useState(direction);
 
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   const isPlayingRef = useRef(false);
 
-  const pauseTime = user?.pause_time || 800;
+  const speedProfile = getSpeedProfile(user);
+  const pauseTime = speedProfile.pauseTime;
+  const speechRate = speedProfile.speechRate;
 
   useEffect(() => {
     return () => {
@@ -76,7 +79,7 @@ export default function Drill({ user, categoryId, direction, onFinish, onCancel 
       const langCode = 'it';
       const playPart = async (text: string) => {
         if (!isPlayingRef.current || !text) return;
-        await speakText(text, langCode, user?.speech_rate || 1.0, user?.voice_it);
+        await speakText(text, langCode, speechRate, user?.voice_it);
         if (isPlayingRef.current) {
           await new Promise(r => setTimeout(r, pauseTime));
         }
@@ -88,45 +91,38 @@ export default function Drill({ user, categoryId, direction, onFinish, onCancel 
       } else if (itemType === 'verbs') {
         const verbItem = item as any;
         const conj = verbItem.conjugations?.[0];
-        await playPart(verbItem.foreign_infinitive);
         if (conj) {
-          await playPart(`io ${conj.form_1s}`);
-          await playPart(`tu ${conj.form_2s}`);
-          await playPart(`lui lei ${conj.form_3s}`);
-          await playPart(`noi ${conj.form_1p}`);
-          await playPart(`voi ${conj.form_2p}`);
-          await playPart(`loro ${conj.form_3p}`);
+          const text = `${verbItem.foreign_infinitive}, io ${conj.form_1s}, tu ${conj.form_2s}, lui lei ${conj.form_3s}, noi ${conj.form_1p}, voi ${conj.form_2p}, loro ${conj.form_3p}`;
+          await playPart(text);
+        } else {
+          await playPart(verbItem.foreign_infinitive);
         }
       }
     }
     
-    isPlayingRef.current = false;
     setIsPlayingAll(false);
+    isPlayingRef.current = false;
   };
 
-  const handleAnswer = (isCorrect) => {
-    if (currentIndex + 1 < items.length) {
-      setCurrentIndex(currentIndex + 1);
+  const handleAnswer = (isCorrect: boolean) => {
+    if (currentIndex + 1 >= items.length) {
+      onFinish(isCorrect);
     } else {
-      onFinish(flipCount);
+      setCurrentIndex(prev => prev + 1);
     }
   };
 
   const handleBack = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
+      setCurrentIndex(prev => prev - 1);
     }
   };
 
-  const handleVerbFinish = (isCorrect) => {
-    if (!isCorrect) {
-      setFlipCount(prev => prev + 1);
-    }
-
-    if (currentIndex + 1 < items.length) {
-      setCurrentIndex(currentIndex + 1);
+  const handleVerbFinish = (isCorrect: boolean) => {
+    if (currentIndex + 1 >= items.length) {
+      onFinish(isCorrect);
     } else {
-      onFinish(flipCount + (isCorrect ? 0 : 1));
+      setCurrentIndex(prev => prev + 1);
     }
   };
 
@@ -135,15 +131,33 @@ export default function Drill({ user, categoryId, direction, onFinish, onCancel 
   };
 
   const playAudio = (e: any, text: string) => {
-    e.preventDefault();
     e.stopPropagation();
-    const langCode = 'it'; 
-    speakText(text, langCode, user?.speech_rate || 1.0, user?.voice_it);
+    const langCode = 'it';
+    speakText(text, langCode, speechRate, user?.voice_it);
   };
 
-  if (isLoading || isFetching) return <div className="loading">Lade Inhalte...</div>;
-  if (itemType !== 'sentences' && items.length === 0) return <div className="loading">Keine Inhalte gefunden.</div>;
+  if (isLoading || isFetching) {
+    return <div className="card-panel">Lade Lerninhalte...</div>;
+  }
 
+  if (itemType === 'sentences') {
+    return (
+      <SentenceDrill
+        user={user}
+        onUpdateUser={onUpdateUser}
+        pronounKey="form_1s"
+        onFinish={onFinish}
+        onCancel={onCancel}
+        onFlip={handleFlip}
+        alwaysShowTranslation={alwaysShowTranslation}
+        setAlwaysShowTranslation={setAlwaysShowTranslation}
+      />
+    );
+  }
+
+  if (!items || items.length === 0) {
+    return <div className="card-panel">Keine Übungen in dieser Kategorie gefunden.</div>;
+  }
 
   return (
     <div className="learning-session" style={{ display: 'flex', flexDirection: 'column', minHeight: '60vh' }}>
@@ -225,6 +239,7 @@ export default function Drill({ user, categoryId, direction, onFinish, onCancel 
         itemType === 'words' ? (
           <VocabDrill
             user={user}
+            onUpdateUser={onUpdateUser}
             word={items[currentIndex]}
             direction={currentDirection}
             onAnswer={handleAnswer}
@@ -241,6 +256,7 @@ export default function Drill({ user, categoryId, direction, onFinish, onCancel 
         ) : itemType === 'verbs' ? (
           <ConjugationDrill
             user={user}
+            onUpdateUser={onUpdateUser}
             verb={items[currentIndex]}
             direction={currentDirection}
             onFinish={handleVerbFinish}
@@ -255,16 +271,8 @@ export default function Drill({ user, categoryId, direction, onFinish, onCancel 
             showOverview={showOverview}
             onCancel={onCancel}
           />
-        ) : (
-          <SentenceDrill
-            user={user}
-            pronounKey={currentDirection}
-            onFinish={() => onFinish(flipCount)}
-            onCancel={onCancel}
-            onFlip={handleFlip}
-            alwaysShowTranslation={alwaysShowTranslation}
-            setAlwaysShowTranslation={setAlwaysShowTranslation}
-          />
-        )
-        )}    </div>  );
+        ) : null
+      )}
+    </div>
+  );
 }

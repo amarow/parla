@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { useVoice } from '../contexts/VoiceContext';
+import { useRecorder } from '../contexts/Recorder';
 import { API_BASE } from '../api';
 
 export default function Reward({ onNext, onRepeat, onCancel, stats, flips }: any) {
-  const { transcript, clearTranscript, setLanguage } = useVoice();
+  const { transcript, clearTranscript, setLanguage } = useRecorder();
   const hasPlayedAudio = useRef(false);
 
   const session = stats?.session;

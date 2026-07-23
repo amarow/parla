@@ -68,7 +68,8 @@ export function checkFuzzyMatch(normalizedTranscript: string, normalizedTarget: 
 }
 
 /**
- * Prüft, ob alle Wörter des erwarteten Texts im gesprochenen Text enthalten sind.
+ * Prüft, ob die Wörter des erwarteten Texts in den LETZTEN N Wörtern des gesprochenen Texts
+ * in der korrekten Reihenfolge (optional per Fuzzy-Match) übereinstimmen.
  */
 export function checkAllWordsPresent(transcript: string, expected: string): boolean {
   const cleanTranscript = normalizeText(transcript);
@@ -78,36 +79,109 @@ export function checkAllWordsPresent(transcript: string, expected: string): bool
   const spokenWords = cleanTranscript.split(/\s+/).filter(Boolean);
   
   if (expectedWords.length === 0) return false;
-  return expectedWords.every(word => spokenWords.includes(word));
+  
+  // Nur exakt die letzten N Wörter vom Ende des Puffers holen
+  const recentWords = spokenWords.slice(-expectedWords.length);
+  if (recentWords.length !== expectedWords.length) return false;
+
+  const recentStr = recentWords.join(' ');
+  const expectedStr = expectedWords.join(' ');
+
+  return recentStr === expectedStr || checkFuzzyMatch(recentStr, expectedStr);
 }
 
+const ALL_ITALIAN_PRONOUNS = ['io', 'tu', 'lui', 'lei', 'noi', 'voi', 'loro'];
+
 /**
- * Prüft, ob ein konjugiertes Verb und das passende Pronomen im gesprochenen Text enthalten sind.
+ * Extrahiert exakt die notwendige Anzahl von Wörtern vom ENDE des Transkripts.
  */
-export function checkConjugationMatch(transcript: string, expectedVerb: string, possiblePronouns: string[]): boolean {
+export function getEvaluatedSequence(
+  transcript: string, 
+  expectedText?: string | number, 
+  allowOptionalPronoun: boolean = false
+): string {
   const cleanTranscript = normalizeText(transcript);
-  const spokenWords = cleanTranscript.split(/\s+/).filter(Boolean);
-  
-  const expectedVerbParts = normalizeText(expectedVerb).split(/\s+/).filter(Boolean);
-  const hasVerb = expectedVerbParts.every(part => spokenWords.includes(part));
-  
-  const hasPronoun = possiblePronouns.map(p => normalizeText(p)).some(p => spokenWords.includes(p));
-  
-  return hasVerb && hasPronoun;
+  const words = cleanTranscript.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '';
+
+  let count = 3;
+  if (typeof expectedText === 'number') {
+    count = expectedText;
+  } else if (typeof expectedText === 'string' && expectedText.trim().length > 0) {
+    const cleanExpected = normalizeText(expectedText);
+    const expectedWords = cleanExpected.split(/\s+/).filter(Boolean);
+    count = expectedWords.length;
+    if (allowOptionalPronoun) {
+      // Prüfen, ob am Ende ein Pronomen mitgesprochen wurde
+      const testWindow = words.slice(-(count + 1));
+      const hasPronoun = testWindow.some(w => ALL_ITALIAN_PRONOUNS.includes(w));
+      if (hasPronoun) {
+        count += 1;
+      }
+    }
+  }
+
+  return words.slice(-count).join(' ');
 }
 
 /**
- * Prüft, ob das Transkript Befehle zum Überspringen enthält (z. B. "weiter", "falsch", "weiß nicht")
- * oder ob die Länge des normalisierten Transkripts einen Schwellenwert überschreitet (für fehlerhafte Eingabe).
+ * Prüft, ob ein konjugiertes Verb von HINTEN her im gesprochenen Text enthalten ist.
+ * Falls Pronomen gesprochen wurden, wird geprüft, ob das zuletzt gesprochene Pronomen korrekt ist.
  */
-export function checkSkipOrWrong(transcript: string, thresholdLength: number, removeSpaces: boolean = false): boolean {
+export function checkConjugationMatch(transcript: string, expectedVerb: string, possiblePronouns: string[] = []): boolean {
+  const cleanTranscript = normalizeText(transcript);
+  const allSpokenWords = cleanTranscript.split(/\s+/).filter(Boolean);
+  if (allSpokenWords.length === 0) return false;
+
+  const expectedVerbParts = normalizeText(expectedVerb).split(/\s+/).filter(Boolean);
+  if (expectedVerbParts.length === 0) return false;
+
+  // Prüfen, ob am Ende ein Pronomen gesprochen wurde
+  const verbLen = expectedVerbParts.length;
+  const testWindow = allSpokenWords.slice(-(verbLen + 1));
+  const hasSpokenPronoun = testWindow.some(w => ALL_ITALIAN_PRONOUNS.includes(w));
+
+  const maxWindow = verbLen + (hasSpokenPronoun ? 1 : 0);
+  const recentSpokenWords = allSpokenWords.slice(-maxWindow);
+
+  // Prüfen, ob das erwartete Verb in diesen exakten End-Wörtern enthalten ist
+  const hasVerb = expectedVerbParts.every(part => recentSpokenWords.includes(part));
+  if (!hasVerb) return false;
+
+  if (possiblePronouns.length > 0) {
+    const cleanPossiblePronouns = possiblePronouns.map(p => normalizeText(p));
+    const recentSpokenPronouns = recentSpokenWords.filter(w => ALL_ITALIAN_PRONOUNS.includes(w));
+
+    if (recentSpokenPronouns.length > 0) {
+      // Nur das ZULETZT gesprochene Pronomen in diesem End-Fenster bewerten
+      const lastSpokenPronoun = recentSpokenPronouns[recentSpokenPronouns.length - 1];
+      const isLastPronounValid = cleanPossiblePronouns.includes(lastSpokenPronoun);
+
+      if (!isLastPronounValid) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Prüft, ob das Transkript Befehle zum Überspringen enthält (z. B. "weiter", "falsch", "weiß nicht", "skip", "nächste").
+ */
+export function checkSkipOrWrong(transcript: string, _thresholdLength?: number, _removeSpaces: boolean = false): boolean {
   const transcriptLower = transcript.toLowerCase();
-  const cleanTranscript = normalizeText(transcript, undefined, removeSpaces);
   
   const hasSkipKeyword = transcriptLower.includes('weiter') || 
                           transcriptLower.includes('falsch') || 
                           transcriptLower.includes('weiß nicht') ||
-                          transcriptLower.includes('weiss nicht');
+                          transcriptLower.includes('weiss nicht') ||
+                          transcriptLower.includes('naechste') ||
+                          transcriptLower.includes('nächste') ||
+                          transcriptLower.includes('überspringen') ||
+                          transcriptLower.includes('ueberspringen') ||
+                          transcriptLower.includes('skip') ||
+                          transcriptLower.includes('pass');
                           
-  return hasSkipKeyword || cleanTranscript.length > thresholdLength;
+  return hasSkipKeyword;
 }
