@@ -138,7 +138,7 @@ export default function ConjugationDrill({
     if (feedback[currentForm.id] === 'correct') return;
 
     const expectedVerb = conjugation[currentForm.formKey];
-    const possiblePronouns = currentForm.id.startsWith('form_3s') ? ['lui', 'lei'] : [currentForm.expectedPronoun];
+    const possiblePronouns = [currentForm.expectedPronoun];
     
     // Evaluate based on expected target length + 1 (pronoun + verb)
     const latestSpoken = getLatestWords(3);
@@ -185,10 +185,10 @@ export default function ConjugationDrill({
   const currentForm = formDefinitions[activeFieldIndex];
   const activeExpectedVerb = activeFieldIndex < formDefinitions.length ? conjugation[currentForm.formKey] : '';
   const activeExpectedPronoun = activeFieldIndex < formDefinitions.length ? currentForm.expectedPronoun : '';
-  const expectedText = currentForm?.id?.startsWith('form_3s') ? `lui ${activeExpectedVerb}` : `${activeExpectedPronoun} ${activeExpectedVerb}`;
+  const expectedText = `${activeExpectedPronoun} ${activeExpectedVerb}`;
   
   const expectedWords = expectedText.trim().split(/\s+/).filter(Boolean);
-  const evaluatedSequence = DrillEvaluator.getEvaluatedSequence(transcript, expectedText, currentForm?.id?.startsWith('form_3s'));
+  const evaluatedSequence = DrillEvaluator.getEvaluatedSequence(transcript, expectedText, false);
 
   return (
     <div className="verb-drill-container">
