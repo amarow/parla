@@ -94,6 +94,27 @@ export default function ConjugationDrill({
     if (onReset) onReset(resetDrill);
   }, [onReset]);
 
+  const handleFailure = (currentForm: FormDef) => {
+    setIsProcessing(true);
+    setFeedback(prev => ({ ...prev, [currentForm.id]: 'incorrect' }));
+    setRevealedRows(prev => ({ ...prev, [currentForm.id]: true }));
+    statsService.recordAttempt(false, true);
+
+    const expectedText = `${currentForm.expectedPronoun} ${conjugation[currentForm.formKey]}`;
+    speakText(expectedText, 'it', speechRate, user?.voice_it).then(() => {
+      if (!isSessionActiveRef.current) return;
+      setTimeout(() => {
+        if (!isSessionActiveRef.current) return;
+        setIsProcessing(false);
+        if (activeFieldIndex < formDefinitions.length - 1) {
+          setActiveFieldIndex(prev => prev + 1);
+        } else {
+          onFinish(false);
+        }
+      }, pauseTime);
+    });
+  };
+
   // Configurable no-input timeout logic per active row
   useEffect(() => {
     if (!isListening || isAudioPlaying || isProcessing || !conjugation || activeFieldIndex >= formDefinitions.length) return;
@@ -103,24 +124,11 @@ export default function ConjugationDrill({
 
     const noInputTimer = setTimeout(() => {
       if (!isSessionActiveRef.current) return;
-
-      setFeedback(prev => ({ ...prev, [currentForm.id]: 'incorrect' }));
-      setRevealedRows(prev => ({ ...prev, [currentForm.id]: true }));
-      statsService.recordAttempt(false, true);
-
-      if (activeFieldIndex < formDefinitions.length - 1) {
-        setTimeout(() => {
-          if (isSessionActiveRef.current) setActiveFieldIndex(prev => prev + 1);
-        }, pauseTime);
-      } else {
-        setTimeout(() => {
-          if (isSessionActiveRef.current) onFinish(false);
-        }, pauseTime);
-      }
+      handleFailure(currentForm);
     }, noInputTimeout);
 
     return () => clearTimeout(noInputTimer);
-  }, [isListening, isAudioPlaying, isProcessing, activeFieldIndex, conjugation, feedback, onFinish, noInputTimeout, pauseTime]);
+  }, [isListening, isAudioPlaying, isProcessing, activeFieldIndex, conjugation, feedback, noInputTimeout]);
 
   // Speech evaluation
   useEffect(() => {
@@ -154,21 +162,8 @@ export default function ConjugationDrill({
     } else {
         const isSkip = DrillEvaluator.checkSkipCommand(latestSpoken || transcript);
         if (isSkip) {
-            setFeedback(prev => ({ ...prev, [currentForm.id]: 'incorrect' }));
-            setRevealedRows(prev => ({ ...prev, [currentForm.id]: true }));
             if (!showSolution && onFlip) onFlip();
-            statsService.recordAttempt(false, true);
-
-            if (activeFieldIndex < formDefinitions.length - 1) {
-              setTimeout(() => {
-                if (isSessionActiveRef.current) setActiveFieldIndex(prev => prev + 1);
-              }, pauseTime);
-            } else {
-              setIsProcessing(true);
-              setTimeout(() => {
-                if (isSessionActiveRef.current) onFinish(false);
-              }, pauseTime);
-            }
+            handleFailure(currentForm);
         }
     }
   }, [transcript, getLatestWords, activeFieldIndex, conjugation, feedback, isListening, showSolution, alwaysShowTranslation, isAudioPlaying, isProcessing, onFinish, onFlip, revealedRows, pauseTime]);
