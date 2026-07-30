@@ -1,4 +1,16 @@
 import { X } from 'lucide-react';
+import { getDrillTypeName } from '../utils/statsService';
+
+function formatDuration(ms: number): string {
+  const totalMinutes = Math.floor(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  
+  if (hours > 0) {
+    return `${hours} Std. ${minutes} Min.`;
+  }
+  return `${minutes} Min.`;
+}
 
 export default function Reward({ onCancel, stats, onReset }: any) {
   const session = stats?.session;
@@ -69,13 +81,18 @@ export default function Reward({ onCancel, stats, onReset }: any) {
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '0.98rem' }}>
-              <span style={{ opacity: 0.85 }}>Auf Hieb richtig:</span>
+              <span style={{ opacity: 0.85 }}>Auf Anhieb richtig:</span>
               <strong style={{ fontSize: '1.05rem' }}>{correctFirstTry} / {completedItems}</strong>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.98rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '0.98rem' }}>
               <span style={{ opacity: 0.85 }}>Nachgeschaut (Hilfen):</span>
               <strong style={{ fontSize: '1.05rem', color: hintsUsed === 0 ? 'var(--right-color)' : 'inherit' }}>{hintsUsed}</strong>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.98rem' }}>
+              <span style={{ opacity: 0.85 }}>Dauer:</span>
+              <strong style={{ fontSize: '1.05rem' }}>{formatDuration((session.endTime || Date.now()) - session.startTime)}</strong>
             </div>
           </div>
         )}
@@ -98,15 +115,61 @@ export default function Reward({ onCancel, stats, onReset }: any) {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '0.98rem' }}>
-              <span style={{ opacity: 0.85 }}>Auf Hieb richtig:</span>
+              <span style={{ opacity: 0.85 }}>Auf Anhieb richtig:</span>
               <strong style={{ fontSize: '1.05rem' }}>{lifetime.totalCorrectFirstTry}</strong>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.98rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '0.98rem' }}>
               <span style={{ opacity: 0.85 }}>Hilfen genutzt:</span>
               <strong style={{ fontSize: '1.05rem' }}>{lifetime.totalHintsUsed}</strong>
             </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.98rem' }}>
+              <span style={{ opacity: 0.85 }}>Gesamte Übungszeit:</span>
+              <strong style={{ fontSize: '1.05rem' }}>{formatDuration(lifetime.totalDurationMs || 0)}</strong>
+            </div>
           </>
+        )}
+
+        {/* Table breakdown per category */}
+        {lifetime && lifetime.categories && (
+          <div style={{ marginTop: '28px', width: '100%' }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', color: 'var(--topic-color)', opacity: 0.9, fontWeight: 600 }}>
+              Aufteilung nach Übungsart
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-color)', opacity: 0.6 }}>
+                  <th style={{ padding: '8px 4px', fontWeight: 600 }}>Übungsart</th>
+                  <th style={{ padding: '8px 4px', fontWeight: 600, textAlign: 'center' }}>Aufg.</th>
+                  <th style={{ padding: '8px 4px', fontWeight: 600, textAlign: 'center' }}>Erfolg</th>
+                  <th style={{ padding: '8px 4px', fontWeight: 600, textAlign: 'right' }}>Zeit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(lifetime.categories).map(([key, cat]: [string, any]) => {
+                  const typeName = getDrillTypeName(key as any);
+                  const accuracyVal = cat.totalItemsPracticed > 0 
+                    ? `${Math.round((cat.totalCorrectFirstTry / cat.totalItemsPracticed) * 100)}%`
+                    : '-';
+                  
+                  const totalMinutes = Math.floor((cat.totalDurationMs || 0) / 60000);
+                  const hrs = Math.floor(totalMinutes / 60);
+                  const mins = totalMinutes % 60;
+                  const timeStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+
+                  return (
+                    <tr key={key} style={{ borderBottom: '1px solid var(--border-color)', opacity: 0.85 }}>
+                      <td style={{ padding: '10px 4px', fontWeight: 500 }}>{typeName}</td>
+                      <td style={{ padding: '10px 4px', textAlign: 'center' }}>{cat.totalItemsPracticed}</td>
+                      <td style={{ padding: '10px 4px', textAlign: 'center' }}>{accuracyVal}</td>
+                      <td style={{ padding: '10px 4px', textAlign: 'right', whiteSpace: 'nowrap' }}>{timeStr}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

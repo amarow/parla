@@ -8,7 +8,8 @@ import textIslands from '../data/textIslands.json';
 
 export default function Setup({ onStart }) {
   const { user } = useSession();
-  const [selectedCategory, setSelectedCategory] = useState<number | string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
   const { setLanguage } = useRecorder();
 
   // Stelle sicher, dass die Spracherkennung hier auf Deutsch (oder die Muttersprache) läuft, 
@@ -25,17 +26,39 @@ export default function Setup({ onStart }) {
   });
 
   useEffect(() => {
-    if (categories.length > 0) {
-      const lastCategory = localStorage.getItem('last_category_id');
-      if (lastCategory && categories.some(cat => cat.id.toString() === lastCategory)) {
-        setSelectedCategory(parseInt(lastCategory));
-      }
+    const lastCategory = localStorage.getItem('last_category_id');
+    const lastSubcategory = localStorage.getItem('last_subcategory_id');
+    if (lastCategory) {
+      setSelectedCategory(lastCategory);
     }
-  }, [categories]);
+    if (lastSubcategory) {
+      setSelectedSubcategory(lastSubcategory);
+    }
+  }, []);
 
   const handleCategoryClick = (id) => {
-    localStorage.setItem('last_category_id', id.toString());
+    const idStr = id.toString();
+    localStorage.setItem('last_category_id', idStr);
+    localStorage.removeItem('last_subcategory_id');
+    setSelectedCategory(idStr);
+    setSelectedSubcategory('');
     onStart(id, user.preferred_direction || 'nativeToForeign', categories);
+  };
+
+  const handleSentenceClick = (pronounKey: string) => {
+    localStorage.setItem('last_category_id', 'sentences');
+    localStorage.setItem('last_subcategory_id', pronounKey);
+    setSelectedCategory('sentences');
+    setSelectedSubcategory(pronounKey);
+    onStart('sentences', pronounKey);
+  };
+
+  const handleThemeClick = (themeId: string) => {
+    localStorage.setItem('last_category_id', 'text_islands');
+    localStorage.setItem('last_subcategory_id', themeId);
+    setSelectedCategory('text_islands');
+    setSelectedSubcategory(themeId);
+    onStart('text_islands', themeId);
   };
 
   const getLangName = (code) => {
@@ -48,7 +71,6 @@ export default function Setup({ onStart }) {
 
   const isGrammarCat = (name) => {
     const n = name.toLowerCase();
-    // Wenn es explizit die Grundformen oder Konjunktionen sind, sollen sie zum Wortschatz
     if (n.includes('grundform') || n.includes('konjunktionen')) return false;
     return n.includes('verb') || n.includes('grammatik');
   };
@@ -81,7 +103,7 @@ export default function Setup({ onStart }) {
                 {vocabCategories.map(cat => (
                   <div 
                     key={cat.id} 
-                    className={`category-item ${selectedCategory === cat.id ? 'active' : ''}`}
+                    className={`category-item ${selectedCategory === cat.id.toString() ? 'active' : ''}`}
                     onClick={() => handleCategoryClick(cat.id)}
                   >
                     {cat.name}
@@ -98,7 +120,7 @@ export default function Setup({ onStart }) {
                 {grammarCategories.map(cat => (
                   <div 
                     key={cat.id} 
-                    className={`category-item grammar-category ${selectedCategory === cat.id ? 'active' : ''}`}
+                    className={`category-item grammar-category ${selectedCategory === cat.id.toString() ? 'active' : ''}`}
                     onClick={() => handleCategoryClick(cat.id)}
                   >
                     {cat.name}
@@ -115,9 +137,17 @@ export default function Setup({ onStart }) {
               {pronouns.map(p => (
                 <div 
                   key={p.key} 
-                  className="category-item sentence-category"
-                  onClick={() => onStart('sentences', p.key)}
-                  style={{ backgroundColor: 'rgba(52, 152, 219, 0.1)', borderColor: '#3498db' }}
+                  className={`category-item sentence-category ${selectedCategory === 'sentences' && selectedSubcategory === p.key ? 'active' : ''}`}
+                  onClick={() => handleSentenceClick(p.key)}
+                  style={selectedCategory === 'sentences' && selectedSubcategory === p.key ? {
+                    background: 'var(--topic-color)',
+                    borderColor: 'var(--topic-color)',
+                    color: 'white',
+                    boxShadow: '0 4px 12px rgba(52, 152, 219, 0.3)'
+                  } : {
+                    backgroundColor: 'rgba(52, 152, 219, 0.05)',
+                    borderColor: 'var(--topic-color)'
+                  }}
                 >
                   {p.label}
                 </div>
@@ -132,9 +162,17 @@ export default function Setup({ onStart }) {
               {textIslands.map((island) => (
                 <div 
                   key={island.id}
-                  className="category-item"
-                  onClick={() => onStart('text_islands', island.id)}
-                  style={{ backgroundColor: 'rgba(75, 138, 230, 0.1)', borderColor: 'var(--primary-color)' }}
+                  className={`category-item ${(selectedCategory === 'text_islands' && selectedSubcategory === island.id) ? 'active' : ''}`}
+                  onClick={() => handleThemeClick(island.id)}
+                  style={selectedCategory === 'text_islands' && selectedSubcategory === island.id ? {
+                    background: 'var(--topic-color)',
+                    borderColor: 'var(--topic-color)',
+                    color: 'white',
+                    boxShadow: '0 4px 12px rgba(75, 138, 230, 0.3)'
+                  } : {
+                    backgroundColor: 'rgba(75, 138, 230, 0.05)',
+                    borderColor: 'var(--topic-color)'
+                  }}
                 >
                   {island.title}
                 </div>

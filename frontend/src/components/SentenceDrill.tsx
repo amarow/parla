@@ -25,7 +25,8 @@ export default function SentenceDrill({
   pronounKey, 
   onFinish, 
   onCancel, 
-  onFlip
+  onFlip,
+  statsModalOpen
 }: any) {
   const [logicData, setLogicData] = useState<any>(null);
   const [currentSentence, setCurrentSentence] = useState<any>(null);
@@ -43,6 +44,12 @@ export default function SentenceDrill({
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
   const playingRef = useRef(false);
+
+  useEffect(() => {
+    if (statsModalOpen && isPlayingAll) {
+      handleStopPlayingAll();
+    }
+  }, [statsModalOpen, isPlayingAll]);
   const lastPlayedRef = useRef<string | null>(null);
   const isSessionActiveRef = useRef(false);
 
@@ -78,7 +85,7 @@ export default function SentenceDrill({
     dataService.getSentenceLogic().then(data => {
       if (!active) return;
       setLogicData(data);
-      statsService.startSession('sentences', TOTAL_SENTENCES);
+      statsService.startSession('sentences', 'sentences', TOTAL_SENTENCES);
       generateSentence(data, false);
       setLoading(false);
     });

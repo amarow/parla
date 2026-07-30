@@ -1,15 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, X, Volume2, Eye, EyeOff } from 'lucide-react';
 import { speakText } from '../api';
-import { useRecorder } from '../contexts/Recorder';
 import { useSession } from '../contexts/SessionContext';
 import textIslands from '../data/textIslands.json';
 import { TransportBar } from './TransportBar';
-import { DrillEvaluator } from '../utils/speechMatch';
-import { AnalyseBar } from './AnalyseBar';
-import { playSuccessSound } from '../utils/audioFeedback';
+import { statsService } from '../utils/statsService';
 
-export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
+export default function ThemeDrill({ islandId, onCancel, onFinish, statsModalOpen }: any) {
   const island = textIslands.find(i => i.id === islandId);
   const sentences = island?.sentences || [];
 
@@ -21,61 +18,30 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
   const [showTranslation, setShowTranslation] = useState(false);
   
   const [progress, setProgress] = useState(0); // 0 to 100 for pause timer
-  const [feedback, setFeedback] = useState<'correct' | null>(null);
   const playingRef = useRef(false);
   const cancelTimerRef = useRef<NodeJS.Timeout | null>(null);
   const currentCycleRef = useRef(0);
   const earlyResolveRef = useRef<(() => void) | null>(null);
-  const feedbackRef = useRef<'correct' | null>(null);
-
-  const { isListening, toggleListening, stopListening, transcript, setLanguage, language, resetTranscript } = useRecorder();
 
   useEffect(() => {
-    setLanguage('it-IT');
+    statsService.startSession('text_islands', 'text_islands', sentences.length);
     return () => {
       playingRef.current = false;
-      stopListening();
       window.speechSynthesis.cancel();
       if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
       if (earlyResolveRef.current) earlyResolveRef.current();
     };
-  }, [setLanguage, stopListening]);
+  }, [sentences.length]);
 
   useEffect(() => {
-    playingRef.current = isListening;
-    setIsPlaying(isListening);
-    if (!isListening) {
+    if (statsModalOpen && isPlaying) {
+      setIsPlaying(false);
+      playingRef.current = false;
       window.speechSynthesis.cancel();
       if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
       if (earlyResolveRef.current) earlyResolveRef.current();
-      setPhase('idle');
-      setFeedback(null);
     }
-  }, [isListening]);
-
-  useEffect(() => {
-    if (!transcript || feedback === 'correct') return;
-
-    const currentSentence = sentences[currentIndex];
-    if (!currentSentence) return;
-
-    const target = currentSentence.it;
-    const isMatch = DrillEvaluator.checkSentenceMatch(transcript, target);
-
-    if (isMatch) {
-      setFeedback('correct');
-      playSuccessSound();
-      feedbackRef.current = 'correct';
-      setShowTranslation(true);
-      
-      // Wait 1.2 seconds to show green feedback, then advance
-      setTimeout(() => {
-        if (earlyResolveRef.current) {
-          earlyResolveRef.current();
-        }
-      }, 1200);
-    }
-  }, [transcript, currentIndex, sentences, feedback]);
+  }, [statsModalOpen, isPlaying]);
 
   const playCycle = async (index: number) => {
     currentCycleRef.current += 1;
@@ -84,15 +50,10 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
     if (!playingRef.current || !sentences[index]) return;
     
     setShowTranslation(alwaysShowTranslation);
-    setFeedback(null);
-    feedbackRef.current = null;
 
     // Loop 2 times per sentence
     for (let repeat = 0; repeat < 2; repeat++) {
       if (!playingRef.current || currentCycleRef.current !== myCycleId) break;
-
-      setFeedback(null);
-      feedbackRef.current = null;
 
       // 1. Speak (App is speaking)
       setPhase('speaking');
@@ -103,13 +64,12 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
 
       const speakDuration = Date.now() - startSpeak;
 
-      // 2. Listen (User is repeating)
-      resetTranscript();
+      // 2. Pause (User is shadowing/repeating)
       setPhase('listening');
       // Calculate pause duration: e.g. 1.5x the speak time, min 3 seconds
       const pauseDuration = Math.max(speakDuration * 1.5, 3000);
       
-      // Animated Progress Bar during listening
+      // Animated Progress Bar during pause
       const startTime = Date.now();
       await new Promise<void>((resolve) => {
         earlyResolveRef.current = () => {
@@ -139,8 +99,15 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
     }
 
     if (playingRef.current && currentCycleRef.current === myCycleId) {
-      // Go to next sentence or loop back
-      setCurrentIndex((prev) => (prev + 1) % sentences.length);
+      statsService.recordAttempt(true, false);
+
+      if (index + 1 >= sentences.length) {
+        setIsPlaying(false);
+        playingRef.current = false;
+        onFinish(true);
+      } else {
+        setCurrentIndex((prev) => prev + 1);
+      }
     }
   };
 
@@ -151,7 +118,16 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
   }, [currentIndex, isPlaying]);
 
   const togglePlay = () => {
-    toggleListening();
+    const nextPlaying = !isPlaying;
+    setIsPlaying(nextPlaying);
+    playingRef.current = nextPlaying;
+    if (!nextPlaying) {
+      window.speechSynthesis.cancel();
+      if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
+      if (earlyResolveRef.current) earlyResolveRef.current();
+      setPhase('idle');
+      setProgress(0);
+    }
   };
 
   const skipForward = () => {
@@ -159,21 +135,25 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
     if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
     if (earlyResolveRef.current) earlyResolveRef.current();
     setProgress(0);
-    setFeedback(null);
-    feedbackRef.current = null;
     setShowTranslation(alwaysShowTranslation);
-    setCurrentIndex((prev) => (prev + 1) % sentences.length);
+    if (currentIndex + 1 >= sentences.length) {
+      setIsPlaying(false);
+      playingRef.current = false;
+      onFinish(true);
+    } else {
+      setCurrentIndex((prev) => prev + 1);
+    }
   };
 
   const skipBack = () => {
-    window.speechSynthesis.cancel();
-    if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
-    if (earlyResolveRef.current) earlyResolveRef.current();
-    setProgress(0);
-    setFeedback(null);
-    feedbackRef.current = null;
-    setShowTranslation(alwaysShowTranslation);
-    setCurrentIndex((prev) => (prev - 1 + sentences.length) % sentences.length);
+    if (currentIndex > 0) {
+      window.speechSynthesis.cancel();
+      if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
+      if (earlyResolveRef.current) earlyResolveRef.current();
+      setProgress(0);
+      setShowTranslation(alwaysShowTranslation);
+      setCurrentIndex((prev) => prev - 1);
+    }
   };
 
   const playAudio = (text: string) => {
@@ -184,12 +164,10 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
 
   const currentSentence = sentences[currentIndex];
   const displaySolution = showTranslation || alwaysShowTranslation;
-  const expectedWords = currentSentence ? currentSentence.it.trim().split(/\s+/).filter(Boolean) : [];
-  const evaluatedSequence = DrillEvaluator.getEvaluatedSequence(transcript, currentSentence?.it);
 
   return (
     <div className="island-player-container">
-      <div className="drill-panel" style={{ backgroundColor: feedback === 'correct' ? 'rgba(46, 204, 113, 0.15)' : 'var(--card-bg)', transition: 'background-color 0.3s' }}>
+      <div className="drill-panel" style={{ backgroundColor: 'var(--card-bg)' }}>
         {/* Header Row inside Card Panel */}
         <div className="drill-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '36px', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -241,7 +219,7 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
         {/* Subjekt (Italienischer Satz) */}
         <div className="subjekt" style={{ marginTop: '8px', marginBottom: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-            <h2 style={{ margin: 0, textAlign: 'center', fontSize: '1.45rem', fontWeight: 700, color: feedback === 'correct' ? 'var(--right-color)' : 'var(--topic-color)' }}>
+            <h2 style={{ margin: 0, textAlign: 'center', fontSize: '1.45rem', fontWeight: 700, color: 'var(--topic-color)' }}>
               {currentSentence?.it}
             </h2>
             <button 
@@ -250,7 +228,7 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
               title="Vorlesen" 
               style={{ background: 'transparent', border: 'none', boxShadow: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.85 }}
             >
-              <Volume2 size={20} color={feedback === 'correct' ? 'var(--right-color)' : 'var(--topic-color)'} />
+              <Volume2 size={20} color="var(--topic-color)" />
             </button>
           </div>
         </div>
@@ -266,7 +244,7 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
           )}
         </div>
 
-        {/* Visual Feedback (Microphone & Phase) */}
+        {/* Visual Feedback (Phase) */}
         <div style={{ 
           height: '40px', 
           display: 'flex', 
@@ -277,7 +255,7 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
           width: '100%',
           marginTop: '10px'
         }}>
-          {phase === 'listening' && feedback !== 'correct' && (
+          {phase === 'listening' && (
             <>
               <div style={{ width: '60%', height: '4px', backgroundColor: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
                 <div style={{ 
@@ -287,7 +265,7 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
                   transition: 'width 0.1s linear'
                 }} />
               </div>
-              <span className="text-small" style={{ color: 'var(--topic-color)', fontWeight: 'bold' }}>Jetzt bist du dran!</span>
+              <span className="text-small" style={{ color: 'var(--topic-color)', fontWeight: 'bold' }}>Jetzt nachsprechen...</span>
             </>
           )}
           {phase === 'speaking' && (
@@ -301,21 +279,13 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
 
       <TransportBar
         onBack={skipBack}
+        backDisabled={currentIndex === 0}
         onForward={skipForward}
-        onMainAction={toggleListening}
-        mainActionType="mic"
-        mainActionActive={isListening}
+        onMainAction={togglePlay}
+        mainActionType="playPause"
+        mainActionActive={isPlaying}
         onShowStats={onFinish}
       />
-
-      {isListening && user.show_analyse_bar !== false && (
-        <AnalyseBar
-          language={language}
-          transcript={transcript}
-          expectedWordCount={expectedWords.length}
-          evaluatedSequence={evaluatedSequence}
-        />
-      )}
     </div>
   );
 }

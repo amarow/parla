@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Moon, Sun, Settings as SettingsIcon, LogOut, MessageCircle, BookOpen, RotateCcw, Target, Map as MapIcon, BarChart2 } from 'lucide-react';
 import Login from './components/Login';
 import Settings from './components/Settings';
@@ -21,6 +21,20 @@ function App() {
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { isListening, toggleListening, stopListening, transcript, language } = useRecorder();
+  const setupScrollPosRef = useRef(0);
+
+  useEffect(() => {
+    if (appState === 'setup' && setupScrollPosRef.current > 0) {
+      const scrollPos = setupScrollPosRef.current;
+      const timer = setTimeout(() => {
+        window.scrollTo({
+          top: scrollPos,
+          behavior: 'instant' as any
+        });
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [appState]);
 
   useEffect(() => {
     // If the user has a gemini key, we might initialize something here
@@ -50,6 +64,7 @@ function App() {
   };
 
   const startSession = (categoryId, direction, categories = null) => {
+    setupScrollPosRef.current = window.scrollY;
     stopListening();
     window.speechSynthesis.cancel();
     setSessionStats(null); // Clear previous session stats
@@ -90,6 +105,7 @@ function App() {
   const cancelSession = () => {
     stopListening();
     window.speechSynthesis.cancel();
+    statsService.endSession();
     setAppState('setup');
     setSessionConfig(null);
   };
@@ -139,7 +155,14 @@ function App() {
               <button className="icon-btn" onClick={openStatsScreen} title="Statistik">
                 <BarChart2 size={20} />
               </button>
-              <button className="icon-btn" onClick={() => setAppState('settings')} title="Einstellungen">
+              <button 
+                className="icon-btn" 
+                onClick={() => {
+                  setupScrollPosRef.current = window.scrollY;
+                  setAppState('settings');
+                }} 
+                title="Einstellungen"
+              >
                 <SettingsIcon size={20} />
               </button>
             </>
@@ -170,6 +193,7 @@ function App() {
             islandId={sessionConfig.direction}
             onCancel={cancelSession}
             onFinish={finishCategory}
+            statsModalOpen={showStatsModal}
           />
         )}
         {user && appState === 'learning' && sessionConfig.categoryId !== 'text_islands' && (
@@ -179,6 +203,7 @@ function App() {
             onFinish={finishCategory}
             onCancel={cancelSession}
             categories={sessionConfig.categories}
+            statsModalOpen={showStatsModal}
           />
         )}
       </main>

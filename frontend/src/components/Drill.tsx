@@ -9,7 +9,7 @@ import { ArrowLeftRight, List, BookOpen, X, Volume2, Play, Square } from 'lucide
 import { statsService } from '../utils/statsService';
 import { useSession } from '../contexts/SessionContext';
 
-export default function Drill({ categoryId, direction, onFinish, onCancel, onShowStats, categories }: any) {
+export default function Drill({ categoryId, direction, onFinish, onCancel, onShowStats, categories, statsModalOpen }: any) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOverview, setShowOverview] = useState(false);
   const [flipCount, setFlipCount] = useState(0);
@@ -58,14 +58,22 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onSho
 
   useEffect(() => {
     if (items && items.length > 0) {
-      statsService.startSession(categoryId, items.length);
+      const drillType = itemType === 'verbs' ? 'conjugations' : 'vocab';
+      statsService.startSession(categoryId, drillType, items.length);
     }
-  }, [categoryId, items]);
+  }, [categoryId, items, itemType]);
 
   // Reset currentIndex when category changes
   useEffect(() => {
     setCurrentIndex(0);
   }, [categoryId]);
+
+  useEffect(() => {
+    if (statsModalOpen && isPlayingAll) {
+      setIsPlayingAll(false);
+      window.speechSynthesis.cancel();
+    }
+  }, [statsModalOpen, isPlayingAll]);
 
   const isPlayingRef = useRef(false);
 
@@ -159,6 +167,7 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onSho
         onFinish={onFinish}
         onCancel={onCancel}
         onFlip={handleFlip}
+        statsModalOpen={statsModalOpen}
       />
     );
   }
