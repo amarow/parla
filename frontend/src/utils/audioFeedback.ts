@@ -1,18 +1,6 @@
-let audioCtx: AudioContext | null = null;
-
-function getAudioContext() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-  }
-  return audioCtx;
-}
-
 export const playSuccessSound = () => {
   try {
-    const ctx = getAudioContext();
-    if (ctx.state === 'suspended') {
-      ctx.resume();
-    }
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gainNode = ctx.createGain();
 
@@ -32,6 +20,11 @@ export const playSuccessSound = () => {
 
     osc.start(now);
     osc.stop(now + 0.4);
+
+    // Close the audio context immediately after the sound finishes to release the audio device on iOS
+    setTimeout(() => {
+      ctx.close().catch(err => console.warn("Failed to close AudioContext", err));
+    }, 450);
   } catch (e) {
     console.warn("Failed to play success audio feedback:", e);
   }
@@ -39,10 +32,7 @@ export const playSuccessSound = () => {
 
 export const playFailureSound = () => {
   try {
-    const ctx = getAudioContext();
-    if (ctx.state === 'suspended') {
-      ctx.resume();
-    }
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gainNode = ctx.createGain();
 
@@ -62,6 +52,11 @@ export const playFailureSound = () => {
 
     osc.start(now);
     osc.stop(now + 0.35);
+
+    // Close the audio context immediately after the sound finishes to release the audio device on iOS
+    setTimeout(() => {
+      ctx.close().catch(err => console.warn("Failed to close AudioContext", err));
+    }, 400);
   } catch (e) {
     console.warn("Failed to play failure audio feedback:", e);
   }
