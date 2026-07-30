@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Moon, Sun, Settings as SettingsIcon, LogOut, MessageCircle, BookOpen, RotateCcw, Target, Map as MapIcon } from 'lucide-react';
+import { Moon, Sun, Settings as SettingsIcon, LogOut, MessageCircle, BookOpen, RotateCcw, Target, Map as MapIcon, BarChart2 } from 'lucide-react';
 import Login from './components/Login';
 import Settings from './components/Settings';
 import Setup from './components/Setup';
@@ -18,6 +18,7 @@ function App() {
   const [appState, setAppState] = useState('login'); // 'login', 'setup', 'settings', 'learning', 'reward'
   const [sessionConfig, setSessionConfig] = useState(null);
   const [sessionStats, setSessionStats] = useState(null);
+  const [showStatsModal, setShowStatsModal] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { isListening, toggleListening, stopListening, transcript, language } = useRecorder();
 
@@ -51,6 +52,7 @@ function App() {
   const startSession = (categoryId, direction, categories = null) => {
     stopListening();
     window.speechSynthesis.cancel();
+    setSessionStats(null); // Clear previous session stats
     const categoryList = [
       { id: 'all_words', name: 'Vokabeln', icon: BookOpen, type: 'words' },
       { id: 'verbs', name: 'Konjugationen', icon: RotateCcw, type: 'verbs' },
@@ -65,20 +67,13 @@ function App() {
     setAppState('learning');
   };
 
-  const showRewardScreen = () => {
-    stopListening();
-    window.speechSynthesis.cancel();
-    const statsResult = statsService.endSession();
-    setSessionStats(statsResult);
-    setAppState('reward');
-  };
-
   const finishCategory = (isCorrect: boolean) => {
     if (sessionConfig && sessionConfig.categories) {
       const currentIndex = sessionConfig.categories.findIndex((c: any) => c.id === sessionConfig.categoryId);
       if (currentIndex !== -1 && currentIndex + 1 < sessionConfig.categories.length) {
         const nextCategory = sessionConfig.categories[currentIndex + 1];
         if (nextCategory.id !== 'text_islands') {
+          statsService.endSession();
           setSessionConfig(prev => {
             if (!prev) return null;
             return { ...prev, categoryId: nextCategory.id };
@@ -87,49 +82,9 @@ function App() {
         }
       }
     }
-    showRewardScreen();
-  };
-
-  const startNextSession = () => {
-    if (!sessionConfig) {
-      cancelSession();
-      return;
-    }
-
-    // 1. Wenn aktuell in einer Textinsel (Thema)
-    if (sessionConfig.categoryId === 'text_islands') {
-      const currentIslandId = sessionConfig.direction;
-      const currentIndex = textIslands.findIndex((i: any) => i.id === currentIslandId);
-      if (currentIndex !== -1 && currentIndex + 1 < textIslands.length) {
-        const nextIsland = textIslands[currentIndex + 1];
-        startSession('text_islands', nextIsland.id);
-        return;
-      }
-      cancelSession();
-      return;
-    }
-
-    // 2. Normaler Vokabel- / Konjugations-Modus
-    if (sessionConfig.categories && Array.isArray(sessionConfig.categories) && sessionConfig.categories.length > 0) {
-      const currentIndex = sessionConfig.categories.findIndex((c: any) => c.id === sessionConfig.categoryId);
-      if (currentIndex !== -1 && currentIndex + 1 < sessionConfig.categories.length) {
-        const nextCategory = sessionConfig.categories[currentIndex + 1];
-        if (nextCategory.id !== 'text_islands') {
-          startSession(nextCategory.id, sessionConfig.direction, sessionConfig.categories);
-          return;
-        }
-      }
-    }
-
+    const statsResult = statsService.endSession();
+    setSessionStats(statsResult);
     cancelSession();
-  };
-
-  const restartSession = () => {
-    if (sessionConfig) {
-      startSession(sessionConfig.categoryId, sessionConfig.direction, sessionConfig.categories);
-    } else {
-      cancelSession();
-    }
   };
 
   const cancelSession = () => {
@@ -137,6 +92,32 @@ function App() {
     window.speechSynthesis.cancel();
     setAppState('setup');
     setSessionConfig(null);
+  };
+
+  const openStatsScreen = () => {
+    stopListening();
+    window.speechSynthesis.cancel();
+    const lifetime = statsService.getLifetimeStats();
+    if (appState === 'learning') {
+      setSessionStats({
+        session: undefined,
+        lifetime
+      });
+    } else {
+      setSessionStats(prev => ({
+        session: prev?.session,
+        lifetime
+      }));
+    }
+    setShowStatsModal(true);
+  };
+
+  const handleResetStats = () => {
+    const resetStats = statsService.resetLifetimeStats();
+    setSessionStats(prev => ({
+      session: prev?.session,
+      lifetime: resetStats
+    }));
   };
 
   return (
@@ -154,9 +135,14 @@ function App() {
 
         <div className="header-buttons" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {user && (
-            <button className="icon-btn" onClick={() => setAppState('settings')} title="Einstellungen">
-              <SettingsIcon size={20} />
-            </button>
+            <>
+              <button className="icon-btn" onClick={openStatsScreen} title="Statistik">
+                <BarChart2 size={20} />
+              </button>
+              <button className="icon-btn" onClick={() => setAppState('settings')} title="Einstellungen">
+                <SettingsIcon size={20} />
+              </button>
+            </>
           )}
           <button className="icon-btn" onClick={toggleTheme} title="Theme wechseln">
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
@@ -183,7 +169,7 @@ function App() {
           <ThemeDrill
             islandId={sessionConfig.direction}
             onCancel={cancelSession}
-            onFinish={showRewardScreen}
+            onFinish={finishCategory}
           />
         )}
         {user && appState === 'learning' && sessionConfig.categoryId !== 'text_islands' && (
@@ -192,19 +178,38 @@ function App() {
             direction={sessionConfig.direction} 
             onFinish={finishCategory}
             onCancel={cancelSession}
-            onShowStats={showRewardScreen}
             categories={sessionConfig.categories}
           />
         )}
-        {user && appState === 'reward' && (
-          <Reward
-            stats={sessionStats}
-            onNext={startNextSession}
-            onRestart={restartSession}
-            onCancel={cancelSession}
-          />
-        )}
       </main>
+
+      {showStatsModal && user && (
+        <div 
+          className="modal-overlay" 
+          onClick={() => setShowStatsModal(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <Reward
+              stats={sessionStats}
+              onCancel={() => setShowStatsModal(false)}
+              onReset={handleResetStats}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,6 +9,7 @@ type RecorderContextType = {
   setLanguage: (lang: string) => void;
   transcript: string;
   getLatestWords: (count: number) => string;
+  resetTranscript: () => void;
 };
 
 const RecorderContext = createContext<RecorderContextType | undefined>(undefined);
@@ -22,12 +23,22 @@ export const RecorderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const shouldListenRef = useRef(false);
   const bufferRef = useRef('');
 
+  // Keep track of event.results indices to reset transcript without toggling mic
+  const totalResultsCountRef = useRef(0);
+  const resultOffsetRef = useRef(0);
+
   const getLatestWords = useCallback((count: number): string => {
     const clean = transcript ? transcript.trim() : bufferRef.current.trim();
     if (!clean) return '';
     const words = clean.split(/\s+/).filter(Boolean);
     return words.slice(-Math.max(1, count)).join(' ');
   }, [transcript]);
+
+  const resetTranscript = useCallback(() => {
+    resultOffsetRef.current = totalResultsCountRef.current;
+    bufferRef.current = '';
+    setTranscript('');
+  }, []);
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -47,8 +58,10 @@ export const RecorderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     recognition.onresult = (event: any) => {
+      totalResultsCountRef.current = event.results.length;
+      
       let combinedTranscript = "";
-      for (let i = 0; i < event.results.length; ++i) {
+      for (let i = resultOffsetRef.current; i < event.results.length; ++i) {
         combinedTranscript += event.results[i][0].transcript;
       }
       
@@ -65,7 +78,7 @@ export const RecorderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     recognition.onerror = (event: any) => {
       console.warn("Speech Recognition Error:", event.error);
       if (event.error === 'no-speech') return;
-      if (['not-allowed', 'service-not-allowed'].includes(event.error)) {
+      if (['not-allowed', 'service-not-allowed', 'network', 'audio-capture', 'language-not-supported', 'bad-grammar'].includes(event.error)) {
         shouldListenRef.current = false;
         setIsListening(false);
       }
@@ -73,6 +86,8 @@ export const RecorderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     recognition.onend = () => {
       console.log("🎤 Browser-Erkennung beendet");
+      resultOffsetRef.current = 0;
+      totalResultsCountRef.current = 0;
       if (shouldListenRef.current) {
         try {
           recognition.start();
@@ -125,6 +140,10 @@ export const RecorderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const startListening = useCallback(() => {
     shouldListenRef.current = true;
     setIsListening(true);
+    resultOffsetRef.current = 0;
+    totalResultsCountRef.current = 0;
+    bufferRef.current = '';
+    setTranscript('');
     try { recognitionRef.current?.start(); } catch (e: any) {
       if (e.name !== 'InvalidStateError') console.error("Failed to start recognition:", e);
     }
@@ -133,6 +152,10 @@ export const RecorderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const stopListening = useCallback(() => {
     shouldListenRef.current = false;
     setIsListening(false);
+    resultOffsetRef.current = 0;
+    totalResultsCountRef.current = 0;
+    bufferRef.current = '';
+    setTranscript('');
     window.speechSynthesis.cancel();
     try { recognitionRef.current?.stop(); } catch(e) {}
   }, []);
@@ -154,7 +177,8 @@ export const RecorderProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       language, 
       setLanguage, 
       transcript, 
-      getLatestWords
+      getLatestWords,
+      resetTranscript
     }}>
       {children}
     </RecorderContext.Provider>

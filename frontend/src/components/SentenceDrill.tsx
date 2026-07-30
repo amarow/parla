@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Volume2, Play, Square, List, XCircle, Eye, EyeOff } from 'lucide-react';
+import { Volume2, Play, Square, List, X, Eye, EyeOff } from 'lucide-react';
 import { useRecorder } from '../contexts/Recorder';
 import { useSession } from '../contexts/SessionContext';
 import { speakText } from '../api';
@@ -8,6 +8,7 @@ import { TransportBar } from './TransportBar';
 import { DrillEvaluator } from '../utils/speechMatch';
 import { statsService } from '../utils/statsService';
 import { AnalyseBar } from './AnalyseBar';
+import { playSuccessSound, playFailureSound } from '../utils/audioFeedback';
 
 const pronounsMap: Record<string, any> = {
   form_1s: { it: 'io', de: 'ich' },
@@ -28,7 +29,6 @@ export default function SentenceDrill({
 }: any) {
   const [logicData, setLogicData] = useState<any>(null);
   const [currentSentence, setCurrentSentence] = useState<any>(null);
-  const [sentenceCount, setSentenceCount] = useState(0);
   const [showSolution, setShowSolution] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,7 @@ export default function SentenceDrill({
   const isSessionActiveRef = useRef(false);
 
   const { user, alwaysShowTranslation, setAlwaysShowTranslation, speedProfile } = useSession();
-  const { isListening, toggleListening, stopListening, transcript, setLanguage, language, getLatestWords } = useRecorder();
+  const { isListening, toggleListening, stopListening, transcript, setLanguage, language, getLatestWords, resetTranscript } = useRecorder();
 
   const pauseTime = speedProfile.pauseTime;
   const noInputTimeout = speedProfile.noInputTimeout;
@@ -74,12 +74,17 @@ export default function SentenceDrill({
 
   // Load language database once
   useEffect(() => {
+    let active = true;
     dataService.getSentenceLogic().then(data => {
+      if (!active) return;
       setLogicData(data);
       statsService.startSession('sentences', TOTAL_SENTENCES);
       generateSentence(data, false);
       setLoading(false);
     });
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Sync language with target text
@@ -96,7 +101,6 @@ export default function SentenceDrill({
        const nextIndex = historyIndex + 1;
        setHistoryIndex(nextIndex);
        setCurrentSentence(history[nextIndex]);
-       setSentenceCount(prev => prev + 1);
        setFeedback(null);
        setShowSolution(false);
        setAttemptCount(0);
@@ -104,7 +108,7 @@ export default function SentenceDrill({
        setIsAudioPlaying(false);
        lastPlayedRef.current = null;
        return;
-    }
+     }
 
     // Reset states
     setShowSolution(false);
@@ -150,11 +154,10 @@ export default function SentenceDrill({
     newHistory.push(newSentence);
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-    setSentenceCount(prev => prev + 1);
   };
 
   const handleNext = (isCorrect = false) => {
-    if (sentenceCount >= TOTAL_SENTENCES) {
+    if (historyIndex + 1 >= TOTAL_SENTENCES) {
       onFinish(isCorrect);
     } else {
       generateSentence(logicData, false);
@@ -189,13 +192,18 @@ export default function SentenceDrill({
       speakText(textToPlay, 'de', speechRate, user?.voice_de).then(() => {
         if (!isCurrent || !isSessionActiveRef.current) return;
         setTimeout(() => {
-          if (isCurrent && isSessionActiveRef.current) setIsAudioPlaying(false);
+          if (isCurrent && isSessionActiveRef.current) {
+            setIsAudioPlaying(false);
+            resetTranscript();
+          }
         }, 150);
       });
     }
 
     return () => {
       isCurrent = false;
+      setIsAudioPlaying(false);
+      window.speechSynthesis.cancel();
     };
   }, [currentSentence, isListening, isAudioPlaying, speechRate, user]);
 
@@ -245,6 +253,7 @@ export default function SentenceDrill({
       if (attemptCount === 0) {
         // Step 1: Timeout -> Show solution, mark incorrect
         setFeedback('incorrect');
+        playFailureSound();
         setShowSolution(true);
         setAttemptCount(1);
         statsService.recordAttempt(false, true);
@@ -256,6 +265,7 @@ export default function SentenceDrill({
         // Step 2: Second Timeout -> Read solution aloud & advance
         setIsProcessing(true);
         setFeedback('incorrect');
+        // Note: playFailureSound() is omitted here as it already played in Step 1.
         
         speakText(currentSentence.foreign, 'it', speechRate, user?.voice_it).then(() => {
           if (!isSessionActiveRef.current) return;
@@ -270,7 +280,7 @@ export default function SentenceDrill({
     }, noInputTimeout);
 
     return () => clearTimeout(noInputTimer);
-  }, [isListening, isAudioPlaying, isProcessing, currentSentence, attemptCount, user, sentenceCount, noInputTimeout, pauseTime, speechRate]);
+  }, [isListening, isAudioPlaying, isProcessing, currentSentence, attemptCount, user, noInputTimeout, pauseTime, speechRate]);
 
   // Speech evaluation
   useEffect(() => {
@@ -284,6 +294,7 @@ export default function SentenceDrill({
 
     if (isMatch) {
       setFeedback('correct');
+      playSuccessSound();
       setIsProcessing(true);
       setShowSolution(true);
       statsService.recordAttempt(true, showSolution || alwaysShowTranslation);
@@ -297,14 +308,17 @@ export default function SentenceDrill({
     } else {
         const isSkip = DrillEvaluator.checkSkipCommand(latestSpoken) || DrillEvaluator.checkSkipCommand(transcript);
         if (isSkip) {
-            setFeedback('incorrect');
-            if (!showSolution && onFlip) onFlip();
-            setShowSolution(true);
-            setAttemptCount(1);
-            statsService.recordAttempt(false, true);
+            if (attemptCount === 0) {
+                setFeedback('incorrect');
+                playFailureSound();
+                if (!showSolution && onFlip) onFlip();
+                setShowSolution(true);
+                setAttemptCount(1);
+                statsService.recordAttempt(false, true);
+            }
         }
     }
-  }, [transcript, getLatestWords, currentSentence, isProcessing, isAudioPlaying, isListening, showSolution, alwaysShowTranslation, onFlip, sentenceCount, pauseTime]);
+  }, [transcript, getLatestWords, currentSentence, isProcessing, isAudioPlaying, isListening, showSolution, alwaysShowTranslation, onFlip, pauseTime, attemptCount]);
 
   const playAudio = (text: string) => {
     if (isPlayingAll) handleStopPlayingAll();
@@ -342,8 +356,23 @@ export default function SentenceDrill({
                 {isPlayingAll ? <Square size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
                 {isPlayingAll ? 'Stop' : 'Alle vorlesen'}
               </button>
-              <button className="icon-btn" onClick={() => setShowOverview(false)} title="Schließen">
-                <XCircle size={20} />
+              <button 
+                className="icon-btn" 
+                onClick={() => setShowOverview(false)} 
+                title="Schließen"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '50%',
+                  backgroundColor: 'transparent'
+                }}
+              >
+                <X size={16} />
               </button>
             </div>
           </div>
@@ -389,7 +418,7 @@ export default function SentenceDrill({
             <div className="drill-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span className="progress-indicator" style={{ position: 'static', padding: '4px 10px', fontSize: '0.9rem', borderRadius: '12px' }}>
-                  {sentenceCount}/{TOTAL_SENTENCES}
+                  {historyIndex + 1}/{TOTAL_SENTENCES}
                 </span>
                 <span style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--text-meta)' }}>
                   Sätze & Pronomen
@@ -419,8 +448,23 @@ export default function SentenceDrill({
                 <button className="icon-btn" onClick={() => setShowOverview(true)} title="Übersicht aller Sätze" style={{ width: '32px', height: '32px' }}>
                   <List size={16} />
                 </button>
-                <button className="icon-btn" onClick={onCancel} title="Beenden" style={{ width: '32px', height: '32px' }}>
-                  <XCircle size={16} />
+                <button 
+                  className="icon-btn" 
+                  onClick={onCancel} 
+                  title="Beenden" 
+                  style={{ 
+                    width: '32px', 
+                    height: '32px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    cursor: 'pointer',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '50%',
+                    backgroundColor: 'transparent'
+                  }}
+                >
+                  <X size={16} />
                 </button>
               </div>
             </div>

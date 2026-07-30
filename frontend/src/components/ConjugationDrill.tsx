@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Volume2, Eye, EyeOff, ArrowLeftRight, List, BookOpen, XCircle } from 'lucide-react';
+import { Volume2, Eye, EyeOff, ArrowLeftRight, List, BookOpen, X } from 'lucide-react';
 import { useRecorder } from '../contexts/Recorder';
 import { useSession } from '../contexts/SessionContext';
 import { speakText } from '../api';
@@ -7,6 +7,7 @@ import { TransportBar } from './TransportBar';
 import { DrillEvaluator } from '../utils/speechMatch';
 import { statsService } from '../utils/statsService';
 import { AnalyseBar } from './AnalyseBar';
+import { playSuccessSound, playFailureSound } from '../utils/audioFeedback';
 
 interface FormDef {
   id: string;
@@ -46,7 +47,7 @@ export default function ConjugationDrill({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
-  const { isListening, toggleListening, stopListening, transcript, setLanguage, language, getLatestWords } = useRecorder();
+  const { isListening, toggleListening, stopListening, transcript, setLanguage, language, getLatestWords, resetTranscript } = useRecorder();
   const { user, alwaysShowTranslation, setAlwaysShowTranslation, speedProfile } = useSession();
   
   const conjugation = verb.conjugations?.[0];
@@ -98,6 +99,7 @@ export default function ConjugationDrill({
   const handleFailure = (currentForm: FormDef) => {
     setIsProcessing(true);
     setFeedback(prev => ({ ...prev, [currentForm.id]: 'incorrect' }));
+    playFailureSound();
     setRevealedRows(prev => ({ ...prev, [currentForm.id]: true }));
     statsService.recordAttempt(false, true);
 
@@ -107,6 +109,7 @@ export default function ConjugationDrill({
       setTimeout(() => {
         if (!isSessionActiveRef.current) return;
         setIsProcessing(false);
+        resetTranscript();
         if (activeFieldIndex < formDefinitions.length - 1) {
           setActiveFieldIndex(prev => prev + 1);
         } else {
@@ -147,6 +150,7 @@ export default function ConjugationDrill({
 
     if (hasMatch) {
        setFeedback(prev => ({ ...prev, [currentForm.id]: 'correct' }));
+       playSuccessSound();
        setRevealedRows(prev => ({ ...prev, [currentForm.id]: true }));
        statsService.recordAttempt(true, revealedRows[currentForm.id] || alwaysShowTranslation);
        
@@ -228,8 +232,23 @@ export default function ConjugationDrill({
               </button>
             )}
             {onCancel && (
-              <button onClick={onCancel} className="icon-btn" style={{ width: '32px', height: '32px' }} title="Beenden">
-                <XCircle size={16} />
+              <button 
+                onClick={onCancel} 
+                className="icon-btn" 
+                style={{ 
+                  width: '32px', 
+                  height: '32px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  cursor: 'pointer',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '50%',
+                  backgroundColor: 'transparent'
+                }} 
+                title="Beenden"
+              >
+                <X size={16} />
               </button>
             )}
           </div>

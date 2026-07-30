@@ -1,134 +1,149 @@
-import { useEffect, useRef } from 'react';
-import confetti from 'canvas-confetti';
-import { useRecorder } from '../contexts/Recorder';
-import { API_BASE } from '../api';
+import { X } from 'lucide-react';
 
-export default function Reward({ onNext, onRepeat, onCancel, stats, flips }: any) {
-  const { transcript, setLanguage } = useRecorder();
-  const hasPlayedAudio = useRef(false);
-
+export default function Reward({ onCancel, stats, onReset }: any) {
   const session = stats?.session;
   const lifetime = stats?.lifetime;
 
-  const hintsUsed = session ? session.hintsUsed : (flips || 0);
+  const hintsUsed = session ? session.hintsUsed : 0;
   const completedItems = session ? session.completedItems : 0;
   const correctFirstTry = session ? session.correctFirstTry : 0;
 
   const accuracy = completedItems > 0 ? Math.round((correctFirstTry / completedItems) * 100) : 100;
 
-  // Stelle sicher, dass die Befehlserkennung hier auf Deutsch läuft
-  useEffect(() => {
-    setLanguage('de-DE');
-  }, [setLanguage]);
-
-  useEffect(() => {
-    if (hasPlayedAudio.current) return;
-    hasPlayedAudio.current = true;
-
-    let textToPlay = 'Fertig! ';
-    if (hintsUsed === 0) {
-      textToPlay += 'Perfekt, keinmal nachgeschaut!';
-    } else {
-      textToPlay += `Du hast ${hintsUsed} mal nachgeschaut.`;
-    }
-
-    const url = `${API_BASE}/tts?text=${encodeURIComponent(textToPlay)}&lang=de`;
-    const audio = new Audio(url);
-    audio.play().catch(err => console.warn('Audio konnte nicht abgespielt werden:', err));
-  }, [hintsUsed]);
-
-  useEffect(() => {
-    if (!transcript) return;
-
-    const lower = transcript.toLowerCase();
-    if (lower.includes('weiter') || lower.includes('nächste') || lower.includes('runde') || lower.includes('starten') || lower.includes('ok')) {
-      onNext();
-    } else if (lower.includes('wiederholen') || lower.includes('nochmal')) {
-      if (onRepeat) onRepeat();
-    } else if (lower.includes('zurück') || lower.includes('abbrechen') || lower.includes('ende')) {
-      onCancel();
-    }
-  }, [transcript, onNext, onRepeat, onCancel]);
-
-  useEffect(() => {
-    const duration = 3 * 1000;
-    const animationEnd = Date.now() + duration;
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-    const interval = setInterval(function() {
-      const timeLeft = animationEnd - Date.now();
-
-      if (timeLeft <= 0) {
-        return clearInterval(interval);
-      }
-
-      const particleCount = 50 * (timeLeft / duration);
-      confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
-      confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
-    }, 250);
-
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <div className="reward-container card-panel text-center" style={{ display: 'flex', flexDirection: 'column', minHeight: '50vh' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-        <div className="confetti-emoji" style={{ fontSize: '4rem', marginBottom: '20px' }}>🎉🎉🎉</div>
-        <h2>Fantastisch!</h2>
-        <p>Du hast die Lektion erfolgreich abgeschlossen!</p>
-        
-        <div className="stats-card" style={{ 
-          marginTop: '20px', 
-          padding: '16px 24px', 
-          backgroundColor: 'var(--bg-color)', 
-          borderRadius: '16px',
+    <div 
+      className="reward-container card-panel text-center" 
+      style={{ 
+        position: 'relative',
+        padding: '40px 36px', 
+        backgroundColor: 'var(--card-bg)',
+        borderRadius: '24px',
+        border: '1px solid var(--border-color)',
+        boxShadow: '0 24px 48px rgba(0, 0, 0, 0.4)',
+        width: '520px',
+        maxWidth: '95%',
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center'
+      }}
+    >
+      {/* Close button X */}
+      <button 
+        type="button"
+        className="icon-btn" 
+        onClick={onCancel} 
+        title="Schließen"
+        style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          width: '32px',
+          height: '32px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
           border: '1px solid var(--border-color)',
-          maxWidth: '360px',
-          width: '100%'
-        }}>
-          <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: 'var(--topic-color)' }}>Session-Statistik</h3>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span>Erfolgsquote:</span>
-            <strong>{accuracy}%</strong>
-          </div>
-          
-          {completedItems > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span>Auf Hieb richtig:</span>
-              <strong>{correctFirstTry} / {completedItems}</strong>
+          borderRadius: '50%',
+          backgroundColor: 'transparent'
+        }}
+      >
+        <X size={16} />
+      </button>
+
+      <h2 style={{ margin: '0 0 28px 0', fontSize: '1.45rem', fontWeight: 700, color: 'var(--topic-color)', letterSpacing: '-0.02em' }}>
+        Statistik
+      </h2>
+      
+      <div className="stats-card" style={{ width: '100%', textAlign: 'left' }}>
+        {/* Session Stats */}
+        {session && session.completedItems > 0 && (
+          <div style={{ marginBottom: '24px' }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', color: 'var(--topic-color)', opacity: 0.9, fontWeight: 600 }}>
+              Letzte Sitzung
+            </h3>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '0.98rem' }}>
+              <span style={{ opacity: 0.85 }}>Erfolgsquote:</span>
+              <strong style={{ fontSize: '1.05rem' }}>{accuracy}%</strong>
             </div>
-          )}
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '0.98rem' }}>
+              <span style={{ opacity: 0.85 }}>Auf Hieb richtig:</span>
+              <strong style={{ fontSize: '1.05rem' }}>{correctFirstTry} / {completedItems}</strong>
+            </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Nachgeschaut (Hilfen):</span>
-            <strong style={{ color: hintsUsed === 0 ? 'var(--right-color)' : 'inherit' }}>{hintsUsed}</strong>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.98rem' }}>
+              <span style={{ opacity: 0.85 }}>Nachgeschaut (Hilfen):</span>
+              <strong style={{ fontSize: '1.05rem', color: hintsUsed === 0 ? 'var(--right-color)' : 'inherit' }}>{hintsUsed}</strong>
+            </div>
           </div>
+        )}
 
-          {lifetime && lifetime.totalSessions > 0 && (
-            <>
-              <hr style={{ margin: '12px 0', borderColor: 'var(--border-color)', opacity: 0.4 }} />
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-meta)' }}>
-                Gesamt geübt: <strong>{lifetime.totalItemsPracticed}</strong> Aufgaben in <strong>{lifetime.totalSessions}</strong> Sessions
-              </div>
-            </>
-          )}
-        </div>
+        {/* Lifetime Stats */}
+        {lifetime && (
+          <>
+            {session && session.completedItems > 0 && (
+              <hr style={{ margin: '24px 0', borderColor: 'var(--border-color)', opacity: 0.25 }} />
+            )}
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '0.98rem' }}>
+              <span style={{ opacity: 0.85 }}>Übungs-Einheiten:</span>
+              <strong style={{ fontSize: '1.05rem' }}>{lifetime.totalSessions}</strong>
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '0.98rem' }}>
+              <span style={{ opacity: 0.85 }}>Geübte Aufgaben:</span>
+              <strong style={{ fontSize: '1.05rem' }}>{lifetime.totalItemsPracticed}</strong>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '0.98rem' }}>
+              <span style={{ opacity: 0.85 }}>Auf Hieb richtig:</span>
+              <strong style={{ fontSize: '1.05rem' }}>{lifetime.totalCorrectFirstTry}</strong>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.98rem' }}>
+              <span style={{ opacity: 0.85 }}>Hilfen genutzt:</span>
+              <strong style={{ fontSize: '1.05rem' }}>{lifetime.totalHintsUsed}</strong>
+            </div>
+          </>
+        )}
       </div>
 
-      <div style={{ display: 'flex', gap: '10px', marginTop: '20px', width: '100%' }}>
-        <button onClick={onCancel} className="btn-secondary" style={{ flex: 1, padding: '12px 5px', fontSize: '0.9rem' }}>
-          Zurück
+      {/* Reset Button */}
+      {lifetime && (
+        <button 
+          type="button"
+          onClick={onReset}
+          style={{
+            marginTop: '36px',
+            padding: '10px 20px',
+            fontSize: '0.82rem',
+            color: '#e74c3c',
+            border: '1px solid var(--border-color)',
+            borderRadius: '14px',
+            backgroundColor: 'transparent',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            fontWeight: 500,
+            letterSpacing: '0.01em'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(231, 76, 60, 0.08)';
+            e.currentTarget.style.borderColor = '#e74c3c';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.borderColor = 'var(--border-color)';
+          }}
+        >
+          Zurücksetzen
         </button>
-        <button onClick={onRepeat} className="btn-secondary" style={{ flex: 1, padding: '12px 5px', fontSize: '0.9rem' }}>
-          Wiederholen
-        </button>
-        <button onClick={onNext} className="btn-secondary" style={{ flex: 1, padding: '12px 5px', fontSize: '0.9rem' }}>
-          Nächste Runde
-        </button>
-      </div>
+      )}
     </div>
   );
 }

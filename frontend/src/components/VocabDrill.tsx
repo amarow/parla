@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Volume2, Eye, EyeOff, ArrowLeftRight, List, BookOpen, XCircle } from 'lucide-react';
+import { Volume2, Eye, EyeOff, ArrowLeftRight, List, BookOpen, X } from 'lucide-react';
 import { speakText } from '../api';
 import { useRecorder } from '../contexts/Recorder';
 import { useSession } from '../contexts/SessionContext';
@@ -7,6 +7,7 @@ import { TransportBar } from './TransportBar';
 import { DrillEvaluator, normalizeText } from '../utils/speechMatch';
 import { statsService } from '../utils/statsService';
 import { AnalyseBar } from './AnalyseBar';
+import { playSuccessSound, playFailureSound } from '../utils/audioFeedback';
 
 export default function VocabDrill({ 
   word, 
@@ -28,7 +29,7 @@ export default function VocabDrill({
   const [speechFeedback, setSpeechFeedback] = useState<string | null>(null);
   const [attemptCount, setAttemptCount] = useState(0);
 
-  const { transcript, setLanguage, getLatestWords, isListening, toggleListening, stopListening, language } = useRecorder();
+  const { transcript, setLanguage, getLatestWords, isListening, toggleListening, stopListening, language, resetTranscript } = useRecorder();
   const { user, alwaysShowTranslation, setAlwaysShowTranslation, speedProfile } = useSession();
   
   const lastPlayedRef = useRef<string | null>(null);
@@ -84,13 +85,18 @@ export default function VocabDrill({
       speakText(textToPlay, frontLangCode, speechRate, frontLangCode === 'it' ? user?.voice_it : user?.voice_de).then(() => {
         if (!isCurrent || !isSessionActiveRef.current) return;
         setTimeout(() => {
-          if (isCurrent && isSessionActiveRef.current) setIsAudioPlaying(false);
+          if (isCurrent && isSessionActiveRef.current) {
+            setIsAudioPlaying(false);
+            resetTranscript();
+          }
         }, 150);
       });
     }
 
     return () => {
       isCurrent = false;
+      setIsAudioPlaying(false);
+      window.speechSynthesis.cancel();
     };
   }, [word, isListening, direction, speechRate, user]);
 
@@ -108,6 +114,7 @@ export default function VocabDrill({
       if (attemptCount === 0) {
         // Step 1: Timeout without input -> Show solution, mark incorrect
         setSpeechFeedback('incorrect');
+        playFailureSound();
         setShowSolution(true);
         setAttemptCount(1);
         statsService.recordAttempt(false, true);
@@ -119,6 +126,7 @@ export default function VocabDrill({
         // Step 2: Still no correct answer after another timeout -> Read solution aloud & advance
         setIsProcessing(true);
         setSpeechFeedback('incorrect');
+        // Note: playFailureSound() is omitted here as it already played in Step 1.
         const langCode = backLang.split('-')[0];
         
         speakText(backText, langCode, speechRate, langCode === 'it' ? user?.voice_it : user?.voice_de).then(() => {
@@ -147,6 +155,7 @@ export default function VocabDrill({
 
     if (isMatch) {
         setSpeechFeedback('correct');
+        playSuccessSound();
         setIsProcessing(true);
         setShowSolution(true);
         statsService.recordAttempt(true, showSolution || alwaysShowTranslation);
@@ -158,16 +167,19 @@ export default function VocabDrill({
             onAnswer(true);
         }, pauseTime);
     } else {
-        // wrong answer or skipping
+        // wrong answer or skipping - only run if we haven't failed/skipped this card yet
         if (DrillEvaluator.checkSkipCommand(latestSpoken) || DrillEvaluator.checkSkipCommand(transcript)) {
-            setSpeechFeedback('incorrect');
-            if (!showSolution && onFlip) onFlip();
-            setShowSolution(true);
-            setAttemptCount(1);
-            statsService.recordAttempt(false, true);
+            if (attemptCount === 0) {
+                setSpeechFeedback('incorrect');
+                playFailureSound();
+                if (!showSolution && onFlip) onFlip();
+                setShowSolution(true);
+                setAttemptCount(1);
+                statsService.recordAttempt(false, true);
+            }
         }
     }
-  }, [transcript, getLatestWords, backText, backLang, isProcessing, isAudioPlaying, onAnswer, showSolution, alwaysShowTranslation, isListening, onFlip, pauseTime]);
+  }, [transcript, getLatestWords, backText, backLang, isProcessing, isAudioPlaying, onAnswer, showSolution, alwaysShowTranslation, isListening, onFlip, pauseTime, attemptCount]);
 
   const playAudio = (e: any) => {
     e.stopPropagation();
@@ -222,8 +234,23 @@ export default function VocabDrill({
               </button>
             )}
             {onCancel && (
-              <button onClick={onCancel} className="icon-btn" style={{ width: '32px', height: '32px' }} title="Beenden">
-                <XCircle size={16} />
+              <button 
+                onClick={onCancel} 
+                className="icon-btn" 
+                style={{ 
+                  width: '32px', 
+                  height: '32px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  cursor: 'pointer',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '50%',
+                  backgroundColor: 'transparent'
+                }} 
+                title="Beenden"
+              >
+                <X size={16} />
               </button>
             )}
           </div>

@@ -232,27 +232,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           gap: '12px'
         }}
       >
-        {onShowStats && (
-          <button 
-            type="button"
-            className="icon-btn" 
-            onClick={onShowStats} 
-            title="Statistik anzeigen"
-            style={{ 
-              width: '40px', 
-              height: '40px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              cursor: 'pointer',
-              border: '1px solid var(--border-color)',
-              borderRadius: '12px',
-              backgroundColor: 'var(--card-bg)'
-            }}
-          >
-            <BarChart2 size={20} />
-          </button>
-        )}
+
 
         <div 
           className="elapsed-time-display" 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, XCircle, Volume2, Eye, EyeOff } from 'lucide-react';
+import { MessageCircle, X, Volume2, Eye, EyeOff } from 'lucide-react';
 import { speakText } from '../api';
 import { useRecorder } from '../contexts/Recorder';
 import { useSession } from '../contexts/SessionContext';
@@ -7,6 +7,7 @@ import textIslands from '../data/textIslands.json';
 import { TransportBar } from './TransportBar';
 import { DrillEvaluator } from '../utils/speechMatch';
 import { AnalyseBar } from './AnalyseBar';
+import { playSuccessSound } from '../utils/audioFeedback';
 
 export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
   const island = textIslands.find(i => i.id === islandId);
@@ -27,7 +28,7 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
   const earlyResolveRef = useRef<(() => void) | null>(null);
   const feedbackRef = useRef<'correct' | null>(null);
 
-  const { isListening, toggleListening, stopListening, transcript, setLanguage, language } = useRecorder();
+  const { isListening, toggleListening, stopListening, transcript, setLanguage, language, resetTranscript } = useRecorder();
 
   useEffect(() => {
     setLanguage('it-IT');
@@ -63,6 +64,7 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
 
     if (isMatch) {
       setFeedback('correct');
+      playSuccessSound();
       feedbackRef.current = 'correct';
       setShowTranslation(true);
       
@@ -102,6 +104,7 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
       const speakDuration = Date.now() - startSpeak;
 
       // 2. Listen (User is repeating)
+      resetTranscript();
       setPhase('listening');
       // Calculate pause duration: e.g. 1.5x the speak time, min 3 seconds
       const pauseDuration = Math.max(speakDuration * 1.5, 3000);
@@ -213,8 +216,23 @@ export default function ThemeDrill({ islandId, onCancel, onFinish }: any) {
               {alwaysShowTranslation ? <EyeOff size={16} color="var(--topic-color)" /> : <Eye size={16} />}
             </button>
             {onCancel && (
-              <button onClick={onCancel} className="icon-btn" style={{ width: '32px', height: '32px' }} title="Beenden">
-                <XCircle size={16} />
+              <button 
+                onClick={onCancel} 
+                className="icon-btn" 
+                style={{ 
+                  width: '32px', 
+                  height: '32px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  cursor: 'pointer',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '50%',
+                  backgroundColor: 'transparent'
+                }} 
+                title="Beenden"
+              >
+                <X size={16} />
               </button>
             )}
           </div>

@@ -1,8 +1,7 @@
 ## Nomenklatur
 
 # Homescreen
-- hat oben die ConfigLine mit Version, Einstellungen, Thema, Logout
-- Application-Tittle Parladino + Logo
+- hat oben den Application-Tittle Parladino + Logo mit Version und buttons: Statistk, Einstellungen, Thema, Logout
 - Übungen oder Drills mit Vokabeln, Konjugationen, Sätze, Themen
 
 # Drills

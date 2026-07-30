@@ -5,7 +5,7 @@ import ConjugationDrill from './ConjugationDrill';
 import SentenceDrill from './SentenceDrill';
 import { dataService } from '../dataService';
 import { speakText } from '../api';
-import { ArrowLeftRight, List, BookOpen, XCircle, Volume2, Play, Square } from 'lucide-react';
+import { ArrowLeftRight, List, BookOpen, X, Volume2, Play, Square } from 'lucide-react';
 import { statsService } from '../utils/statsService';
 import { useSession } from '../contexts/SessionContext';
 
@@ -50,7 +50,6 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onSho
       const verbs = await dataService.getVerbs(categoryId);
       return { items: verbs || [], type: 'verbs' };
     },
-    placeholderData: keepPreviousData,
     staleTime: 0 
   });
 
@@ -88,7 +87,7 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onSho
     isPlayingRef.current = true;
     setIsPlayingAll(true);
 
-    for (let i = currentIndex; i < items.length; i++) {
+    for (let i = 0; i < items.length; i++) {
       if (!isPlayingRef.current) break;
       setCurrentIndex(i);
 
@@ -156,7 +155,7 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onSho
   if (itemType === 'sentences') {
     return (
       <SentenceDrill
-        pronounKey="form_1s"
+        pronounKey={direction}
         onFinish={onFinish}
         onCancel={onCancel}
         onFlip={handleFlip}
@@ -190,8 +189,23 @@ export default function Drill({ categoryId, direction, onFinish, onCancel, onSho
               <button onClick={() => setShowOverview(false)} className="icon-btn" title="Lernen">
                 <BookOpen size={20} />
               </button>
-              <button onClick={onCancel} className="icon-btn" title="Beenden">
-                <XCircle size={20} />
+              <button 
+                onClick={onCancel} 
+                className="icon-btn" 
+                style={{ 
+                  width: '32px', 
+                  height: '32px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  cursor: 'pointer',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '50%',
+                  backgroundColor: 'transparent'
+                }}
+                title="Beenden"
+              >
+                <X size={16} />
               </button>
             </div>
           </div>

@@ -85,6 +85,22 @@ class StatsService {
     };
   }
 
+  resetLifetimeStats(): LifetimeStats {
+    const reset: LifetimeStats = {
+      totalSessions: 0,
+      totalItemsPracticed: 0,
+      totalCorrectFirstTry: 0,
+      totalHintsUsed: 0,
+      lastActive: Date.now()
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(reset));
+    } catch (e) {
+      console.warn('Failed to reset lifetime stats in localStorage', e);
+    }
+    return reset;
+  }
+
   private updateLifetimeStats(session: SessionStats): LifetimeStats {
     const current = this.getLifetimeStats();
     const updated: LifetimeStats = {
