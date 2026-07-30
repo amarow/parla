@@ -95,10 +95,16 @@ export default function VocabDrill({
 
     return () => {
       isCurrent = false;
-      setIsAudioPlaying(false);
-      window.speechSynthesis.cancel();
     };
   }, [word, isListening, direction, speechRate, user]);
+
+  // Clean up ongoing speech synthesis when word changes or component unmounts
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+      setIsAudioPlaying(false);
+    };
+  }, [word]);
 
   useEffect(() => {
     setLanguage(backLang);

@@ -181,7 +181,7 @@ export default function SentenceDrill({
 
   // Play target sentence text aloud
   useEffect(() => {
-    if (!currentSentence || !isListening || isAudioPlaying) return;
+    if (!currentSentence || !isListening) return;
 
     let isCurrent = true;
     const textToPlay = currentSentence.native;
@@ -202,10 +202,16 @@ export default function SentenceDrill({
 
     return () => {
       isCurrent = false;
-      setIsAudioPlaying(false);
-      window.speechSynthesis.cancel();
     };
-  }, [currentSentence, isListening, isAudioPlaying, speechRate, user]);
+  }, [currentSentence, isListening, speechRate, user]);
+
+  // Clean up ongoing speech synthesis when sentence changes or component unmounts
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+      setIsAudioPlaying(false);
+    };
+  }, [currentSentence]);
 
   // Auto play all sentences logic (Overview tab)
   const togglePlayAllOverview = async () => {
